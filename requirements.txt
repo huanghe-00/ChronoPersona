@@ -1,0 +1,42 @@
+# === Core Framework ===
+langgraph>=0.0.50
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+# === API & WebSocket ===
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-socketio>=5.11.0
+websockets>=12.0
+
+# === CRDT ===
+y-py>=0.6.0
+
+# === Vector Store (MVA: Mock, but client included for typing) ===
+qdrant-client>=1.7.0
+
+# === Database (MVA: Mock, but client included for typing) ===
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9
+pgvector>=0.2.5
+
+# === ML / Embeddings ===
+numpy>=1.26.0
+sentence-transformers>=2.3.0
+torch>=2.1.0
+
+# === LLM Routing ===
+openai>=1.12.0
+
+# === Testing ===
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+httpx>=0.26.0
+
+# === Lint / Dev ===
+ruff>=0.2.0
+black>=24.0.0
+mypy>=1.8.0
+
+# === Evaluation ===
+scikit-learn>=1.4.0

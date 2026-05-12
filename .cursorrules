@@ -1,0 +1,27 @@
+# ChronoPersona Cursor Rules
+
+## 通用
+- 使用 Python 3.10+ 语法，优先 `|` 联合类型而非 `Union`
+- 所有函数必须带类型注解，返回值不要省略
+- 优先使用 Pydantic v2 做数据校验
+- 异步函数命名前缀 `a` 可选，但 I/O 操作必须 async
+
+## 记忆系统
+- 操作记忆时始终携带 `branch_id` 参数，禁止默认值穿透导致隔离失效
+- CRDT 层只处理 Yjs 数据结构，版本语义由 MVCC 层管理
+- 意图图谱导航限制 `max_hops &lt;= 3`，防止 CTE 性能爆炸
+
+## Agent 核心
+- LangGraph 节点函数签名统一：`async def xxx_node(state: AgentState) -&gt; AgentState`
+- 情感状态机转移必须记录 `trigger_reason`，确保可审计
+- LLM 调用必须通过 `ModelRouter.route()`，禁止直接调用 OpenAI 客户端
+
+## 具身层
+- Action Token 必须是 `snake_case`，如 `approach_gently`
+- 每个 ActionPlan 必须包含 `reasoning` 字段
+- 映射字典（`ACTION_TOKEN_MAP`）禁止硬编码业务逻辑，只做纯翻译
+
+## 人格工程
+- Persona Anchor 文件使用 YAML，必须包含 `estimated_anchor_tokens` 字段
+- style_examples 数量 &gt;= 3，用于漂移检测基准
+- 有机约束优先：在 `core_narrative` 中植入边界意识，而非单独 `taboos` 列表
