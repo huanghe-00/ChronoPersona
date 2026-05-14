@@ -921,7 +921,7 @@ Cost 统计是生产环境必需的可观测性模块，必须在 **Model Router
 - `ICostTracker.record(request: ModelRequest, response: ModelResponse, latency_ms: float, branch_id: str) -> None`
 - `ICostTracker.get_summary(scope: CostScope, branch_id: str, start: datetime, end: datetime) -> CostSummary`
 
-### 4.8 Emotion Engine（双层实现）
+### 4.9 Emotion Engine（双层实现）
 
 **Layer 1: Rule-based State Machine（默认）**
 
@@ -962,7 +962,7 @@ trainable_emotion_model.py
     └── [RL-PLACEHOLDER]: 未来替换为 PPO/GRPO 优化策略
 ```
 
-### 4.9 2D Virtual Environment（Token→Action Bridge 架构）
+### 4.10 2D Virtual Environment（Token→Action Bridge 架构）
 
 **核心定位**：不为机器人训练"身体"（VLA），而是构建可跨本体移植的"人格灵魂"。
 
@@ -1040,7 +1040,7 @@ EmbodiedAdapter (ABC)
 
 **MVA 阶段**：纯文本描述，无 Canvas 渲染。Week 7 补极简 HTML 前端。
 
-### 4.10 Skills System
+### 4.11 Skills System
 
 Skill 在 ChronoPersona 框架中是**可执行的能力原语**，必须与人格（Persona）和记忆（Memory）形成清晰的三元划分：
 
@@ -1325,9 +1325,11 @@ EmbodiedAdapter (ABC)
 ├── get_perception(agent_id: str) → EmbodiedState
 ├── execute_action(agent_id: str, action: Action) → PerceptionResult
 ├── get_spatial_memory(agent_id: str) → List[SpatialRecord]
-└── predict_action(percept: EmbodiedState, task_desc: str) → Action
-    └── 默认: LLM 调用
-    └── [VLA-PLACEHOLDER]: 微调模型替换
+├── predict_action(percept: EmbodiedState, task_desc: str) → Action
+│   └── 默认: LLM 调用
+│   └── [VLA-PLACEHOLDER]: 微调模型替换
+└── translate_action_token(action_token: str, params: dict, robot_type: str) → LowLevelCommand
+    └── 映射字典翻译，实现人格-身体解耦
 
 ModelRouter
 ├── route(task: Task, context: Context) → Response
@@ -1364,6 +1366,44 @@ ISkill (Protocol)
 ### 6.2 数据实体定义
 
 ```
+IContext
+├── persona_id: str
+├── branch_id: str
+├── working_memory: List[MemoryEntry]   -- L1 滑动窗口
+├── episodic_context: List[MemoryEntry] -- L2 检索结果
+├── semantic_facts: List[Fact]          -- L3 事实
+├── insights: List[Insight]             -- 主动反思
+├── emotion_state: EmotionState
+├── embodied_state: Optional[EmbodiedState]
+└── metadata: Dict
+
+ModelRequest
+├── task_type: str
+├── prompt: str
+├── context: IContext
+├── model_preference: Optional[str]
+├── max_tokens: int
+├── temperature: float
+└── metadata: Dict
+
+ModelResponse
+├── content: str
+├── model_name: str
+├── input_tokens: int
+├── output_tokens: int
+├── finish_reason: str
+└── metadata: Dict
+
+BudgetStatus
+├── branch_id: str
+├── session_id: str
+├── token_budget: int
+├── tokens_used: int
+├── usd_budget: float
+├── usd_used: float
+├── warning_level: str   # "normal" / "warning" / "exceeded"
+└── last_updated: datetime
+
 MemoryEntry
 ├── id: str
 ├── content: str
