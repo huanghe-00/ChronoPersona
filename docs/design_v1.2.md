@@ -267,12 +267,12 @@ CRDT Sync ──► Yjs update 广播至其他设备
 **CRDT 冲突流**：
 
 ```
-手机端: "preference: 川菜" ──► Yjs Doc ──┐
-                                          ├──► Yjs CRDT Merge (add-wins)
-车机端: "preference: 粤菜" ──► Yjs Doc ──┘        │
-                                                   ▼
-                                          MVCC 创建 CONTRADICTS 边
-                                          LLM 生成时自行判断
+手机端: "preference: 川菜" ──► LWWMap ──┐
+                                         ├──► LWW-CRDT Merge (add-wins)
+车机端: "preference: 粤菜" ──► LWWMap ──┘       │
+                                                  ▼
+                                         MVCC 创建 CONTRADICTS 边
+                                         LLM 生成时自行判断
 ```
 
 ---
@@ -497,7 +497,7 @@ AbstractVersionManager
 - `rpg-{char_id}`：游戏角色扮演记忆
 
 **切换语义**：
-- `checkout('therapist')`：加载 therapist branch 的 ydoc state vector + L2 snapshot + L3 entity 版本指针
+- `checkout('therapist')`：加载 therapist branch 的 lww_map state + L2 snapshot + L3 entity 版本指针
 - 切换后 LLM 的 Persona Anchor 同步切换为 therapist 角色设定
 
 ### 4.3 L1: Working Memory
@@ -532,7 +532,7 @@ Agent位于客厅(3,4)，面向北方。
 
 **4.5.1 数据模型（纯 PostgreSQL）**
 
-#### 4.5.4 语义边构建策略（带置信度 + 分流处理）
+#### 4.5.2 语义边构建策略（带置信度 + 分流处理）
 
 **核心原则**：每类边有独立的构建方法、置信度阈值、失败兜底。
 
@@ -547,7 +547,7 @@ Agent位于客厅(3,4)，面向北方。
 | **BELONGS_TO** | 系统元数据 | 1.0 | 1.0 | 无 |
 | **TRIGGERED_BY** | MVA：关键词模板 | 共现频率 | 0.70 | 不写入 |
 
-#### 4.5.5 CAUSED 边三阶策略
+#### 4.5.3 CAUSED 边三阶策略
 
 ```python
 class CausalEdgeBuilder:
@@ -569,35 +569,6 @@ async def _handle_caused(self, rel, turn):
 ```
 
 **关键设计**：所有 Tier 1 边标记 `mva_only` 溯源位，支持后续审核升级。不匹配模板的因果表达降级为 `CORRELATED` 边，避免污染因果推理链。
-
-#### 4.5.1.1 最小可行本体（MVO）种子注入
-
-**决策**：冷启动必须预置种子，否则图谱导航瘫痪。
-
-约 200 个预置概念（覆盖食物、情绪、社会关系、活动四大高频域）。这不是伪造用户记忆，而是语言理解的基础设施。
-
-```sql
--- 概念层级种子（节选）
-INSERT INTO concepts (id, name, concept_type, parent_id) VALUES
-('c_food', '食物', 'abstract', NULL),
-('c_cuisine', '菜系', 'abstract', 'c_food'),
-('c_sichuan', '川菜', 'food', 'c_cuisine'),
-('c_cantonese', '粤菜', 'food', 'c_cuisine'),
-('c_emotion', '情绪', 'abstract', NULL),
-('c_anxiety', '焦虑', 'emotion', 'c_emotion'),
-('c_joy', '喜悦', 'emotion', 'c_emotion'),
-('c_person', '人物', 'abstract', NULL),
-('c_family', '家人', 'relation', 'c_person');
-
--- 6 条硬编码意图策略（MVA 阶段）
-INSERT INTO intent_patterns (intent_type, trigger_keywords, entry_edge_types, max_hops) VALUES
-('temporal_trace', ARRAY['后来','之后','然后','接着','现在怎样','结果如何'], ARRAY['TEMPORAL_NEXT','MENTIONS'], 3),
-('causal_explore', ARRAY['为什么','怎么回事','原因','怎么会'], ARRAY['CAUSED','MENTIONS'], 3),
-('vertical_generalize', ARRAY['种类','类型','还有哪些','类似的','同类的'], ARRAY['IS_A'], 2),
-('vertical_specify', ARRAY['具体','哪种','什么样的','举例'], ARRAY['IS_A'], 2),
-('parallel_compare', ARRAY['和','相比','哪个','还是','或者'], ARRAY['SIMILAR_TO'], 2),
-('empathize', ARRAY['难过','开心','生气','担心','害怕'], ARRAY['MENTIONS'], 2);
-```
 
 | 表 | 用途 | 关键字段 |
 |----|------|---------|
@@ -630,7 +601,36 @@ INSERT INTO intent_patterns (intent_type, trigger_keywords, entry_edge_types, ma
 | `empathize` | "我好难过" | `MENTIONS`(情感概念) | 2 |
 | `persona_switch` | "切换到心理医生" | `BELONGS_TO` | 1 |
 
-#### 4.5.4 关键词快速通道（借鉴酒馆 World Info）
+#### 4.5.1.1 最小可行本体（MVO）种子注入
+
+**决策**：冷启动必须预置种子，否则图谱导航瘫痪。
+
+约 200 个预置概念（覆盖食物、情绪、社会关系、活动四大高频域）。这不是伪造用户记忆，而是语言理解的基础设施。
+
+```sql
+-- 概念层级种子（节选）
+INSERT INTO concepts (id, name, concept_type, parent_id) VALUES
+('c_food', '食物', 'abstract', NULL),
+('c_cuisine', '菜系', 'abstract', 'c_food'),
+('c_sichuan', '川菜', 'food', 'c_cuisine'),
+('c_cantonese', '粤菜', 'food', 'c_cuisine'),
+('c_emotion', '情绪', 'abstract', NULL),
+('c_anxiety', '焦虑', 'emotion', 'c_emotion'),
+('c_joy', '喜悦', 'emotion', 'c_emotion'),
+('c_person', '人物', 'abstract', NULL),
+('c_family', '家人', 'relation', 'c_person');
+
+-- 6 条硬编码意图策略（MVA 阶段）
+INSERT INTO intent_patterns (intent_type, trigger_keywords, entry_edge_types, max_hops) VALUES
+('temporal_trace', ARRAY['后来','之后','然后','接着','现在怎样','结果如何'], ARRAY['TEMPORAL_NEXT','MENTIONS'], 3),
+('causal_explore', ARRAY['为什么','怎么回事','原因','怎么会'], ARRAY['CAUSED','MENTIONS'], 3),
+('vertical_generalize', ARRAY['种类','类型','还有哪些','类似的','同类的'], ARRAY['IS_A'], 2),
+('vertical_specify', ARRAY['具体','哪种','什么样的','举例'], ARRAY['IS_A'], 2),
+('parallel_compare', ARRAY['和','相比','哪个','还是','或者'], ARRAY['SIMILAR_TO'], 2),
+('empathize', ARRAY['难过','开心','生气','担心','害怕'], ARRAY['MENTIONS'], 2);
+```
+
+**4.5.4 关键词快速通道（借鉴酒馆 World Info）**
 
 **设计**：在 Intent Graph 的冷启动阶段，增加轻量关键词触发层作为"快速通道"。
 
@@ -663,7 +663,7 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
 - 保留复杂查询的图谱导航能力
 - 与酒馆 World Info 的"关键词→记忆注入"理念一致，但系统化接入混合检索链路
 
-**4.5.2 异步构建流水线**
+**4.5.5 异步构建流水线**
 
 每轮对话结束后，由后台 **Reflection Agent** 异步执行：
 
@@ -695,7 +695,7 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
    写入 PostgreSQL
 ```
 
-#### 4.5.6 性能边界与保障
+**4.5.7 性能边界与保障**
 
 | 数据规模 | 延迟 | 评级 |
 |---------|------|------|
@@ -708,7 +708,7 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
 2. 分层查询（hop_limit 1→2→3，召回足够提前返回）
 3. 对 `semantic_edges(source_id, edge_type, branch_id)` 建立复合索引
 
-#### 4.5.7 冷启动三阶段
+**4.5.8 冷启动三阶段**
 
 | 阶段 | 时间 | 内容 |
 |------|------|------|
@@ -716,13 +716,13 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
 | **Phase 2** | Week 2-4 | 对话驱动：前 50 轮产 MENTIONS + TEMPORAL_NEXT；50-200 轮积累 IS_A |
 | **Phase 3** | Week 4+ | Insight 驱动：周期性主动反思优化图谱 |
 
-#### 4.5.8 混合召回融合权重
+**4.5.9 混合召回融合权重**
 
 MVA 初始权重：`final_score = 0.6 * graph_score + 0.4 * vector_score`
 
 后续根据 A6 评估场景动态调参。
 
-**4.5.3 检索路径精确执行流程（6 步）**
+**4.5.6 检索路径精确执行流程（6 步）**
 
 ```
 Step 1: 意图解析 (T1 本地 Qwen3.5 分类 + T2 DS-V4-flash 实体提取)
@@ -1444,7 +1444,7 @@ Version
 | **Qwen3.5 本地推理性能不足** | T0/T1 延迟高，影响体验 | 降级到 DS-V4-flash，本地模型仅作演示 |
 | **API 成本超预算** | DS-V4-pro 调用过多 | Model Router 缓存命中率监控，超阈值时切换 Kimi |
 | **PostgreSQL CTE 性能差** | 意图图谱导航慢 | 限制 max_hops ≤ 3，预计算高频路径 |
-| **Yjs 同步复杂度高** | 多端演示难以构建 | MVA 阶段仅演示单端 + 模拟冲突，真实多端放到第二月 |
+| **CRDT 同步复杂度高** | 多端演示难以构建 | MVA 阶段仅演示单端 + 模拟冲突，真实多端放到第二月 |
 | **8周做不完** | 项目无法成型 | Week 4 设置 checkpoint，若 L3 未完成则砍掉 Insight 模块，保核心记忆+评估 |
 | **面试官质疑" toy 项目"** | 印象分降低 | 强调架构设计的生产级考量（CRDT、MVCC、量化压缩、模型路由），而非功能堆砌 |
 
