@@ -1333,6 +1333,32 @@ ModelRouter
 ├── route(task: Task, context: Context) → Response
 ├── get_cost_summary() → CostReport
 └── cache_clear() → None
+
+IPersonaInjector (ABC)
+├── inject(persona_id: str, branch_id: str, target: IContext) → None
+└── eject(persona_id: str, branch_id: str) → None
+
+IMemoryMigrationService (ABC)
+├── migrate(source: MemoryAnchor, target: MemoryAnchor, branch_id: str, filter: MigrationFilter) → MigrationResult
+├── snapshot(branch_id: str) → Snapshot
+└── merge_branches(source_branch: str, target_branch: str) → MergeResult
+
+ICostTracker (ABC)
+├── record(request: ModelRequest, response: ModelResponse, latency_ms: float, branch_id: str) → None
+├── get_summary(scope: CostScope, branch_id: str, start: datetime, end: datetime) → CostSummary
+└── check_budget(branch_id: str, session_id: str) → BudgetStatus
+
+ISkillRegistry (ABC)
+├── register(skill: ISkill, branch_id: str) → None
+├── execute(skill_id: str, params: dict, branch_id: str) → SkillResult
+└── get_available_skills(branch_id: str, persona_id: str) → List[ISkill]
+
+ISkill (Protocol)
+├── skill_id → str
+├── version → str
+├── description → str
+├── parameters_schema → dict
+└── execute(params: dict, branch_id: str, persona_id: str) → SkillResult
 ```
 
 ### 6.2 数据实体定义
@@ -1378,6 +1404,42 @@ Version
 ├── vector_clock: Dict[str, int]
 ├── parent: Optional[str]
 └── content_hash: str
+
+ModelCallRecord
+├── record_id: str
+├── timestamp: datetime
+├── session_id: str
+├── branch_id: str
+├── persona_id: str
+├── node_id: str
+├── model_name: str
+├── input_tokens: int
+├── output_tokens: int
+├── total_tokens: int
+├── latency_ms: float
+├── ttft_ms: float
+├── cost_usd: float
+├── cache_hit: bool
+└── status: str
+
+SkillResult
+├── observation: str          # 原始执行结果
+├── summary: str              # 给人看的摘要
+├── cost: CostRecord          # 本次执行内部消耗
+├── memory_writes: List[str]  # 自动写入 L2 的记忆 ID 列表
+└── status: str               # success / error / timeout
+
+MigrationFilter
+├── privacy_level: str        # strict / relaxed / none
+├── relevance_threshold: float
+├── time_range: Tuple[datetime, datetime]
+└── layer_scope: List[str]    # ["L1", "L2", "L3"]
+
+MigrationResult
+├── migrated_count: int
+├── conflict_list: List[ConflictItem]
+├── auto_resolution_rate: float
+└── target_snapshot_id: str
 ```
 
 ### 6.3 API 契约（REST + WebSocket）
