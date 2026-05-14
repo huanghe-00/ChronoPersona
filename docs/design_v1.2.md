@@ -440,20 +440,35 @@ agent: {ex.agent}")
 - 用户说"therapist 说话更直接" → 复制 `therapist-v1.0` → `v1.1`，修改 `style_fingerprint`，MVCC commit
 
 
-### 4.1 L0: CRDT Distributed Sync Layer
+### 4.1 L0: LWW-CRDT Distributed Sync Layer
 
-**设计原则**：Yjs 只负责**运行时内存结构**和**实时同步**，版本语义由上层自建 MVCC 管理，避免耦合。
+**架构决策**：移除 Yjs，改用自研轻量 LWW-CRDT（`LWWMap`）。
 
-| 组件 | 职责 | 关键特性 |
-|------|------|---------|
-| **Yjs Doc** | 运行时内存结构 | `Y.Map` 存储记忆 KV，`Y.Array` 存储时间线，`Y.Text` 存储长文本内容 |
-| **Yjs Provider** | 网络同步 | WebSocket 广播 `update` 消息；`Awareness` 追踪多端在线状态 |
-| **UndoManager** | 线性历史 | 仅用于单端撤销/重做，不用于分支管理 |
+| 项目 | 决策内容 |
+|------|---------|
+| **原方案** | Yjs-based CRDT（通用文档同步） |
+| **新方案** | 自研轻量 LWW-CRDT（`LWWMap`） |
+| **原因** | Yjs 是文本编辑器导向，不适合复杂结构化数据拓展；自研可控且与 MVCC 共享 vector_clock 语义 |
 
-**冲突处理策略**：
-- 多端同时写入同一记忆键：Yjs 的 `Y.Map` 天然保证 add-wins 语义，后写入者胜出
-- 上层 MVCC 会**保留冲突版本**，标记为 `CONTRADICTS` 边，不自动消解
-- 示例：手机端写入 `"preference: 川菜"`，车机端写入 `"preference: 粤菜"` → Yjs 合并后两者并存，MVCC 创建 `CONTRADICTS` 边，LLM 生成时自行判断
+**职责收紧（关键边界）**：
+
+```python
+class L0_SyncLayer:
+    def __init__(self, device_id: str, branch_id: str):
+        self.lww_map = LWWMap(device_id)   # 仅缓存高频变化键值
+        self.dirty_keys: set[str] = set()
+    
+    # 职责范围：
+    # ✅ 用户画像、当前状态、活跃偏好、情感状态（高频变化 + 需多端同步）
+    # ❌ 对话历史（由 L2 负责）
+    # ❌ 复杂图谱（由 L3 负责）
+```
+
+**核心特性**：
+- **冲突处理**：`LWWMap` 以 `(timestamp, device_id)` 为全序比较器，天然 add-wins。上层 MVCC 保留冲突版本，标记为 `CONTRADICTS` 边，不自动消解。
+- **实时同步**：设备间通过 WebSocket 广播 LWW-CRDT 操作（`op_type, key, value, timestamp, device_id`）。
+- **定期刷盘**：每 5 分钟或 session 结束，将 `dirty_keys` 刷入 L3 `entity_versions`。
+- **初始化**：从 L3 加载当前 branch 的 profile 事实初始化 L0。
 
 ### 4.2 MVCC Version & Branch Manager
 
@@ -461,7 +476,7 @@ agent: {ex.agent}")
 
 | 层级 | 粒度 | 实现方式 | MVCC 机制 |
 |------|------|---------|----------|
-| **L2 Episodic** | Session 级粗粒度 | 每 session 结束对整个 L2 索引打 snapshot | `SnapshotVersionManager`：序列化 ydoc state vector |
+| **L2 Episodic** | Session 级粗粒度 | 每 session 结束对 L0 lww_map 状态及 L2 索引打 snapshot | `SnapshotVersionManager`：序列化 lww_map JSON + L2 metadata |
 | **L3 Semantic** | Entity 级细粒度 | 每条事实/画像独立版本链 | `EntityVersionManager`：逐 entity 维护 `version_chain` |
 
 **抽象接口**（支持后续切换）：
@@ -595,10 +610,14 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
 [Concept Linking] ──► 本地 Qwen3.5：链接到已有概念或新建概念
     │
     ▼
-[Edge Creation] ──► 规则引擎：根据模板自动创建边
-    │                    • 提到实体 → MENTIONS
-    │                    • 因为...所以... → CAUSED
-    │                    • 与上轮相关 → TEMPORAL_NEXT
+[Edge Creation] ──► 按边类型分流构建
+    │                    • MENTIONS / TEMPORAL_NEXT / BELONGS_TO → 规则引擎直接写入
+    │                    • CAUSED → Tier 1 模板匹配，验证方向与实体存在性；
+    │                              匹配失败则降级写入 CORRELATED
+    │                    • IS_A → LLM 泛化，置信度 < 0.75 挂起待审核
+    │                    • SIMILAR_TO → 向量相似度 > 0.85 时写入
+    │                    • CONTRADICTS / TRIGGERED_BY → 规则引擎
+    │                    • 所有边写入时附加置信度与 `mva_only` 标记（如适用）
     ▼
 [Conflict Detect] ──► 轻量规则：检测 CONTRADICTS
     │                    • 已有"喜欢川菜"，新建"讨厌川菜" → 标记矛盾
@@ -633,6 +652,8 @@ Step 5: 混合召回
 ```
 
 ### 4.6 Retrieval Engine
+
+检索执行遵循 4.5.3 的 6 步流程，混合召回阶段采用 `0.6 * graph_score + 0.4 * vector_score` 的融合权重。
 
 | 阶段 | 组件 | 职责 |
 |------|------|------|
@@ -907,6 +928,7 @@ CREATE TABLE entity_versions (
     vector_clock JSONB,
     content_hash TEXT,
     diff JSONB,  -- 与 parent 的 diff
+    provenance_op TEXT,    -- 关联 L0 的操作 ID
     UNIQUE(entity_id, branch_id, version)
 );
 CREATE INDEX idx_entity_versions_lookup ON entity_versions(entity_id, branch_id, version);
@@ -937,7 +959,7 @@ CREATE TABLE session_snapshots (
     session_id TEXT NOT NULL,
     version TEXT NOT NULL,
     timestamp TIMESTAMPTZ DEFAULT NOW(),
-    ydoc_state_vector BYTEA,  -- Yjs 二进制状态
+    lww_state JSONB,  -- LWWMap JSON 序列化
     qdrant_metadata JSONB,
     UNIQUE(branch_id, session_id, version)
 );
@@ -959,6 +981,26 @@ Collection: "episodic_memory"
 │   ├── created_at: datetime
 │   └── entities: List[string]  -- 该轮提到的实体ID
 └── Quantization: Scalar(1-bit or 2-bit)  -- 可选
+
+-- MVO 种子（MVA 冷启动）
+INSERT INTO concepts (id, name, concept_type, parent_id) VALUES
+('c_food', '食物', 'abstract', NULL),
+('c_cuisine', '菜系', 'abstract', 'c_food'),
+('c_sichuan', '川菜', 'food', 'c_cuisine'),
+('c_cantonese', '粤菜', 'food', 'c_cuisine'),
+('c_emotion', '情绪', 'abstract', NULL),
+('c_anxiety', '焦虑', 'emotion', 'c_emotion'),
+('c_joy', '喜悦', 'emotion', 'c_emotion'),
+('c_person', '人物', 'abstract', NULL),
+('c_family', '家人', 'relation', 'c_person');
+
+INSERT INTO intent_patterns (intent_type, trigger_keywords, entry_edge_types, max_hops) VALUES
+('temporal_trace', ARRAY['后来','之后','然后','接着','现在怎样','结果如何'], ARRAY['TEMPORAL_NEXT','MENTIONS'], 3),
+('causal_explore', ARRAY['为什么','怎么回事','原因','怎么会'], ARRAY['CAUSED','MENTIONS'], 3),
+('vertical_generalize', ARRAY['种类','类型','还有哪些','类似的','同类的'], ARRAY['IS_A'], 2),
+('vertical_specify', ARRAY['具体','哪种','什么样的','举例'], ARRAY['IS_A'], 2),
+('parallel_compare', ARRAY['和','相比','哪个','还是','或者'], ARRAY['SIMILAR_TO'], 2),
+('empathize', ARRAY['难过','开心','生气','担心','害怕'], ARRAY['MENTIONS'], 2);
 ```
 
 ---
@@ -1133,6 +1175,15 @@ Version
 | A4 | 角色共享 | Main branch 穿透 | 在 RPG branch 问用户姓名（存在 Main），应正确回答 |
 | A5 | 多端冲突 | CRDT 合并正确性 | 模拟手机/车机同时写入矛盾偏好，检查合并结果 |
 | A6 | 意图图谱导航 | 结构化检索优于纯向量 | 同一问题分别用"纯向量"和"意图图谱"检索，对比召回 |
+
+#### A6 详细测试用例
+
+| 测试 ID | 查询 | 纯向量 RAG 难点 | Intent Graph 优势 |
+|--------|------|---------------|----------------|
+| A6-1 | "我上周的方案后来怎样" | "方案"语义泛化 | TEMPORAL_NEXT 链 |
+| A6-2 | "川菜和粤菜我喜欢哪个" | 无法聚合对比 | SIMILAR_TO + CONTRADICTS |
+| A6-3 | "为什么我最近焦虑" | "焦虑"与"工作压力"向量距离远 | CAUSED 回溯 |
+| A6-4 | "上次你说的那个餐厅" | "那个"无法向量匹配 | MENTIONS + 指代消解 |
 | A7 | 情感一致性 | 状态机不漂移 | 连续输入负面内容，检查状态转移路径是否符合设计 |
 | A8 | 具身感知 | 空间记忆影响对话 | Agent 在"厨房"vs"客厅"时，对"我饿了"的回复差异 |
 | A9 | 跨本体迁移 | 人格一致性 | 同一人格驱动 grid_2d / ros2_mobile，行为参数一致 |
@@ -1192,6 +1243,9 @@ Version
 | `tests/test_mock_pipeline.py` | 全 Mock 端到端测试 |
 | `Makefile` | `make test` 一键执行 |
 | `CLAUDE.md` / `.cursorrules` | Vibe Coding 规范 |
+| 自研 LWW-CRDT 接口 | `contracts/interfaces/` 中替换 Yjs 为 LWWMap |
+| PostgreSQL Schema + MVO 种子 | 包含 4.5.1.1 的初始数据 |
+| 8 类边 Tier 1 规则 | MENTIONS / TEMPORAL_NEXT / CAUSED 模板等基础构建器 |
 
 **里程碑**：`make test` 通过 28 个测试用例，包含一个完整的"用户输入 → Agent 回复" Mock 流程。
 
@@ -1201,8 +1255,8 @@ Version
 
 | 周次 | 聚焦 | 交付物 |
 |------|------|--------|
-| Week 2 | L0 CRDT + L1 Working Memory + L2 Episodic Memory | Yjs 同步、滑动窗口、Qdrant Mock 接入 |
-| Week 3 | L3 Semantic Memory + Intent Graph (PostgreSQL CTE) | 概念层级、语义边、意图导航策略、Recursive CTE |
+| Week 2 | L0 CRDT + L1 Working Memory + L2 Episodic Memory | **L0 LWW-CRDT 实现、滑动窗口、Qdrant Mock 接入** |
+| Week 3 | L3 Semantic Memory + Intent Graph (PostgreSQL CTE) | 概念层级、语义边、意图导航策略、Recursive CTE（含 6 步检索、MVO 种子、PostgreSQL CTE） |
 
 **里程碑**：命令行运行 `python demo_memory.py`，演示：
 1. 写入记忆 → 切换 therapist branch → 查询同一实体得到不同结果
@@ -1214,6 +1268,7 @@ Version
 
 | 交付物 | 说明 |
 |--------|------|
+| **CAUSED 边 Tier 2 统计共现评估** | 统计共现评估 |
 | `InsightGenerator` | 每 N 轮或每日凌晨触发 |
 | `insight_types` | pattern / trend / conflict / recommendation |
 | `insights` 表 | 存储反思产出，带有效期 |
