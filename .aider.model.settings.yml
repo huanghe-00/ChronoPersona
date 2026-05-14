@@ -1,26 +1,46 @@
+# .aider.model.settings.yml
+
 # 架构师：Kimi K2.6
-- name: kimi/kimi-k2.6
+- name: openai/kimi-for-coding
   edit_format: architect
   weak_model_name: deepseek/deepseek-v4-flash
   use_repo_map: true
-  editor_model_name: deepseek/deepseek-v4-pro
+  editor_model_name: deepseek/deepseek-v4-pro-thinking
   editor_edit_format: editor-diff
   extra_params:
-    api_key: env:KIMI_API_KEY
+    api_key: 
     api_base: https://api.kimi.com/coding/v1
     extra_headers:
-      User-Agent: "Aider/1.0"
+      User-Agent: KimiCLI/1.3
 
-# 编辑师：DeepSeek V4-Pro
+# 编辑师（日常编码）：DeepSeek V4-Pro，关闭思考模式
 - name: deepseek/deepseek-v4-pro
   edit_format: diff
   weak_model_name: deepseek/deepseek-v4-flash
   use_repo_map: true
   extra_params:
-    api_key: env:DEEPSEEK_API_KEY
+    api_key: 
+    extra_body:
+      thinking:
+        type: disabled
 
-# 弱模型：DeepSeek V4-Flash
+# 编辑师（复杂逻辑）：DeepSeek V4-Pro，开启思考模式 max
+- name: deepseek/deepseek-v4-pro-thinking
+  edit_format: diff
+  weak_model_name: deepseek/deepseek-v4-flash
+  use_repo_map: true
+  extra_params:
+    api_key: 
+    reasoning_effort: max
+    extra_body:
+      thinking:
+        type: enabled
+
+# 弱模型：DeepSeek V4-Flash，关闭思考（速度快）
 - name: deepseek/deepseek-v4-flash
   edit_format: weak
   extra_params:
-    api_key: env:DEEPSEEK_API_KEY
+    api_key: 
+    extra_body:
+      thinking:
+        type: disabled

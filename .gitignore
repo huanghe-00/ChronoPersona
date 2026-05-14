@@ -87,3 +87,5 @@ checkpoints/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+.aider*
+*.key
