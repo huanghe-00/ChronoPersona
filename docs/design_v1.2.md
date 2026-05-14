@@ -321,23 +321,18 @@ style_examples:
            我可以帮你梳理失眠的模式，我们一起看看有没有其他缓解方式。"
 
 # Layer 4: 结构化权限与参数（机器最优，系统解析）
-skill_boundary:
-  can_do:
-    - "情感支持"
-    - "认知重构引导"
-    - "放松技巧教学"
-    - "危机识别与转介"
-  cannot_do:
-    - "医学诊断"
-    - "药物建议"
-    - "法律建议"
-  tools_available:
+skill_permissions:
+  allowed_skills:
     - "memory_recall"
     - "relaxation_guide"
     - "crisis_hotline_lookup"
     - "session_summary"
-  tools_forbidden:
+  forbidden_skills:
     - "rpg_dice_roll"
+
+skill_preferences:
+  preferred_skills: []
+  fallback_strategy: "ask_user"
 
 memory_access_policy:
   readable_branches: ["main", "therapist"]
@@ -585,7 +580,7 @@ Agent位于客厅(3,4)，面向北方。
 
 ### 4.5 L3: Semantic Memory + Intent Graph
 
-**4.5.1 数据模型（纯 PostgreSQL）**
+#### 4.5.1 数据模型（纯 PostgreSQL）
 
 #### 4.5.2 语义边构建策略（带置信度 + 分流处理）
 
@@ -656,7 +651,7 @@ async def _handle_caused(self, rel, turn):
 | `empathize` | "我好难过" | `MENTIONS`(情感概念) | 2 |
 | `persona_switch` | "切换到心理医生" | `BELONGS_TO` | 1 |
 
-#### 4.5.1.1 最小可行本体（MVO）种子注入
+#### 4.5.4 最小可行本体（MVO）种子注入
 
 **决策**：冷启动必须预置种子，否则图谱导航瘫痪。
 
@@ -817,7 +812,7 @@ ORDER BY path_weight DESC, hop ASC LIMIT 20;
 
 ### 4.6 Retrieval Engine
 
-检索执行遵循 4.5.3 的 6 步流程，混合召回阶段采用 `0.6 * graph_score + 0.4 * vector_score` 的融合权重。
+检索执行遵循 4.5.7 的 6 步流程，混合召回阶段采用 `0.6 * graph_score + 0.4 * vector_score` 的融合权重。
 
 | 阶段 | 组件 | 职责 |
 |------|------|------|
@@ -1424,9 +1419,19 @@ RetrievedContext
 ├── navigation_path: List[NavigationStep]    -- 意图图谱路径
 └── total_tokens: int
 
+Action
+├── action_token: str
+├── params: Dict
+
+ActionPlan
+├── action_token: str
+├── action_params: Dict
+└── reasoning: str
+
 AgentOutput
 ├── reply_text: str
-├── action: Optional[Action]
+├── action_plan: Optional[ActionPlan]
+├── emotion_modulation: Optional[Dict]  -- e.g., {speed_mult: 0.5, volume_mult: 0.8}
 ├── emotion_state: EmotionState
 ├── used_memories: List[str]     -- 引用的记忆ID（可解释性）
 └── branch_id: str
@@ -1474,6 +1479,25 @@ MigrationFilter
 ├── relevance_threshold: float
 ├── time_range: Tuple[datetime, datetime]
 └── layer_scope: List[str]    # ["L1", "L2", "L3"]
+
+CostRecord
+├── internal_tokens: int
+├── internal_latency_ms: float
+└── metadata: Dict
+
+CostReport
+├── total_calls: int
+├── total_input_tokens: int
+├── total_output_tokens: int
+├── total_cost_usd: float
+├── avg_latency_ms: float
+├── breakdown_by_model: Dict[str, ModelSummary]
+└── breakdown_by_branch: Dict[str, BranchSummary]
+
+MemoryAnchor
+├── persona_id: str
+├── layer_level: str       -- "L0" / "L1" / "L2" / "L3"
+└── time_range: Tuple[datetime, datetime]
 
 MigrationResult
 ├── migrated_count: int
