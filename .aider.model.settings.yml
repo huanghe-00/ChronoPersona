@@ -1,0 +1,26 @@
+# 架构师：Kimi K2.6
+- name: kimi/kimi-k2.6
+  edit_format: architect
+  weak_model_name: deepseek/deepseek-v4-flash
+  use_repo_map: true
+  editor_model_name: deepseek/deepseek-v4-pro
+  editor_edit_format: editor-diff
+  extra_params:
+    api_key: env:KIMI_API_KEY
+    api_base: https://api.kimi.com/coding/v1
+    extra_headers:
+      User-Agent: "Aider/1.0"
+
+# 编辑师：DeepSeek V4-Pro
+- name: deepseek/deepseek-v4-pro
+  edit_format: diff
+  weak_model_name: deepseek/deepseek-v4-flash
+  use_repo_map: true
+  extra_params:
+    api_key: env:DEEPSEEK_API_KEY
+
+# 弱模型：DeepSeek V4-Flash
+- name: deepseek/deepseek-v4-flash
+  edit_format: weak
+  extra_params:
+    api_key: env:DEEPSEEK_API_KEY
