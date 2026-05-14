@@ -745,33 +745,6 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
    写入 PostgreSQL
 ```
 
-**4.5.8 性能边界与保障**
-
-| 数据规模 | 延迟 | 评级 |
-|---------|------|------|
-| 1,000 节点 / 5,000 边 | 10-30ms | ✅ |
-| **MVA 目标：10,000 节点 / 50,000 边** | **50-150ms** | ✅ |
-| 100,000 节点 / 500,000 边 | 200-800ms | ⚠️ 需优化 |
-
-**保障策略**：
-1. 限制 `max_hops ≤ 3`
-2. 分层查询（hop_limit 1→2→3，召回足够提前返回）
-3. 对 `semantic_edges(source_id, edge_type, branch_id)` 建立复合索引
-
-**4.5.9 冷启动三阶段**
-
-| 阶段 | 时间 | 内容 |
-|------|------|------|
-| **Phase 1** | Week 1-2 | 种子注入：200 概念 + 6 条硬编码策略 |
-| **Phase 2** | Week 2-4 | 对话驱动：前 50 轮产 MENTIONS + TEMPORAL_NEXT；50-200 轮积累 IS_A |
-| **Phase 3** | Week 4+ | Insight 驱动：周期性主动反思优化图谱 |
-
-**4.5.10 混合召回融合权重**
-
-MVA 初始权重：`final_score = 0.6 * graph_score + 0.4 * vector_score`
-
-后续根据 A6 评估场景动态调参。
-
 **4.5.7 检索路径精确执行流程（6 步）**
 
 ```
@@ -810,6 +783,32 @@ ORDER BY path_weight DESC, hop ASC LIMIT 20;
 
 **混合召回融合权重**（Step 5）：`final_score = 0.6 * graph_score + 0.4 * vector_score`
 
+**4.5.8 性能边界与保障**
+
+| 数据规模 | 延迟 | 评级 |
+|---------|------|------|
+| 1,000 节点 / 5,000 边 | 10-30ms | ✅ |
+| **MVA 目标：10,000 节点 / 50,000 边** | **50-150ms** | ✅ |
+| 100,000 节点 / 500,000 边 | 200-800ms | ⚠️ 需优化 |
+
+**保障策略**：
+1. 限制 `max_hops ≤ 3`
+2. 分层查询（hop_limit 1→2→3，召回足够提前返回）
+3. 对 `semantic_edges(source_id, edge_type, branch_id)` 建立复合索引
+
+**4.5.9 冷启动三阶段**
+
+| 阶段 | 时间 | 内容 |
+|------|------|------|
+| **Phase 1** | Week 1-2 | 种子注入：200 概念 + 6 条硬编码策略 |
+| **Phase 2** | Week 2-4 | 对话驱动：前 50 轮产 MENTIONS + TEMPORAL_NEXT；50-200 轮积累 IS_A |
+| **Phase 3** | Week 4+ | Insight 驱动：周期性主动反思优化图谱 |
+
+**4.5.10 混合召回融合权重**
+
+MVA 初始权重：`final_score = 0.6 * graph_score + 0.4 * vector_score`
+
+后续根据 A6 评估场景动态调参。
 ### 4.6 Retrieval Engine
 
 检索执行遵循 4.5.7 的 6 步流程，混合召回阶段采用 `0.6 * graph_score + 0.4 * vector_score` 的融合权重。
