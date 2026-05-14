@@ -441,6 +441,60 @@ agent: {ex.agent}")
 - 用户说"therapist 说话更直接" → 复制 `therapist-v1.0` → `v1.1`，修改 `style_fingerprint`，MVCC commit
 
 
+### 4.0.6 人格注入与记忆迁移/合并
+
+#### 人格注入（Persona Injection）
+
+人格注入不是简单的 System Prompt 拼接，而是**分层上下文植入**，确保人格既影响推理风格，又不污染事实记忆。
+
+**注入分层：**
+
+| 层级 | 注入内容 | 目标载体 | 更新频率 |
+|------|---------|---------|---------|
+| 静态属性 | 姓名、年龄、职业、语言风格（formal/casual）、核心口头禅 | System Prompt / L3 Semantic | 极低 |
+| 动态状态 | 当前情绪、疲劳度、对话深度、上下文窗口占用率 | L1 Working Memory | 每轮推理 |
+| 价值观约束 | 禁忌话题、伦理红线、决策偏好（如"优先保守"） | Guardrails / System Prompt | 中 |
+| 身份锚点 | "我是XXX"的自我指认模板 | L1 Working Memory 前缀 | 每次 `inject` |
+
+**接口契约：**
+- `IPersonaInjector.inject(persona_id: str, branch_id: str, target: IContext) -> None`
+  - 将指定人格按上述分层写入目标上下文。
+  - **禁止**将人格信息直接写入 L2 Episodic（避免记忆与身份混淆）。
+- `IPersonaInjector.eject(persona_id: str, branch_id: str) -> None`
+  - 清理 L1 Working Memory 中该人格的动态状态，保留 L3 中的静态知识。
+  - 用于人格切换时的"上下文重置"。
+
+**热切换流程：**
+```text
+Agent Core 触发 persona_switch
+  ├─ IPersonaInjector.eject(old_persona, branch_id)  // 清理 L1
+  ├─ IMemoryMigrationService.snapshot(branch_id)     // 可选：保存旧人格的 L1 快照
+  └─ IPersonaInjector.inject(new_persona, branch_id, context)
+```
+
+#### 记忆迁移与合并（Memory Migration & Merge）
+
+**三种迁移场景：**
+
+1. **跨分支迁移（Branch Merge）**
+   - 依赖 `L0 CRDT` 的原生合并能力。
+   - 冲突解决策略：`last-write-wins` 或 `vector-similarity-merge`（当同一事实的两个分支版本语义相似时自动去重）。
+   - 必须显式传递 `source_branch_id` 与 `target_branch_id`。
+
+2. **跨人格迁移（Cross-Persona Migration）**
+   - 源人格的记忆需经过 **Privacy Filter**（过滤掉涉及他人隐私的片段）和 **Relevance Filter**（仅保留与目标人格角色相关的记忆）。
+   - 迁移后的记忆以 **"observed memory"（第三方观察）** 形式写入目标人格的 L2，而非原生经历，避免自我认知错乱。
+
+3. **层级晋升（Layer Promotion）**
+   - L2 Episodic → L3 Semantic：周期性由 `MemoryCompactionService` 执行，将多个情节抽象为事实。
+   - L1 Working → L0 CRDT：实时同步，保证工作记忆的最新状态可被其他节点合并。
+
+**接口契约：**
+- `IMemoryMigrationService.migrate(source: MemoryAnchor, target: MemoryAnchor, branch_id: str, filter: MigrationFilter) -> MigrationResult`
+  - `MemoryAnchor` 包含 `(persona_id, layer_level, time_range)`。
+  - 返回冲突列表及自动解决率。
+
+
 ### 4.1 L0: LWW-CRDT Distributed Sync Layer
 
 **架构决策**：移除 Yjs，改用自研轻量 LWW-CRDT（`LWWMap`）。
@@ -820,6 +874,53 @@ ORDER BY path_weight DESC, hop ASC LIMIT 20;
 **缓存策略**：SQLite 缓存，TTL 24h，相同 (task_type, prompt_hash) 直接复用。  
 **成本追踪**：每次调用记录 model_name、input_tokens、output_tokens、latency，用于评估框架的 `Token/s` 指标。
 
+### 4.8.1 Cost Tracking 详细设计
+
+Cost 统计是生产环境必需的可观测性模块，必须在 **Model Router** 层统一拦截，避免各模型客户端自行上报导致口径不一致。
+
+#### 记录维度（Raw Metrics）
+
+每条记录 `ModelCallRecord` 包含：
+
+```python
+{
+  "record_id": str,           # UUID
+  "timestamp": datetime,      # UTC
+  "session_id": str,          # 用户会话聚合键
+  "branch_id": str,           # 显式分支标识（禁止默认全局分支）
+  "persona_id": str,          # 当前激活人格
+  "node_id": str,             # Agent Core 中调用该模型的节点标识
+  "model_name": str,          # 如 "gpt-4o", "claude-3.5-sonnet"
+  "input_tokens": int,
+  "output_tokens": int,
+  "total_tokens": int,
+  "latency_ms": float,        # 端到端耗时（含网络）
+  "ttft_ms": float,           # Time To First Token（流式场景）
+  "cost_usd": float,          # 按模型单价计算的预估费用
+  "cache_hit": bool,          # 是否命中 prompt cache（若模型支持）
+  "status": str               # success / error / timeout
+}
+```
+
+#### 存储与聚合
+
+- **原始记录**：写入独立的 `metrics_store`（SQLite / 轻量级时序库），**不直接污染记忆层级**。
+- **聚合视图**：由 `CostAggregator` 按以下维度生成摘要，供 L3 Semantic Memory 查询：
+  - `by_branch`: 分支级预算消耗。
+  - `by_session`: 单会话成本上限告警。
+  - `by_model`: 模型选型 ROI 分析。
+  - `by_persona`: 不同人格的推理成本差异（如"详细分析型"人格通常消耗更多 tokens）。
+
+#### 预算与告警
+
+- 支持在 `branch_id` 和 `session_id` 级别设置 `token_budget` 与 `usd_budget`。
+- 当消耗达到 80% 时，由 `ICostTracker` 抛出 `BudgetWarningException`，由 Agent Core 决策是否降级模型或截断上下文。
+
+#### 接口契约
+
+- `ICostTracker.record(request: ModelRequest, response: ModelResponse, latency_ms: float, branch_id: str) -> None`
+- `ICostTracker.get_summary(scope: CostScope, branch_id: str, start: datetime, end: datetime) -> CostSummary`
+
 ### 4.8 Emotion Engine（双层实现）
 
 **Layer 1: Rule-based State Machine（默认）**
@@ -938,6 +1039,85 @@ EmbodiedAdapter (ABC)
 ```
 
 **MVA 阶段**：纯文本描述，无 Canvas 渲染。Week 7 补极简 HTML 前端。
+
+### 4.10 Skills System
+
+Skill 在 ChronoPersona 框架中是**可执行的能力原语**，必须与人格（Persona）和记忆（Memory）形成清晰的三元划分：
+
+| 维度 | 人格 (Persona) | 记忆 (Memory) | 技能 (Skill) |
+|------|---------------|--------------|-------------|
+| **核心问题** | 我是谁？我如何说话？ | 我知道什么？我经历过什么？ | 我能做什么？ |
+| **数据形态** | 属性配置 + 风格模板 | 时序事件 + 语义知识 | 输入 Schema + 执行 Handler |
+| **作用时机** | 推理前注入上下文 | 检索时作为依据 | 推理中由模型决策调用 |
+| **是否可积累** | 相对稳定，偶尔更新 | 随时间持续增长 | 静态注册，版本迭代 |
+| **副作用** | 无（纯上下文） | 读/写记忆本身 | 可产生外部副作用（API、IO、代码执行） |
+
+**一句话界定**：人格决定"怎么说"，记忆决定"基于什么说"，技能决定"能做什么再说"。
+
+#### Skills 在框架中的三个角色
+
+1. **作为模型可调用的原子操作**
+   - Model Router 在构造请求时，将 `ISkillRegistry` 中当前分支可用的技能列表，以 Function Calling / Tools 格式暴露给 LLM。
+   - LLM 的某一步输出可能是 `call_skill(skill_id="web_search", params={"query": "..."})`。
+
+2. **作为记忆的生产者**
+   - Skill 的执行结果（Observation）**必须**写回 L2 Episodic Memory，并标注 `source_skill_id`。
+   - 这保证了 Agent 知道"某个事实是我通过搜索获得的"，而非原生知识。
+
+3. **作为人格的下游表现载体**
+   - 同一个 Skill 的执行结果，经过不同人格的包装后，输出风格完全不同。
+   - 例如：`skill_calculate_risk` 返回 `{risk_score: 0.8}`，保守型人格会说"风险极高，建议终止"，激进型人格会说"存在一定波动，但可控"。
+
+#### Skill 的组成结构
+
+```python
+class ISkill(Protocol):
+    @property
+    def skill_id(self) -> str: ...           # 全局唯一标识
+    @property
+    def version(self) -> str: ...            # 语义化版本，支持热更新
+    @property
+    def description(self) -> str: ...        # 给 LLM 看的自然语言描述
+    @property
+    def parameters_schema(self) -> dict: ...  # JSON Schema，供模型生成参数
+    
+    def execute(self, params: dict, branch_id: str, persona_id: str) -> SkillResult:
+        """
+        Args:
+            params: 模型生成的参数，需校验
+            branch_id: 显式分支上下文
+            persona_id: 当前人格，用于执行时的个性化适配
+        Returns:
+            SkillResult: 包含 observation(原始结果)、summary(给人看的摘要)、
+                         cost(本次执行的内部消耗，如外部 API tokens)
+        """
+        ...
+```
+
+#### Skills 与记忆/人格的交互关系
+
+**Skill → Memory：**
+- Skill 执行后，由 `MemoryWriterService` 自动将 `SkillResult.observation` 写入当前分支的 L2 Episodic，标签为 `origin:skill`，并关联 `skill_id`。
+- 未来记忆检索时，可区分"亲身经历"与"工具获取"。
+
+**Memory → Skill：**
+- `SkillRegistry` 在注册时，可将 Skill 的 `description` 和 `parameters_schema` 也存入 L3 Semantic Memory。
+- 这支持未来"动态技能发现"：Agent 在推理时不仅调用已知技能，还能通过语义检索发现"我好像需要一个能处理 PDF 的技能"，然后请求加载。
+
+**Persona → Skill：**
+- 人格配置中包含 `skill_permissions` 和 `skill_preferences`。
+  - `permissions`: 某些 Skill（如 `execute_code`）仅特定人格可调用。
+  - `preferences`: 人格可定义"在不确定时优先调用 `fact_check` skill"，这作为系统提示词的一部分注入。
+
+**Skill → Persona：**
+- Skill 执行时的副作用不应直接修改人格配置（人格是静态身份），但 Skill 的**使用历史**会进入记忆，长期可能通过记忆迁移间接影响人格表现。
+
+#### 注册中心
+
+- `ISkillRegistry` 管理生命周期：
+  - `register(skill: ISkill, branch_id: str)`：向指定分支注册（支持分支级隔离）。
+  - `execute(skill_id: str, params: dict, branch_id: str)`：执行并走完全链路（记录 Cost、写入记忆）。
+  - `get_available_skills(branch_id: str, persona_id: str) -> list[ISkill]`：根据人格权限过滤。
 
 ---
 
