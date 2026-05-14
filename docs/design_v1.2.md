@@ -680,7 +680,7 @@ INSERT INTO intent_patterns (intent_type, trigger_keywords, entry_edge_types, ma
 ('empathize', ARRAY['难过','开心','生气','担心','害怕'], ARRAY['MENTIONS'], 2);
 ```
 
-**4.5.4 关键词快速通道（借鉴酒馆 World Info）**
+**4.5.5 关键词快速通道（借鉴酒馆 World Info）**
 
 **设计**：在 Intent Graph 的冷启动阶段，增加轻量关键词触发层作为"快速通道"。
 
@@ -713,7 +713,7 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
 - 保留复杂查询的图谱导航能力
 - 与酒馆 World Info 的"关键词→记忆注入"理念一致，但系统化接入混合检索链路
 
-**4.5.5 异步构建流水线**
+**4.5.6 异步构建流水线**
 
 每轮对话结束后，由后台 **Reflection Agent** 异步执行：
 
@@ -745,7 +745,7 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
    写入 PostgreSQL
 ```
 
-**4.5.7 性能边界与保障**
+**4.5.8 性能边界与保障**
 
 | 数据规模 | 延迟 | 评级 |
 |---------|------|------|
@@ -758,7 +758,7 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
 2. 分层查询（hop_limit 1→2→3，召回足够提前返回）
 3. 对 `semantic_edges(source_id, edge_type, branch_id)` 建立复合索引
 
-**4.5.8 冷启动三阶段**
+**4.5.9 冷启动三阶段**
 
 | 阶段 | 时间 | 内容 |
 |------|------|------|
@@ -766,13 +766,13 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
 | **Phase 2** | Week 2-4 | 对话驱动：前 50 轮产 MENTIONS + TEMPORAL_NEXT；50-200 轮积累 IS_A |
 | **Phase 3** | Week 4+ | Insight 驱动：周期性主动反思优化图谱 |
 
-**4.5.9 混合召回融合权重**
+**4.5.10 混合召回融合权重**
 
 MVA 初始权重：`final_score = 0.6 * graph_score + 0.4 * vector_score`
 
 后续根据 A6 评估场景动态调参。
 
-**4.5.6 检索路径精确执行流程（6 步）**
+**4.5.7 检索路径精确执行流程（6 步）**
 
 ```
 Step 1: 意图解析 (T1 本地 Qwen3.5 分类 + T2 DS-V4-flash 实体提取)
