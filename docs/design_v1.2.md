@@ -532,6 +532,73 @@ Agent位于客厅(3,4)，面向北方。
 
 **4.5.1 数据模型（纯 PostgreSQL）**
 
+#### 4.5.4 语义边构建策略（带置信度 + 分流处理）
+
+**核心原则**：每类边有独立的构建方法、置信度阈值、失败兜底。
+
+| 边类型 | 构建方法 | 置信度来源 | MVA 阈值 | 失败兜底 |
+|--------|---------|-----------|---------|---------|
+| **MENTIONS** | 规则：NER 实体在对话中出现 | 实体链接置信度 | 0.85 | 不写入 |
+| **TEMPORAL_NEXT** | 规则：同 session 相邻 turn；跨 session 按时间戳 | 时间邻近度 | 0.90 | 不写入 |
+| **IS_A** | LLM 泛化 | LLM logprob | 0.75 | 挂起待审核 |
+| **CAUSED** | **Tier 1 模板匹配** + LLM 二次验证 | 模板匹配度 × LLM 确认 | 0.80 | **降级为 CORRELATED** |
+| **CONTRADICTS** | 规则：同一 key 新旧值语义相反 | 语义对立检测 | 0.90 | 人工确认 |
+| **SIMILAR_TO** | 向量相似度 > 0.85 | 向量相似度 | 0.85 | 不写入 |
+| **BELONGS_TO** | 系统元数据 | 1.0 | 1.0 | 无 |
+| **TRIGGERED_BY** | MVA：关键词模板 | 共现频率 | 0.70 | 不写入 |
+
+#### 4.5.5 CAUSED 边三阶策略
+
+```python
+class CausalEdgeBuilder:
+    # Tier 1: 硬规则（MVA 启用，准确率 > 95%，召回率 ~40%）
+    TIER1_TEMPLATES = [
+        r"因为(.+?)，所以(.+?)",
+        r"(.+?)导致(.+?)",
+        r"(.+?)使得(.+?)",
+        r"(.+?)因此(.+?)",
+        r"(.+?)引起了(.+?)",
+    ]
+
+async def _handle_caused(self, rel, turn):
+    # 1. 模板匹配（严格）
+    # 2. 验证 cause/effect 是否对应已提取实体
+    # 3. 方向校验（因必须在果之前）
+    # 4. 不匹配模板 → 降级为 CORRELATED（弱相关，不进入因果推理链）
+    pass
+```
+
+**关键设计**：所有 Tier 1 边标记 `mva_only` 溯源位，支持后续审核升级。不匹配模板的因果表达降级为 `CORRELATED` 边，避免污染因果推理链。
+
+#### 4.5.1.1 最小可行本体（MVO）种子注入
+
+**决策**：冷启动必须预置种子，否则图谱导航瘫痪。
+
+约 200 个预置概念（覆盖食物、情绪、社会关系、活动四大高频域）。这不是伪造用户记忆，而是语言理解的基础设施。
+
+```sql
+-- 概念层级种子（节选）
+INSERT INTO concepts (id, name, concept_type, parent_id) VALUES
+('c_food', '食物', 'abstract', NULL),
+('c_cuisine', '菜系', 'abstract', 'c_food'),
+('c_sichuan', '川菜', 'food', 'c_cuisine'),
+('c_cantonese', '粤菜', 'food', 'c_cuisine'),
+('c_emotion', '情绪', 'abstract', NULL),
+('c_anxiety', '焦虑', 'emotion', 'c_emotion'),
+('c_joy', '喜悦', 'emotion', 'c_emotion'),
+('c_person', '人物', 'abstract', NULL),
+('c_family', '家人', 'relation', 'c_person');
+
+-- 6 条硬编码意图策略（MVA 阶段）
+INSERT INTO intent_patterns (intent_type, trigger_keywords, entry_edge_types, max_hops) VALUES
+('temporal_trace', ARRAY['后来','之后','然后','接着','现在怎样','结果如何'], ARRAY['TEMPORAL_NEXT','MENTIONS'], 3),
+('causal_explore', ARRAY['为什么','怎么回事','原因','怎么会'], ARRAY['CAUSED','MENTIONS'], 3),
+('vertical_generalize', ARRAY['种类','类型','还有哪些','类似的','同类的'], ARRAY['IS_A'], 2),
+('vertical_specify', ARRAY['具体','哪种','什么样的','举例'], ARRAY['IS_A'], 2),
+('parallel_compare', ARRAY['和','相比','哪个','还是','或者'], ARRAY['SIMILAR_TO'], 2),
+('empathize', ARRAY['难过','开心','生气','担心','害怕'], ARRAY['MENTIONS'], 2);
+```
+
 | 表 | 用途 | 关键字段 |
 |----|------|---------|
 | `concepts` | 概念层级节点 | `id`, `name`, `concept_type`, `parent_id`(IS_A), `embedding`, `branch_id` |
@@ -628,28 +695,43 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
    写入 PostgreSQL
 ```
 
-**4.5.3 检索路径示例**
-
-用户查询：*"我上周提到的那个方案后来怎么样了"*
+**4.5.3 检索路径精确执行流程（6 步）**
 
 ```
-Step 1: 意图解析 → temporal_trace + 实体"方案" + 时间"上周"
-Step 2: 加载策略 → entry_edge_types=['TEMPORAL_NEXT','MENTIONS'], max_hops=3
-Step 3: 模糊指代消解
-        • Working Memory 找最近提及的"方案"
-        • 若无，L2 向量检索"方案" Top-5 + 时间过滤"上周"
-        • 得到候选 memory_node_A
-Step 4: 图谱导航 (Recursive CTE)
-        • 从 memory_node_A 出发
-        • 沿 TEMPORAL_NEXT 向后遍历（找"后来"）
-        • 沿 MENTIONS 确认"方案"上下文
-        • 收集路径上的记忆节点 [A, C, D]
-Step 5: 混合召回
-        • 图谱召回: [A, C, D]
-        • 向量召回: "方案 后来" Top-5
-        • 时间过滤: 上周之后
-        • 交集 + Cross-Encoder Reranker → 最终上下文
+Step 1: 意图解析 (T1 本地 Qwen3.5 分类 + T2 DS-V4-flash 实体提取)
+Step 2: 模糊指代消解 (L1 → L2 向量检索 → T6 Kimi 2.6 消歧)
+Step 3: 加载意图策略 (查询 intent_patterns 表)
+Step 4: 图谱导航 (PostgreSQL Recursive CTE)
+Step 5: 混合召回融合 (图谱 + 向量 + 关键词快速通道)
+Step 6: 上下文组装 (Importance × Recency × Relevance，截断到 4K tokens)
 ```
+
+**示例 CTE 查询模板**（Step 4）：
+
+```sql
+WITH RECURSIVE navigation AS (
+    SELECT mn.id as node_id, mn.content_summary, 0 as hop, 
+           ARRAY[mn.id]::uuid[] as path, 1.0 as path_weight
+    FROM memory_nodes mn
+    WHERE mn.id = :candidate_id AND mn.branch_id = :branch_id
+    
+    UNION ALL
+    SELECT se.target_id, target_mn.content_summary, nav.hop + 1,
+           nav.path || se.target_id, nav.path_weight * se.weight * 0.9
+    FROM navigation nav
+    JOIN semantic_edges se ON nav.node_id = se.source_id
+    JOIN memory_nodes target_mn ON se.target_id = target_mn.id
+    WHERE se.edge_type = ANY(:entry_edge_types)
+      AND se.branch_id = :branch_id
+      AND nav.hop < :max_hops
+      AND NOT se.target_id = ANY(nav.path)  -- 严格防环
+)
+SELECT node_id, content_summary, hop, path_weight
+FROM navigation WHERE hop > 0
+ORDER BY path_weight DESC, hop ASC LIMIT 20;
+```
+
+**混合召回融合权重**（Step 5）：`final_score = 0.6 * graph_score + 0.4 * vector_score`
 
 ### 4.6 Retrieval Engine
 
