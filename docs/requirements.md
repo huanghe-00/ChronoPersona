@@ -868,7 +868,11 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
     │                    主动总结跨 session 洞察（如"用户近3次谈话焦虑程度上升"）
     ▼
    写入 PostgreSQL
-```
+
+**Insight 触发量化契约（MVA）**：
+- `trigger_rounds`: 每 **10 轮**对话（可配置，范围 5–20）
+- `trigger_daily`: 每日 **03:00 UTC** 兜底扫描（无论轮数是否达标）
+- `min_confidence`: 0.6（低于此值的 insight 不写入，避免噪声）
 
 **4.5.7 检索路径精确执行流程（6 步）**
 
