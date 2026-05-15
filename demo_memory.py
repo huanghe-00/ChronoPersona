@@ -1,5 +1,6 @@
 """Minimal demo script for MVA memory system."""
 
+from chronopersona.contracts.schemas import ChangeSet, MemoryEntry
 from chronopersona.mocks import MockAgentCore, MockMemoryStore, MockVersionManager
 
 
@@ -52,6 +53,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    from chronopersona.contracts.schemas import ChangeSet, MemoryEntry
-
     main()
