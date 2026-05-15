@@ -1,7 +1,7 @@
 # ChronoPersona 系统设计文档
 
-**版本**: MVA v1.3 (Minimal Viable Architecture)  
-**日期**: 2026-05-12  
+**版本**: MVA v1.4 (Minimal Viable Architecture)  
+**日期**: 2026-05-15  
 **定位**: 面向面试的 AI Agent 长期记忆系统项目  
 **核心差异化**: CRDT 多端同步 + MVCC 角色分支 + 意图图谱导航 + Token→Action Bridge 具身人格移植 + 酒馆式混合格式人格工程  
 
