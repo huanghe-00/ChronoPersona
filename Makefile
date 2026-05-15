@@ -1,4 +1,4 @@
-.PHONY: test lint format mock-demo eval install clean
+.PHONY: test lint format mock-demo eval install clean test-m1 test-m2 test-m3 test-m4 eval-full
 
 # === Environment ===
 install:
@@ -27,6 +27,22 @@ mock-demo:
 # === Evaluation ===
 eval:
 	python -m evaluation.run_eval
+
+# === Modular Testing (Schedule v2.0) ===
+test-m1:
+	pytest tests/test_lww_map.py tests/test_sliding_window.py tests/test_episodic.py tests/test_semantic.py -v --tb=short
+
+test-m2:
+	pytest tests/test_agent_core.py tests/test_emotion_engine.py tests/test_state_machine.py -v --tb=short
+
+test-m3:
+	pytest tests/test_a1_a3.py tests/test_a4_a5.py tests/test_a6_intent_graph.py -v --tb=short
+
+test-m4:
+	pytest tests/test_grid_world.py tests/test_embodied_adapter.py -v --tb=short
+
+eval-full:
+	python -m evaluation.runner --all
 
 # === Cleanup ===
 clean:
