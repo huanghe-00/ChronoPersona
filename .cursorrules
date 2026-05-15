@@ -3,16 +3,19 @@
 ## 通用
 - 使用 Python 3.10+ 语法，优先 `|` 联合类型而非 `Union`
 - 所有函数必须带类型注解，返回值不要省略
-- 优先使用 Pydantic v2 做数据校验
-- 异步函数命名前缀 `a` 可选，但 I/O 操作必须 async
+- **优先使用标准库 `dataclasses` 定义数据 Schema；仅在 API 层输入校验必要时使用 Pydantic v2**
+- 异步函数命名前缀 `a` 可选，但 I/O 操作必须 async；**核心接口（如 AbstractAgentCore.run_turn）当前为同步契约，实现层若引入 LangGraph 须保持兼容**
+- 日志统一使用 `loguru`，关键路径 INFO，错误路径 ERROR
+- 注释和 docstring 使用英文，用户交互文本用中文
 
 ## 记忆系统
 - 操作记忆时始终携带 `branch_id` 参数，禁止默认值穿透导致隔离失效
-- CRDT 层只处理 Yjs 数据结构，版本语义由 MVCC 层管理
-- 意图图谱导航限制 `max_hops &lt;= 3`，防止 CTE 性能爆炸
+- **CRDT 层使用自研 LWWMap（LWW-CRDT），基于 Hybrid Logical Clock（HLC）实现 add-wins 语义；Yjs 已完全移除**
+- **L0 职责收紧：仅缓存高频变化键值（user_profile、active_state、preferences、emotion_state），不承载对话历史（L2）或复杂图谱（L3）**
+- 意图图谱导航限制 `max_hops <= 3`，防止 CTE 性能爆炸
 
 ## Agent 核心
-- LangGraph 节点函数签名统一：`async def xxx_node(state: AgentState) -&gt; AgentState`
+- **AbstractAgentCore 接口当前为同步设计（run_turn / switch_persona）；W5+ 引入 LangGraph 时须保持与冻结接口兼容**
 - 情感状态机转移必须记录 `trigger_reason`，确保可审计
 - LLM 调用必须通过 `ModelRouter.route()`，禁止直接调用 OpenAI 客户端
 
@@ -23,5 +26,15 @@
 
 ## 人格工程
 - Persona Anchor 文件使用 YAML，必须包含 `estimated_anchor_tokens` 字段
-- style_examples 数量 &gt;= 3，用于漂移检测基准
+- style_examples 数量 >= 3，用于漂移检测基准
 - 有机约束优先：在 `core_narrative` 中植入边界意识，而非单独 `taboos` 列表
+
+## 接口与测试（强制）
+- 任何新模块必须先定义抽象接口（`contracts/interfaces/`），再写实现
+- 修改接口必须同步更新 Mock（`mocks/`）和单元测试（`tests/`）
+- 异常处理必须指定具体异常类型，**禁止裸 `except`**
+- Week 1 核心守卫 `tests/test_mock_pipeline.py` 不得破坏
+
+## PLACEHOLDER 处理
+- 遇到 `[RL-PLACEHOLDER]`、`[VLA-PLACEHOLDER]` 等标记时，仅保留标记并添加 TODO 注释，实现空函数或 pass 行为
+- **绝对禁止**在 MVA 阶段尝试实现 PPO/GRPO、VLA 微调等标记为 PLACEHOLDER 的复杂算法
