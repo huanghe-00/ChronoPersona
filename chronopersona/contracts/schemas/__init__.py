@@ -17,6 +17,13 @@ from chronopersona.contracts.schemas.embodied import (
     PerceptionResult,
     SpatialRecord,
 )
+from chronopersona.contracts.schemas.model import (
+    BudgetStatus,
+    CostRecord,
+    CostReport,
+    ModelRequest,
+    ModelResponse,
+)
 from chronopersona.contracts.schemas.version import (
     ChangeSet,
     MergeResult,
@@ -27,7 +34,10 @@ from chronopersona.contracts.schemas.version import (
 __all__ = [
     "ActionPlan",
     "AgentOutput",
+    "BudgetStatus",
     "ChangeSet",
+    "CostRecord",
+    "CostReport",
     "EmbodiedState",
     "EmotionLabel",
     "EmotionState",
@@ -35,6 +45,8 @@ __all__ = [
     "LowLevelCommand",
     "MemoryEntry",
     "MergeResult",
+    "ModelRequest",
+    "ModelResponse",
     "PerceptionResult",
     "RetrievedContext",
     "Snapshot",

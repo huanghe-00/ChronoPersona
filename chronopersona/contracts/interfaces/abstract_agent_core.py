@@ -23,12 +23,15 @@ class AbstractAgentCore(ABC):
     def run_turn(
         self,
         user_input: str,
+        branch_id: str,
         embodied_state: Optional[EmbodiedState] = None,
     ) -> AgentOutput:
         """Execute a single conversation turn.
 
         Args:
             user_input: The raw text input from the user.
+            branch_id: Explicit branch identifier for memory isolation.
+                Must not be empty.
             embodied_state: Optional perception snapshot from the 2D environment.
 
         Returns:
@@ -36,19 +39,23 @@ class AbstractAgentCore(ABC):
             emotion state, and metadata.
 
         Raises:
+            ValueError: If branch_id is empty or user_input is empty.
             RuntimeError: If the agent core encounters an unrecoverable error.
         """
         ...
 
     @abstractmethod
-    def switch_persona(self, persona_id: str) -> None:
-        """Switch the active persona.
+    def switch_persona(self, persona_id: str, branch_id: str) -> None:
+        """Switch the active persona and checkout the corresponding branch.
 
         Args:
             persona_id: Identifier of the persona to activate.
+            branch_id: Target branch to checkout. Must match persona scope.
+                Must not be empty.
 
         Raises:
-            ValueError: If the persona_id is unknown.
+            ValueError: If persona_id or branch_id is empty.
+            LookupError: If the persona or branch does not exist.
         """
         ...
 
