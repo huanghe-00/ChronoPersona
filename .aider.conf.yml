@@ -10,3 +10,4 @@ git: true
 read: [docs/architecture.md, AIDER.md]
 show-model-warnings: false
 api-key: 
+chat-language: Chinese
