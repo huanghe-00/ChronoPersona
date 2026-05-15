@@ -3,7 +3,7 @@
 **版本**: v1.0  
 **基线日期**: 2026-05-15 (周五)  
 **总工期**: 8 周（2026-05-11 ~ 2026-07-05）  
-**当前状态**: Week 1 第 5 天（剩余 1 个工作日）
+**当前状态**: Week 2 第 3 天（L2 Episodic Mock 完成）
 
 ---
 
@@ -12,7 +12,7 @@
 | 周次 | 日期范围 | 阶段主题 | 核心交付物 | 状态 |
 |------|---------|---------|-----------|------|
 | **W1** | 05-11 ~ 05-17 | 契约与孤岛 | 接口冻结、Mock 全量、test_mock_pipeline 通过 | 🟡 收尾中 |
-| **W2** | 05-18 ~ 05-24 | L0-L2 记忆核心 | LWW-CRDT、L1 滑动窗口、L2 Qdrant Mock、Session-MVCC | ⚪ 未开始 |
+| **W2** | 05-18 ~ 05-24 | L0-L2 记忆核心 | LWW-CRDT、L1 滑动窗口、L2 Qdrant Mock、Session-MVCC | 🟡 进行中 |
 | **W3** | 05-25 ~ 05-31 | L3 + Intent Graph | PostgreSQL Schema、CTE 导航、MVO 种子、6 步检索 | ⚪ 未开始 |
 | **W4** | 06-01 ~ 06-07 | Insight + 反思 | InsightGenerator、CAUSED Tier 2、A1/A2 召回测试 | ⚪ 未开始 |
 | **W5** | 06-08 ~ 06-14 | Agent 核心循环 | LangGraph 状态机、LSTM 脚本、RL/VLA Placeholder | ⚪ 未开始 |
@@ -57,7 +57,7 @@
 |------|---------|--------|---------|
 | 05-18 (一) | L0 `LWWMap` 实现 + HLC 时钟 | `l0_crdt/lww_map.py` | 单测覆盖 merge、clock skew 检测 |
 | 05-19 (二) | L1 Working Memory 滑动窗口 + 压缩 | `l1_working/sliding_window.py` | 超 token 阈值触发 LLM 摘要 |
-| 05-20 (三) | L2 Episodic Mock 接入 + BGE Embedding | `l2_episodic/mock_store.py` | Qdrant Mock 支持 payload 过滤 |
+| 05-20 (三) | L2 Episodic Mock 接入 + BGE Embedding | `l2_episodic/mock_store.py` | ✅ Qdrant Mock 支持 payload 过滤 |
 | 05-21 (四) | L2 Session-MVCC Snapshot | `session_snapshots` 表写入 | 会话结束自动打 snapshot |
 | 05-22 (五) | L0-L2 集成 + 多端冲突模拟 | `tests/test_l0_l2_integration.py` | CONTRADICTS 边正确生成 |
 | 05-23~24 | 缓冲 / 文档 / CR 修复 | — | `make test` 全绿 |

@@ -11,6 +11,10 @@ from chronopersona.memory_system.l1_working import (
     TurnEntry,
     WorkingMemoryWindow,
 )
+from chronopersona.memory_system.l2_episodic import (
+    MockBGEEmbedder,
+    MockEpisodicStore,
+)
 
 __all__ = [
     "ClockSkewConflict",
@@ -18,6 +22,8 @@ __all__ = [
     "HybridTimestamp",
     "LWWEntry",
     "LWWMap",
+    "MockBGEEmbedder",
+    "MockEpisodicStore",
     "TurnEntry",
     "WorkingMemoryWindow",
 ]
