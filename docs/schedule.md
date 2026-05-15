@@ -38,10 +38,12 @@
 |------|---------|------|---------|
 | T01-T05 | 端到端与基础 | 5 | Mock 对话、分支隔离、LWW merge、意图检索、人格注入 |
 | T06-T10 | CRDT 核心 | 5 | merge、clock skew、conflict、sync broadcast、offline replay |
+| T29-T31 | L0 CRDT 接口 | 3 | get/set、merge conflict、checkpoint |
 | T11-T15 | Memory 层级 | 5 | L0/L1/L2/L3 读写、checkout、snapshot |
 | T16-T20 | Agent 节点 | 5 | state machine、intent、memory node、LLM node、output node |
 | T21-T25 | API 与序列化 | 5 | REST、WebSocket、error handling、schema validation、auth mock |
 | T26-T28 | 集成回归 | 3 | full pipeline、persona switch、eval injection |
+| T29-T31 | L0 CRDT | 3 | get/set、merge conflict、checkpoint |
 
 **若今日未完成**: 占用 **W2 前 2 天（05-18/19）** 收尾，但不得超过 2 天，否则触发 **Checkpoint 1.1**（砍 Insight 模块，保 L0-L3 核心链路）。
 

@@ -3,6 +3,7 @@
 from chronopersona.contracts.interfaces import (
     AbstractAgentCore,
     AbstractEmbodiedAdapter,
+    AbstractL0SyncLayer,
     AbstractMemoryStore,
     AbstractModelRouter,
     AbstractVersionManager,
@@ -18,6 +19,7 @@ from chronopersona.contracts.schemas import (
 __all__ = [
     "AbstractAgentCore",
     "AbstractEmbodiedAdapter",
+    "AbstractL0SyncLayer",
     "AbstractMemoryStore",
     "AbstractModelRouter",
     "AbstractVersionManager",

@@ -19,6 +19,7 @@ from chronopersona.mocks import (
     MockAgentCore,
     MockCostTracker,
     MockEmbodiedAdapter,
+    MockL0SyncLayer,
     MockMemoryMigrationService,
     MockMemoryStore,
     MockModelRouter,
@@ -231,3 +232,29 @@ class TestIntegrationRegression:
         adapter = MockEmbodiedAdapter()
         cmd = adapter.translate_action_token("move", {}, "grid_2d")
         assert cmd.robot_type == "grid_2d"
+
+
+class TestL0CRDT:
+    """T29-T31: L0 LWW-CRDT tests."""
+
+    def test_t29_l0_get_set(self):
+        """T29: L0 get/set basic operation."""
+        sync = MockL0SyncLayer()
+        sync.set("key1", "value1", branch_id="main", device_id="dev-a")
+        assert sync.get("key1", branch_id="main") == "value1"
+
+    def test_t30_l0_merge_conflict(self):
+        """T30: L0 merge detects conflicts."""
+        sync = MockL0SyncLayer()
+        sync.set("pref", "川菜", branch_id="main", device_id="phone")
+        conflicts = sync.merge({"pref": "粤菜"}, branch_id="main")
+        assert "pref" in conflicts
+        assert sync.get("pref", branch_id="main") == "粤菜"  # Mock 采用 remote wins
+
+    def test_t31_l0_checkpoint(self):
+        """T31: L0 checkpoint returns dirty keys."""
+        sync = MockL0SyncLayer()
+        sync.set("k1", "v1", branch_id="main", device_id="dev-a")
+        sync.set("k2", "v2", branch_id="main", device_id="dev-a")
+        keys = sync.checkpoint("main")
+        assert set(keys) == {"k1", "k2"}
