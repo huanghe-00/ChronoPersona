@@ -489,6 +489,33 @@ Agent Core 触发 persona_switch
   - `MemoryAnchor` 包含 `(persona_id, layer_level, time_range)`。
   - 返回冲突列表及自动解决率。
 
+#### Privacy Filter 设计
+
+**保护范围（PII 定义）**：
+
+| 级别 | 数据类型 | 检测方式 | MVA 策略 |
+|------|---------|---------|---------|
+| L0 | 手机号、身份证号、邮箱、银行卡号 | 正则表达式 | 强制替换为 `<REDACTED>` |
+| L1 | 人名、地址、机构名 | NER 模型（本地 Qwen3.5-9B） | 若置信度 > 0.9 则替换 |
+| L2 | 医疗记录、情感隐私 | 关键词 + LLM 分类 | MVA 阶段不做，标记为 `[FUTURE]` |
+
+**过滤行为**：
+- 跨人格迁移时，源记忆经过 `IPrivacyFilter.apply(content, level=L1)` 处理
+- 匹配到的敏感片段替换为 `<REDACTED:类型:哈希>`（如 `<REDACTED:phone:7a3f...>`），保留结构但不泄露内容
+- 若单条记忆的敏感内容占比 > 30%，整条记忆标记为 `MIGRATION_BLOCKED`，不入目标分支
+
+**准确率目标**：
+- MVA 阶段：L0 正则召回率 ≥ 95%，精确率 ≥ 90%；L1 NER 召回率 ≥ 80%
+- 后续迭代：L1 召回率 ≥ 95%，新增 L2 语义隐私检测
+
+**接口契约**：
+```python
+IPrivacyFilter (ABC)
+├── apply(content: str, filter_level: FilterLevel, branch_id: str) -> FilteredContent
+├── detect_pii(content: str) -> List[PiiSpan]          # 返回匹配区间和类型
+└── get_stats(branch_id: str) -> PrivacyFilterStats    # 过滤次数、准确率监控
+```
+
 
 ### 4.1 L0: LWW-CRDT Distributed Sync Layer
 
@@ -514,11 +541,61 @@ class L0_SyncLayer:
     # ❌ 复杂图谱（由 L3 负责）
 ```
 
+**时钟与冲突策略**：
+
+| 项目 | 决策内容 |
+|------|---------|
+| 时间源 | 物理时间戳（time.time_ns()）+ Hybrid Logical Clock (HLC) 偏移 |
+| 时钟同步 | 设备启动时强制 NTP 同步，运行期每 10 分钟校准一次 |
+| 偏差容忍 | 最大可接受偏差 `MAX_CLOCK_SKEW = 500ms` |
+| 偏差检测 | 收到远程操作时，若 `|remote_ts - local_ts| > MAX_CLOCK_SKEW` → 标记为 `SUSPECTED_SKEW` |
+| 偏差处理 | `SUSPECTED_SKEW` 操作不自动覆盖本地值，而是创建 CONTRADICTS 边，通知用户决策 |
+
+**HLC 实现**：
+```python
+class HybridTimestamp:
+    def __init__(self, physical: int, logical: int = 0):
+        self.physical = physical  # 物理时间（ns）
+        self.logical = logical    # 逻辑计数器（解决同一毫秒内多操作）
+    
+    def __lt__(self, other):
+        if self.physical != other.physical:
+            return self.physical < other.physical
+        return self.logical < other.logical
+```
+
+**关键语义修正**：
+- LWW 的"Last"不是"物理时间上最后发生"，而是"HLC 排序上最后提交"
+- 当物理时间戳差异在 `MAX_CLOCK_SKEW` 内时，信任 LWW 语义
+- 当差异超出容忍度时，降级为"保留冲突，人工决策"
+
 **核心特性**：
 - **冲突处理**：`LWWMap` 以 `(timestamp, device_id)` 为全序比较器，天然 add-wins。上层 MVCC 保留冲突版本，标记为 `CONTRADICTS` 边，不自动消解。
 - **实时同步**：设备间通过 WebSocket 广播 LWW-CRDT 操作（`op_type, key, value, timestamp, device_id`）。
 - **定期刷盘**：每 5 分钟或 session 结束，将 `dirty_keys` 刷入 L3 `entity_versions`。
 - **初始化**：从 L3 加载当前 branch 的 profile 事实初始化 L0。
+
+#### 4.1.1 故障恢复与同步保障
+
+**三种故障模式**：
+
+| 故障模式 | 检测方式 | 恢复策略 |
+|---------|---------|---------|
+| 网络分区 | WebSocket 心跳超时（30s 无响应） | 本地操作日志持续写入 SQLite，恢复后重放 |
+| 消息丢失 | ACK 机制：接收方需回复 `sync_ack` | 发送方 5s 内未收到 ACK 则加入重试队列 |
+| 设备离线重连 | 连接断开后重连事件 | 请求 `SyncManager.get_delta(since=last_vector_clock)` 增量同步 |
+
+**重试策略**：
+- 指数退避：1s → 2s → 4s → 8s，最多 4 次
+- 超过 4 次仍失败 → 标记该设备为 `STALE`，写入 `sync_conflicts` 表待人工介入
+
+**冲突通知机制**：
+- LWW-CRDT 合并后若检测到同一 key 存在多个有效版本（vector_clock 不可比较）→ 不自动消解
+- 生成 `ConflictNotification` 事件，由 Agent Core 在下一轮对话中向用户报告："检测到手机和车机的偏好设置不一致，请确认保留哪个"
+
+**脏数据清理**：
+- `dirty_keys` 存活超过 1 小时未刷盘 → 强制触发 checkpoint
+- checkpoint 失败超过 3 次 → 告警并保留操作日志供排查
 
 ### 4.2 MVCC Version & Branch Manager
 
@@ -1113,6 +1190,50 @@ class ISkill(Protocol):
   - `execute(skill_id: str, params: dict, branch_id: str)`：执行并走完全链路（记录 Cost、写入记忆）。
   - `get_available_skills(branch_id: str, persona_id: str) -> list[ISkill]`：根据人格权限过滤。
 
+#### 4.11.1 权限校验流程
+
+**双重校验机制**：
+
+```
+LLM 生成 skill_call 意图
+    │
+    ▼
+[第一层: 预过滤] ──► ISkillRegistry.get_available_skills(branch_id, persona_id)
+    │                    • 读取 PersonaAnchor.skill_permissions
+    │                    • 过滤掉 forbidden_skills
+    │                    • 仅返回 allowed_skills（若 allowed_skills 非空）
+    │                    • 返回列表注入 LLM system prompt（模型只能看到可用技能）
+    ▼
+[第二层: 执行校验] ──► ISkillRegistry.execute(skill_id, ...)
+    │                    • 再次检查 skill_id 是否在可用列表
+    │                    • 不在列表中 → 抛出 SkillPermissionDenied
+    │                    • 在列表中 → 正常执行
+    ▼
+   执行 Skill
+```
+
+**关键规则**：
+- `allowed_skills` 非空时 → 白名单模式，仅列表内技能可用
+- `allowed_skills` 为空且 `forbidden_skills` 非空时 → 黑名单模式，仅排除禁用技能
+- 两者冲突时（某 skill 同时在 allowed 和 forbidden 中）→ `forbidden_skills` 优先，拒绝执行
+
+**错误契约**：
+```python
+class SkillPermissionDenied(Exception):
+    skill_id: str
+    persona_id: str
+    reason: str   # "not_in_allowed_list" / "explicitly_forbidden"
+    
+    # Agent Core 捕获后行为：
+    # 1. 记录 ERROR 日志
+    # 2. 向用户返回："当前人格不支持该操作"
+    # 3. 不暴露具体权限配置（防止信息泄露）
+```
+
+**与 4.0.1 的联动**：
+- `therapist` 人格配置 `forbidden_skills: ["rpg_dice_roll"]`
+- 若用户通过提示词注入（prompt injection）诱导 LLM 调用 `rpg_dice_roll` → 第二层校验拦截，返回礼貌拒绝
+
 ---
 
 ## 5. 数据模型设计
@@ -1504,6 +1625,32 @@ MigrationResult
 ├── auto_resolution_rate: float
 └── target_snapshot_id: str
 ```
+
+### 6.2.1 认证与权限模型
+
+**MVA 阶段采用轻量方案**：API Key + Branch 级 RBAC。
+
+**认证机制**：
+- HTTP Header: `Authorization: Bearer <api_key>`
+- API Key 由部署时环境变量注入，MVA 阶段单租户单 Key
+- WebSocket 连接时通过 `?token=<api_key>` 查询参数认证
+
+**权限模型**：
+
+| 角色 | 可读分支 | 可写分支 | 可执行操作 |
+|------|---------|---------|-----------|
+| `reader` | 授权分支列表 | 无 | GET /api/v1/memory/*, GET /api/v1/emotion |
+| `writer` | 授权分支列表 | 授权分支列表 | POST /api/v1/chat, POST /api/v1/sync/force |
+| `admin` | 全部 | 全部 | POST /api/v1/branches/*/checkout, DELETE 操作 |
+
+**分支级隔离**：
+- 每个 API Key 关联 `allowed_branches: List[str]`
+- 请求中显式传递 `branch_id`，服务端校验该 Key 是否有权访问
+- **禁止**使用默认全局分支或从 session 推断分支
+
+**未授权处理**：
+- 认证缺失 → `401 Unauthorized`
+- 分支无权限 → `403 Forbidden` + `{"error": "branch_access_denied", "branch_id": "xxx"}`
 
 ### 6.3 API 契约（REST + WebSocket）
 
