@@ -592,6 +592,24 @@ class HybridTimestamp:
 - **初始化**：从 L3 加载当前 branch 的 profile 事实初始化 L0。
 
 
+**L0→L3 刷盘契约**：
+
+```python
+class SyncManager:
+    def checkpoint(self, branch_id: str) -> None:
+        """
+        触发条件：每 5 分钟 / session 结束 / dirty_keys 超 100 条。
+        执行流：
+          1. 冻结 lww_map.dirty_keys 快照
+          2. 调用 version_manager.commit(branch_id, snapshot)
+          3. 按 entity_id 分组写入 entity_versions
+          4. 冲突解决：比较 HLC
+             • HLC 可比较 → LWW，旧版标记 superseded
+             • HLC 不可比较（超出 MAX_CLOCK_SKEW）→ 保留双版本，创建 CONTRADICTS 边
+          5. 清空 dirty_keys，广播 checkpoint_ack
+        """
+```
+
 #### 4.1.1 故障恢复与同步保障
 
 **三种故障模式**：
@@ -652,6 +670,15 @@ AbstractVersionManager
 | **动态压缩** | token 数超过阈值（如 4K）时，调用 LLM（DS-V4-flash）生成摘要，替换原始内容 |
 | **压缩追溯** | 每个压缩摘要包含 `summary_id` 和 `source_turn_ids: List[int]`，关联原始对话轮次；摘要不参与向量检索（仅作为 L1 上下文），原始轮次仍保留在 L2 供精确召回 |
 | **具身上下文注入** | 2D 环境状态（Agent 位置、视野内物体、最近动作）转换为文本描述，注入 system prompt |
+
+**L1 压缩摘要存储契约**：
+
+| 属性 | 说明 |
+|------|------|
+| 存储位置 | L1 Working Memory 内部 `compressed_summaries: List[CompressedSummary]`（内存对象，**不进入向量库**） |
+| 生命周期 | 与当前 session 绑定，session 结束随 L1 丢弃；需长期保留的摘要由 Reflection Agent 异步提炼后写入 L3 |
+| 数据结构 | `CompressedSummary(summary_id, source_turn_ids: List[int], content, created_at, token_count)` |
+| 引用方式 | L1 上下文组装时按 `created_at` 逆序拼接；原始轮次保留在 L2，通过 `source_turn_ids` 可追溯 |
 
 **具身上下文示例**：
 ```
@@ -1025,6 +1052,8 @@ Cost 统计是生产环境必需的可观测性模块，必须在 **Model Router
 
 - `ICostTracker.record(request: ModelRequest, response: ModelResponse, latency_ms: float, branch_id: str) -> None`
 - `ICostTracker.get_summary(scope: CostScope, branch_id: str, start: datetime, end: datetime) -> CostSummary`
+
+**排期**: W1 冻结接口签名（Mock 实现为空 pass）；W5 与 Model Router 同步实现，作为 Agent 核心循环的可观测性基础。
 
 ### 4.9 Emotion Engine（双层实现）
 
@@ -1462,6 +1491,9 @@ INSERT INTO intent_patterns (intent_type, trigger_keywords, entry_edge_types, ma
 
 ### 6.1 核心抽象接口
 
+**W1 冻结范围（硬阻塞）**: `AbstractMemoryStore`、`AbstractAgentCore`、`AbstractVersionManager`、`EmbodiedAdapter`、`ModelRouter`  
+**[FUTURE] 预留接口（W4+ 启用）**: `IPersonaInjector`、`IMemoryMigrationService`、`ICostTracker`、`ISkillRegistry`、`ISkill` —— W1 仅冻结空接口签名，Mock 实现返回 `NotImplementedError` 或空值，确保编译与 `test_mock_pipeline.py` 通过。
+
 ```
 AbstractMemoryStore (ABC)
 ├── add(memory: MemoryEntry, branch_id: str) → str  (返回 memory_id)
@@ -1706,6 +1738,8 @@ MigrationResult
 **未授权处理**：
 - 认证缺失 → `401 Unauthorized`
 - 分支无权限 → `403 Forbidden` + `{"error": "branch_access_denied", "branch_id": "xxx"}`
+
+**排期**: MVA 阶段采用单租户单 Key，权限系统为 `[FUTURE]`；W1 冻结 REST 路径规范，认证中间件留空接口 `IAuthMiddleware`。
 
 ### 6.3 API 契约（REST + WebSocket）
 

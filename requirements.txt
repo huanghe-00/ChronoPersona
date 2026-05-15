@@ -10,7 +10,8 @@ python-socketio>=5.11.0
 websockets>=12.0
 
 # === CRDT ===
-y-py>=0.6.0
+# y-py REMOVED (v1.3 决策): 已改用自研 LWW-CRDT，禁止引用 Yjs
+# 若需向后兼容，使用 mocks/lww_crdt.py
 
 # === Vector Store (MVA: Mock, but client included for typing) ===
 qdrant-client>=1.7.0

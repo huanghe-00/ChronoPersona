@@ -1,4 +1,4 @@
-.PHONY: test lint format mock-demo eval install clean test-m1 test-m2 test-m3 test-m4 eval-full
+.PHONY: test lint format mock-demo eval install clean test-w1 test-w2 test-w3 test-w4 test-w5 test-w6 test-w7 eval-full
 
 # === Environment ===
 install:
@@ -28,21 +28,30 @@ mock-demo:
 eval:
 	python -m evaluation.run_eval
 
-# === Modular Testing (Schedule v2.0) ===
-test-m1:
-	pytest tests/test_lww_map.py tests/test_sliding_window.py tests/test_episodic.py tests/test_semantic.py -v --tb=short
+# === Phase-aligned Testing (Schedule v1.0) ===
+test-w1:
+	pytest tests/test_mock_pipeline.py -v --tb=short
 
-test-m2:
+test-w2:
+	pytest tests/test_lww_map.py tests/test_sliding_window.py tests/test_episodic.py tests/test_l0_l2_integration.py -v --tb=short
+
+test-w3:
+	pytest tests/test_semantic.py tests/test_intent_graph.py tests/test_mvo_seed.py -v --tb=short
+
+test-w4:
+	pytest tests/test_insight.py tests/test_caused_tier2.py -v --tb=short
+
+test-w5:
 	pytest tests/test_agent_core.py tests/test_emotion_engine.py tests/test_state_machine.py -v --tb=short
 
-test-m3:
-	pytest tests/test_a1_a3.py tests/test_a4_a5.py tests/test_a6_intent_graph.py -v --tb=short
+test-w6:
+	pytest tests/test_a1_a3.py tests/test_a4_a5.py tests/test_a6_intent_graph.py tests/test_eval_pipeline.py -v --tb=short
 
-test-m4:
-	pytest tests/test_grid_world.py tests/test_embodied_adapter.py -v --tb=short
+test-w7:
+	pytest tests/test_grid_world.py tests/test_embodied_adapter.py tests/test_action_bridge.py -v --tb=short
 
 eval-full:
-	python -m evaluation.runner --all
+	python -m evaluation.run_eval --all
 
 # === Cleanup ===
 clean:

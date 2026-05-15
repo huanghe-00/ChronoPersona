@@ -27,10 +27,21 @@
 **假设**: Week 1 从 05-11（周一）启动，已消耗 4 个工作日。
 
 **今日必须完成（硬阻塞）**:
-- [ ] `contracts/interfaces/` 下全部接口文件冻结，合并至 `main`
+- [ ] `contracts/interfaces/` 下全部接口文件冻结，合并至 `main`（仅 W1 核心 5 个接口，`IPersonaInjector`/`ICostTracker` 等留 [FUTURE] 空壳）
 - [ ] `mocks/` 全量实现与 `tests/test_mock_pipeline.py` 通过（28 个用例）
 - [ ] LWW-CRDT 接口替换 Yjs（`IL0SyncLayer` / `ILWWMap`）
-- [ ] PostgreSQL Schema + MVO 种子 SQL 文件合入
+- [ ] PostgreSQL Schema + MVO 种子 SQL 文件合入（仅 6 张核心表，`insights`/`embodied_interactions` 标记为 [FUTURE]）
+
+**28 个测试用例清单（W1 验收）**:
+
+| 编号 | 用例类别 | 数量 | 验证目标 |
+|------|---------|------|---------|
+| T01-T05 | 端到端与基础 | 5 | Mock 对话、分支隔离、LWW merge、意图检索、人格注入 |
+| T06-T10 | CRDT 核心 | 5 | merge、clock skew、conflict、sync broadcast、offline replay |
+| T11-T15 | Memory 层级 | 5 | L0/L1/L2/L3 读写、checkout、snapshot |
+| T16-T20 | Agent 节点 | 5 | state machine、intent、memory node、LLM node、output node |
+| T21-T25 | API 与序列化 | 5 | REST、WebSocket、error handling、schema validation、auth mock |
+| T26-T28 | 集成回归 | 3 | full pipeline、persona switch、eval injection |
 
 **若今日未完成**: 占用 **W2 前 2 天（05-18/19）** 收尾，但不得超过 2 天，否则触发 **Checkpoint 1.1**（砍 Insight 模块，保 L0-L3 核心链路）。
 
@@ -62,7 +73,11 @@
 | 05-31 (日) | 缓冲 / 修复 | — | Recall@5 ≥ 0.6 |
 
 **Checkpoint 3.1（05-30 周六）**:
-- 通过标准: L3 经过 10 轮对话稳定性测试，MENTIONS / TEMPORAL_NEXT 边正确写入，Intent Graph CTE Recall@5 ≥ 0.6。
+- 通过标准:
+  1. L3 经过 10 轮对话稳定性测试，MENTIONS / TEMPORAL_NEXT 边正确写入。
+  2. Intent Graph CTE Recall@5 ≥ **0.6**（W3 基础达标线，验证 CTE 可用）。
+  3. A1-A3 评估基线自动化脚本产出首份 JSON（允许部分指标为 `null`，框架必须跑通）。
+- **A6 指标说明**: W3 的 0.6 为 CTE 可用标准；设计文档 8.2 要求的 A6 ≥ 0.8 为 **W6 优化目标**，依赖 CTE 性能调优与更多种子数据，**不阻塞 W3**。
 - **若未通过**: Week 4 前 3 天全部用于修复 L3，Insight 模块顺延至 Week 5，保核心记忆链路。
 
 ### Week 4: Insight + 反思（06-01 ~ 06-07）
@@ -85,21 +100,24 @@
 | 06-10 (三) | Memory Node（分支 checkout + 混合检索） |
 | 06-11 (四) | LLM Node + Persona Anchor 注入 + Emotion Filter |
 | 06-12 (五) | Output Node + ActionPlanner + Emotion→Behavior 调制表 |
-| 06-13~14 | `trainable_emotion_model.py` LSTM 脚本 + `[RL-PLACEHOLDER]` 空接口 |
+| 06-13 (六) | `trainable_emotion_model.py` LSTM 脚本 + `[RL-PLACEHOLDER]` 空接口 |
+| 06-14 (日) | **评估前置**: A4-A5 自动化脚本 + `metrics.py` 骨架启动 | 利用周末降低 W6 密度，产出 `tests/test_a4_a5.py` 框架 |
 
 ### Week 6: 评估框架（06-15 ~ 06-21）
 
 **⚠️ 假期影响**: 06-19（周五）端午节法定假，06-20~21 调休/周末，本周仅 **4 个工作日**。
 
+**评估左移后目标**: A1-A3 框架已在 W3 Checkpoint 产出；本周聚焦 **A4-A11 补全 + 基线集成 + 最终量化表**。
+
 | 日期 | 重点任务 |
 |------|---------|
-| 06-15 (一) | `evaluation/scenarios.py` A1-A5 场景实现 |
-| 06-16 (二) | A6-A8 意图图谱 / 情感 / 具身场景 |
-| 06-17 (三) | A9-A11 跨本体 / 可审计 / 漂移检测 |
-| 06-18 (四) | `evaluation/baseline.py` 纯向量 RAG 基线 + `metrics.py` |
+| 06-15 (一) | A4-A5 角色隔离/多端冲突补全（W5 周末已启动骨架） |
+| 06-16 (二) | A6 意图图谱导航 + A7 情感一致性 |
+| 06-17 (三) | A8 具身感知 + A9-A11 跨本体/可审计/漂移 |
+| 06-18 (四) | `evaluation/baseline.py` 纯向量 RAG 基线 + `metrics.py` 最终集成 |
 | 06-19 (五) | **端午节假期** — 提前完成或顺延至 06-22 |
 
-**优化措施**: A6-A11 的 metrics 计算函数可在 Week 5 周末（06-13/14）提前启动开发，降低 Week 6 密度。
+**评估工作流**: W3 产 A1-A3 框架 → W5 周末产 A4-A5 骨架 → W6 补全 A6-A11 + 填满量化表。
 
 ### Week 7: 2D 世界 + 前端（06-22 ~ 06-28）
 
