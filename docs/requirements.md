@@ -47,7 +47,7 @@
 
 构建 **ChronoPersona** —— 一个以**分布式一致性**和**版本化记忆**为核心差异化的长期记忆 Agent 系统：
 
-- **CRDT 多端同步**：基于 Yjs 实现最终一致性，冲突记忆保留而非覆盖
+- **LWW-CRDT 多端同步**：自研轻量 CRDT，基于 HLC 混合逻辑时钟，冲突记忆保留而非覆盖
 - **MVCC 角色分支**：每条记忆支持版本链，角色切换 = `git checkout`
 - **意图图谱导航**：将用户查询意图翻译为结构化检索路径，而非单纯向量相似度
 - **人格工程**：借鉴酒馆社区验证的混合格式定义（W++ + Ali:Chat + 自然语言），系统化有机约束与风格指纹漂移检测
@@ -271,7 +271,7 @@ User Input
 异步 Reflection Agent ──► 实体链接 → 边构建 → 冲突检测 → 图谱更新
     │                         (T2/T3: DS-V4-flash)
     ▼
-CRDT Sync ──► Yjs update 广播至其他设备
+CRDT Sync ──► LWW-CRDT operation 广播至其他设备
 ```
 
 **CRDT 冲突流**：
@@ -638,7 +638,7 @@ class SyncManager:
 
 | 层级 | 粒度 | 实现方式 | MVCC 机制 |
 |------|------|---------|----------|
-| **L2 Episodic** | Session-MVCC（Session 级粗粒度） | 每 session 结束对 L0 lww_map 状态及 L2 索引打 snapshot | `SnapshotVersionManager`：序列化 lww_map JSON + L2 metadata |
+| **L2 Episodic** | Session-MVCC（Session 级粗粒度） | 每 session 结束对 L0 lww_map 状态及 L2 索引打 snapshot | `SnapshotVersionManager`：序列化 LWWMap JSON + L2 metadata |
 | **L3 Semantic** | Entity-MVCC（Entity 级细粒度） | 每条事实/画像独立版本链 | `EntityVersionManager`：逐 entity 维护 `version_chain` |
 
 **抽象接口**（支持后续切换）：

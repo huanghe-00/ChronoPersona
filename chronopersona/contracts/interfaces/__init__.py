@@ -5,6 +5,7 @@ from chronopersona.contracts.interfaces.abstract_cost_tracker import ICostTracke
 from chronopersona.contracts.interfaces.abstract_embodied_adapter import (
     AbstractEmbodiedAdapter,
 )
+from chronopersona.contracts.interfaces.abstract_l0_sync import AbstractL0SyncLayer
 from chronopersona.contracts.interfaces.abstract_memory_migration_service import (
     IMemoryMigrationService,
 )
@@ -20,6 +21,7 @@ from chronopersona.contracts.interfaces.model_router import AbstractModelRouter
 __all__ = [
     "AbstractAgentCore",
     "AbstractEmbodiedAdapter",
+    "AbstractL0SyncLayer",
     "AbstractMemoryStore",
     "AbstractModelRouter",
     "AbstractVersionManager",
