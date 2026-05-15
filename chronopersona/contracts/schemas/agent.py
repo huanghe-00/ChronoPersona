@@ -80,13 +80,19 @@ class EmbodiedState:
     """Perception snapshot from the 2D virtual environment.
 
     Attributes:
+        agent_id: Unique agent identifier.
         x: Agent x-coordinate.
         y: Agent y-coordinate.
         theta: Agent orientation in radians.
         fov_objects: List of object identifiers currently in the field of view.
+        last_action: Last executed action token.
+        metadata: Extra embodied metadata.
     """
 
+    agent_id: str = ""
     x: float = 0.0
     y: float = 0.0
     theta: float = 0.0
     fov_objects: List[str] = field(default_factory=list)
+    last_action: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)

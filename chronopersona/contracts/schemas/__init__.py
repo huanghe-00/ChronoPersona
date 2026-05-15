@@ -12,6 +12,11 @@ from chronopersona.contracts.schemas.base import (
     MemoryEntry,
     RetrievedContext,
 )
+from chronopersona.contracts.schemas.embodied import (
+    LowLevelCommand,
+    PerceptionResult,
+    SpatialRecord,
+)
 from chronopersona.contracts.schemas.version import (
     ChangeSet,
     MergeResult,
@@ -27,9 +32,12 @@ __all__ = [
     "EmotionLabel",
     "EmotionState",
     "Fact",
+    "LowLevelCommand",
     "MemoryEntry",
     "MergeResult",
+    "PerceptionResult",
     "RetrievedContext",
     "Snapshot",
+    "SpatialRecord",
     "Version",
 ]
