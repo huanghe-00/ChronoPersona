@@ -1387,21 +1387,8 @@ CREATE TABLE intent_patterns (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 周期性主动反思产出
-CREATE TABLE insights (
-    id UUID PRIMARY KEY,
-    insight_type TEXT NOT NULL CHECK (insight_type IN (
-        'pattern','trend','conflict','recommendation'
-    )),
-    source_memory_ids TEXT[],  -- 支撑该洞察的源记忆
-    content TEXT NOT NULL,
-    confidence FLOAT,
-    branch_id TEXT NOT NULL DEFAULT 'main',
-    generated_at TIMESTAMPTZ DEFAULT NOW(),
-    valid_until TIMESTAMPTZ
-);
-CREATE INDEX idx_insights_branch ON insights(branch_id);
-CREATE INDEX idx_insights_type ON insights(insight_type);
+-- [FUTURE: W4] 周期性主动反思产出（Insight 模块启用时解冻）
+-- CREATE TABLE insights (...);
 
 -- MVCC 版本链（L3 Entity 级细粒度）
 CREATE TABLE entity_versions (
@@ -1419,24 +1406,22 @@ CREATE TABLE entity_versions (
 );
 CREATE INDEX idx_entity_versions_lookup ON entity_versions(entity_id, branch_id, version);
 
--- 空间-情感-动作关联记忆（用于具身行为优化与跨本体迁移）
-CREATE TABLE embodied_interactions (
+-- [FUTURE: M4/W7] 空间-情感-动作关联记忆（具身模块启用时解冻）
+-- CREATE TABLE embodied_interactions (...);
+
+-- 同步操作日志（W1 冻结：CRDT 操作落盘与故障恢复）
+CREATE TABLE sync_operation_logs (
     id UUID PRIMARY KEY,
-    agent_id TEXT NOT NULL,
-    branch_id TEXT NOT NULL DEFAULT 'main',
-    location TEXT,           -- "客厅(3,4)" 或 "kitchen"
-    location_embedding VECTOR(512),  -- 空间语义编码（预留）
-    action_token TEXT NOT NULL,
-    action_params JSONB,
-    emotion_state TEXT,
-    emotion_intensity FLOAT,
-    user_reaction TEXT CHECK (user_reaction IN ('positive', 'neutral', 'negative', 'startled')),
-    outcome_score FLOAT,     -- 动作效果评分 [-1.0, 1.0]
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    session_id TEXT
+    device_id TEXT NOT NULL,
+    branch_id TEXT NOT NULL,
+    operation_type TEXT NOT NULL CHECK (operation_type IN ('set', 'delete', 'merge')),
+    key TEXT NOT NULL,
+    value_hash TEXT,         -- 值哈希，避免存储大对象
+    hlc_timestamp JSONB NOT NULL,
+    vector_clock JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
-CREATE INDEX idx_embodied_location ON embodied_interactions(location, branch_id);
-CREATE INDEX idx_embodied_action ON embodied_interactions(action_token, outcome_score);
+CREATE INDEX idx_sync_logs_device ON sync_operation_logs(device_id, branch_id, created_at);
 
 -- MVCC Session 快照（L2 粗粒度）
 CREATE TABLE session_snapshots (
