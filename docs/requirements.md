@@ -693,6 +693,8 @@ async def _handle_caused(self, rel, turn):
     # 3. 方向校验（因必须在果之前）
     # 4. 不匹配模板 → 降级为 CORRELATED（弱相关，不进入因果推理链）
     pass
+
+Tier 2（统计共现评估）和 Tier 3（LLM 深度因果推理）标记为 `[FUTURE]`，MVA 阶段仅启用 Tier 1。
 ```
 
 **关键设计**：所有 Tier 1 边标记 `mva_only` 溯源位，支持后续审核升级。不匹配模板的因果表达降级为 `CORRELATED` 边，避免污染因果推理链。
@@ -942,7 +944,7 @@ MVA 初始权重：`final_score = 0.6 * graph_score + 0.4 * vector_score`
 | **T6** | 冲突消解语义 | Kimi 2.6 | DS-V4-pro | 云端 |
 | **T7** | 评估/测试 | DS-V4-pro | Kimi 2.6 | 云端 |
 
-**缓存策略**：SQLite 缓存，TTL 24h，相同 (task_type, prompt_hash) 直接复用。  
+**缓存策略**：SQLite 缓存，TTL 24h，缓存键为 `hash(task_type + prompt + branch_id + persona_id)`，避免跨分支/人格的缓存污染。  
 **成本追踪**：每次调用记录 model_name、input_tokens、output_tokens、latency，用于评估框架的 `Token/s` 指标。
 
 ### 4.8.1 Cost Tracking 详细设计
@@ -965,6 +967,7 @@ Cost 统计是生产环境必需的可观测性模块，必须在 **Model Router
   "input_tokens": int,
   "output_tokens": int,
   "total_tokens": int,
+  "token_scope": str,         # system / user / agent，区分系统开销与业务 token
   "latency_ms": float,        # 端到端耗时（含网络）
   "ttft_ms": float,           # Time To First Token（流式场景）
   "cost_usd": float,          # 按模型单价计算的预估费用
@@ -975,7 +978,7 @@ Cost 统计是生产环境必需的可观测性模块，必须在 **Model Router
 
 #### 存储与聚合
 
-- **原始记录**：写入独立的 `metrics_store`（SQLite / 轻量级时序库），**不直接污染记忆层级**。
+- **原始记录**：写入独立的 `metrics_store`（SQLite / 轻量级时序库），**不直接污染记忆层级**。原始 prompt 在持久化前经 `IPrivacyFilter.apply(content, level=L0)` 脱敏处理；日志中存储 prompt 哈希值用于去重，不存储原始文本。
 - **聚合视图**：由 `CostAggregator` 按以下维度生成摘要，供 L3 Semantic Memory 查询：
   - `by_branch`: 分支级预算消耗。
   - `by_session`: 单会话成本上限告警。
@@ -1678,6 +1681,8 @@ MigrationResult
 | `embodied.action` | C→S | 前端请求 Agent 执行动作 |
 | `presence.change` | S→C | 多端在线状态变化 |
 
+WebSocket 传输采用 JSON 序列化，心跳间隔 30s，超时 60s 自动断线重连。
+
 ---
 
 ## 7. 模型路由策略
@@ -1746,6 +1751,12 @@ MigrationResult
 | A6-2 | "川菜和粤菜我喜欢哪个" | 无法聚合对比 | SIMILAR_TO + CONTRADICTS |
 | A6-3 | "为什么我最近焦虑" | "焦虑"与"工作压力"向量距离远 | CAUSED 回溯 |
 | A6-4 | "上次你说的那个餐厅" | "那个"无法向量匹配 | MENTIONS + 指代消解 |
+
+**A6 预期召回与通过标准**：
+- A6-1：预期召回包含"上周方案"相关记忆节点（`memory_nodes.id` 对应 session_2 的方案讨论）；判定标准：Recall@5 ≥ 0.8 且目标记忆排名 ≤ 3。
+- A6-2：预期召回同时包含"川菜"和"粤菜"的偏好记忆，并识别 CONTRADICTS 边；判定标准：Recall@5 ≥ 0.8 且矛盾边被检索到。
+- A6-3：预期召回"工作压力"相关记忆，并通过 CAUSED 边回溯到"焦虑"概念；判定标准：Recall@5 ≥ 0.8 且因果链完整。
+- A6-4：预期通过 MENTIONS 边和指代消解定位到"上次提到的餐厅"具体记忆；判定标准：Recall@5 ≥ 0.8 且目标记忆排名 ≤ 2。
 | A7 | 情感一致性 | 状态机不漂移 | 连续输入负面内容，检查状态转移路径是否符合设计 |
 | A8 | 具身感知 | 空间记忆影响对话 | Agent 在"厨房"vs"客厅"时，对"我饿了"的回复差异 |
 | A9 | 跨本体迁移 | 人格一致性 | 同一人格驱动 grid_2d / ros2_mobile，行为参数一致 |
@@ -1759,7 +1770,7 @@ MigrationResult
 | **记忆准确性** | Recall@5 | 正确答案是否在 Top-5 召回中 |
 | | MRR | 正确答案的倒数排名 |
 | | Answer F1 | 生成答案与标准答案的 token-level F1 |
-| **角色一致性** | Persona Drift Score | Embedding 相似度检测回答风格与角色设定的偏离 |
+| **角色一致性** | Persona Drift Score | 单轮回复与 `PersonaAnchor.style_examples` 的 embedding 均值的余弦相似度；< 0.75 触发告警 |
 | | Role Confusion Rate | 在 branch A 问 branch B 的问题，错误回答的比例 |
 | **CRDT 正确性** | Conflict Resolution Accuracy | 冲突记忆合并后是否保留全部信息 |
 | | Sync Convergence Time | 模拟网络分区后恢复，测量最终一致性达成时间 |
