@@ -84,19 +84,26 @@ class LWWMap:
 
         return conflict
 
-    def set(self, key: str, value: Any, timestamp: HybridTimestamp) -> Optional[ClockSkewConflict]:
+    def set(
+        self,
+        key: str,
+        value: Any,
+        timestamp: HybridTimestamp,
+        device_id: Optional[str] = None,
+    ) -> Optional[ClockSkewConflict]:
         """Set key using add-wins semantics.
 
         If clock skew exceeds MAX_CLOCK_SKEW_NS, record conflict but still
         apply HLC winner.
         """
         local = self._store.get(key)
+        resolved_device_id = device_id if device_id is not None else self.device_id
         return self._compare_and_resolve(
             key=key,
             local=local,
             new_timestamp=timestamp,
             new_value=value,
-            new_device_id=self.device_id,
+            new_device_id=resolved_device_id,
         )
 
     def get(self, key: str) -> Any:
