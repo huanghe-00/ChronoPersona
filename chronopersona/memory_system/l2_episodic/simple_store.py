@@ -5,11 +5,12 @@ from __future__ import annotations
 import math
 from typing import Dict, List, Optional
 
+from chronopersona.contracts.interfaces import AbstractEpisodicStore
 from chronopersona.contracts.schemas import MemoryEntry, RetrievedContext
 from chronopersona.memory_system.l2_episodic.embedder import MockBGEEmbedder
 
 
-class SimpleEpisodicStore:
+class SimpleEpisodicStore(AbstractEpisodicStore):
     """In-memory episodic store with cosine similarity retrieval.
 
     Uses MockBGEEmbedder for vector embeddings and standard library math
@@ -38,7 +39,7 @@ class SimpleEpisodicStore:
             return 0.0
         return dot / (norm_a * norm_b)
 
-    def add(self, memory: MemoryEntry, branch_id: str) -> str:
+    def add(self, entry: MemoryEntry, branch_id: str) -> str:
         """Add a memory entry and its embedding to the store.
 
         Returns:
@@ -47,9 +48,9 @@ class SimpleEpisodicStore:
         if not branch_id:
             raise ValueError("branch_id must not be empty")
         mid = self._next_id()
-        memory.id = mid
-        self._entries.setdefault(branch_id, []).append(memory)
-        vec = self._embedder.embed_query(memory.content)
+        entry.id = mid
+        self._entries.setdefault(branch_id, []).append(entry)
+        vec = self._embedder.embed_query(entry.content)
         self._vectors.setdefault(branch_id, []).append(vec)
         return mid
 
@@ -58,6 +59,7 @@ class SimpleEpisodicStore:
         query: str,
         branch_id: str,
         top_k: int = 5,
+        intent: Optional[str] = None,
     ) -> RetrievedContext:
         """Retrieve top-k most similar memories for the given query.
 
