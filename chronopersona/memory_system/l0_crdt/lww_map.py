@@ -3,8 +3,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-import logging
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 from chronopersona.memory_system.l0_crdt.hybrid_timestamp import HybridTimestamp
 
