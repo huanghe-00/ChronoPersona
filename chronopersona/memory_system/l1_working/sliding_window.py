@@ -8,7 +8,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, UTC
 from typing import List, Optional, Protocol
 
-from loguru import logger
+import logging
+logger = logging.getLogger(__name__)
 
 
 @dataclass
