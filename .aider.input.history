@@ -794,3 +794,1405 @@
 
 # 2026-05-15 18:11:00.004471
 +y
+
+# 2026-05-15 21:19:25.773192
++n
+
+# 2026-05-15 21:19:34.572147
++y
+
+# 2026-05-15 21:20:08.369503
++/ask 你是什么模型
+
+# 2026-05-15 21:20:25.289090
++/quit
+
+# 2026-05-15 21:39:53.074281
++N
+
+# 2026-05-15 21:40:05.425979
++/ask 你是什么模型
+
+# 2026-05-15 21:40:34.585491
++/model openai/kimi-for-coding
+
+# 2026-05-15 21:40:40.690123
++/ask 你是什么模型
+
+# 2026-05-15 21:40:57.645522
++/quit
+
+# 2026-05-15 21:41:39.272536
++N
+
+# 2026-05-15 21:42:05.197449
++/model openai/kimi-for-coding
+
+# 2026-05-15 21:42:09.400091
++/ask 你是什么模型
+
+# 2026-05-15 21:43:26.409567
++/ask 我在两个不同终端上进行当前项目的开发，刚刚从另一台设备切换到本机，目前aider依赖的各种配置项我都从远端通过github同步过来了，请告诉我当前项目进度到哪里了，下一步任务是什么
+
+# 2026-05-15 21:43:59.906119
++Y
+
+# 2026-05-15 21:45:24.664987
++N
+
+# 2026-05-15 21:45:36.536651
++/drop tests/test_mock_pipeline.py
+
+# 2026-05-15 21:45:45.541084
++/add /home/dmin/workspace/ChronoPersona/docs/requirements.md
+
+# 2026-05-15 21:45:52.757962
++/add docs/schedule.md
+
+# 2026-05-15 21:45:59.894928
++/add .aider.chat.history.md
+
+# 2026-05-15 21:46:06.201022
++/add .aider.input.history
+
+# 2026-05-15 21:48:41.969354
++/ask 1.docs/requirements.md设计文档 2.docs/schedule.md 进度计划表 3..aider.input.history另一设备的指令记录 4..aider.chat.history.md另一个设备的对话记录 请你详细阅读后，告诉我当前的整体进展和下一阶段计划 
+
+# 2026-05-15 21:54:22.102763
++/drop docs/requirements.md
+
+# 2026-05-15 21:54:26.998023
++/drop docs/schedule.md
+
+# 2026-05-15 21:54:48.825890
++/ask 请你先了解当前发生了什么 .aider.input.history另一设备的指令记录 .aider.chat.history.md另一个设备的对话记录 请你详细阅读后，告诉我当前的整体进展和下一阶段计划 
+
+# 2026-05-15 21:55:31.560940
++/drop .aider.chat.history.md
+
+# 2026-05-15 21:55:39.536256
++/add docs/requirements.md
+
+# 2026-05-15 21:55:47.913718
++/add docs/schedule.md
+
+# 2026-05-15 21:56:12.757826
++/ask 1.docs/requirements.md设计文档 2.docs/schedule.md 进度计划表 请你详细阅读后，告诉我当前的整体进展和下一阶段计划 
+
+# 2026-05-15 21:58:20.605688
++A
+
+# 2026-05-15 22:04:37.660403
++测试结果如下：================== test session starts ===================
++platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++collected 31 items                                       
++
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t01_mock_full_turn PASSED [  3%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t02_branch_isolation PASSED [  6%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t03_lww_merge PASSED [  9%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t04_intent_retrieval PASSED [ 12%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t05_persona_switch PASSED [ 16%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t06_crdt_merge_basic PASSED [ 19%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t07_clock_skew_detection PASSED [ 22%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t08_conflict_preservation PASSED [ 25%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast PASSED [ 29%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay PASSED [ 32%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t11_l0_read_write PASSED [ 35%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t12_l1_working_window PASSED [ 38%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t13_l2_episodic_write PASSED [ 41%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t14_l3_semantic_fact PASSED [ 45%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t15_checkout_snapshot PASSED [ 48%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t16_state_machine PASSED [ 51%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t17_intent_node PASSED [ 54%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t18_memory_node PASSED [ 58%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t19_llm_node PASSED [ 61%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t20_output_node PASSED [ 64%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t21_rest_schema PASSED [ 67%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t22_websocket_event PASSED [ 70%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t23_error_handling PASSED [ 74%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t24_schema_validation PASSED [ 77%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t25_auth_mock PASSED [ 80%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t26_full_pipeline PASSED [ 83%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t27_persona_switch_regression PASSED [ 87%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t28_eval_injection PASSED [ 90%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t29_l0_get_set PASSED [ 93%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t30_l0_merge_conflict PASSED [ 96%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t31_l0_checkpoint PASSED [100%]
++
++==================== warnings summary ====================
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay
++  <string>:6: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
++
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t15_checkout_snapshot
++  <string>:5: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
++
++-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
++============= 31 passed, 5 warnings in 0.05s =============
+
+# 2026-05-15 22:04:43.040605
++N
+
+# 2026-05-15 22:09:03.860261
++/architect 已经识别到的小问题，请完成修复
+
+# 2026-05-15 22:12:00.730821
++A
+
+# 2026-05-15 22:16:09.630373
++/add .cursorrules
+
+# 2026-05-15 22:16:33.630295
++/add docs/requirements.md
+
+# 2026-05-15 22:16:57.397719
++/architect .cursorrules文件有些与当前设计已经不符合了，请你修正
+
+# 2026-05-15 22:21:45.958957
++/ask 告诉我当前进展，以及下一阶段的任务目标
+
+# 2026-05-15 22:27:07.013730
++/drop chronopersona/*
+
+# 2026-05-15 22:27:14.069050
++/drop .aider.input.history
+
+# 2026-05-15 22:27:18.421933
++/drop .cursorrules
+
+# 2026-05-15 22:27:22.494852
++/drop Makefile
+
+# 2026-05-15 22:27:26.710132
++/drop docs/requirements.md
+
+# 2026-05-15 22:27:29.628565
++/drop docs/schedule.md
+
+# 2026-05-15 22:27:34.380845
++/drop migrations/001_init.sql
+
+# 2026-05-15 22:27:37.006590
++/drop tests/test_mock_pipeline.py
+
+# 2026-05-15 22:27:51.260803
++/add docs/schedule.md
+
+# 2026-05-15 22:28:04.685246
++根据当前进展，修改进度表
+
+# 2026-05-15 22:39:39.837315
++Y
+
+# 2026-05-15 22:55:32.355657
++A
+
+# 2026-05-15 23:05:51.683848
++y
+
+# 2026-05-15 23:19:02.517891
++/architect 继续执行下一个子任务
+
+# 2026-05-15 23:26:36.053280
++A
+
+# 2026-05-15 23:34:24.109116
++y
+
+# 2026-05-15 23:37:05.510633
++/ask 告诉我你下一步任务是什么
+
+# 2026-05-15 23:49:48.378506
++A
+
+# 2026-05-16 00:01:02.610404
++python3 -c "from c
++hronopersona.memory_system.l2_episodic import MockEpisodicStore, MockB
++GEEmbedder; print('L2 import     
++OK')"  
++  File "<string>", line 1
++    from chronopersona.memory_system.l2_episodic import MockEpisodicStore, MockBGEEmbedder; print('L2 import     
++                                                                                                  ^
+
+# 2026-05-16 00:03:28.194123
++y
+
+# 2026-05-16 00:06:55.312583
++返回如下：“python3 -c "from chronopersona.memory_system.l2_episodic import MockEpisodicStore, MockBGEEmbedder; print('L2 import OK')"
++Traceback (most recent call last):
++  File "<string>", line 1, in <module>
++  File "/home/dmin/workspace/ChronoPersona/chronopersona/memory_system/__init__.py", line 3, in <module>
++    from chronopersona.memory_system.l0_crdt import (
++  File "/home/dmin/workspace/ChronoPersona/chronopersona/memory_system/l0_crdt/__init__.py", line 4, in <module>
++    from chronopersona.memory_system.l0_crdt.lww_map import ClockSkewConflict, LWWEntry, LWWMap
++  File "/home/dmin/workspace/ChronoPersona/chronopersona/memory_system/l0_crdt/lww_map.py", line 6, in <module>
++    from loguru import logger
++ModuleNotFoundError: No module named 'loguru'”
+
+# 2026-05-16 00:09:16.995817
++y
+
+# 2026-05-16 01:37:06.642999
++a
+
+# 2026-05-16 10:04:16.166262
++ /ask 告诉我当前进展，以及你需要我进行哪些验证
+
+# 2026-05-16 10:09:28.948274
++N
+
+# 2026-05-16 10:09:36.798546
++/drop chronopersona/contracts/interfaces/__init__.py
+
+# 2026-05-16 10:09:39.303396
++/drop *
+
+# 2026-05-16 10:09:56.662907
++/ask 简短告诉我，我当前的测试步骤
+
+# 2026-05-16 10:15:20.672935
++给你一个临时任务，基于当前已有的依赖，刷新requirements.txt
+
+# 2026-05-16 10:17:01.982598
++a
+
+# 2026-05-16 10:18:23.539920
++y
+
+# 2026-05-17 10:02:39.985839
++N
+
+# 2026-05-17 10:03:18.867185
++/ask 告诉我当前的工作进展
+
+# 2026-05-17 10:04:49.527798
++/quit
+
+# 2026-05-17 10:07:06.006947
++N
+
+# 2026-05-17 10:07:16.279481
++/ask 告诉我当前工作进展
+
+# 2026-05-17 10:09:03.596023
++/model openai/kimi-for-coding
+
+# 2026-05-17 10:09:19.332167
++/ask 告诉我当前工作进展，整理下一步的计划
+
+# 2026-05-17 10:10:30.683065
++Y
+
+# 2026-05-17 10:11:21.755319
++A
+
+# 2026-05-17 10:28:15.635892
++/ask 我作为用户应该替你执行并验证哪些内容
+
+# 2026-05-17 10:29:55.433165
++Y
+
+# 2026-05-17 10:31:05.236955
++pytest tests/ -v                                                                                                               
++                                                             
++=================================================================================== test session starts ====================================================================================
++platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++collected 31 items / 3 errors                                                                                                                                                              
++
++========================================================================================== ERRORS ==========================================================================================
++_____________________________________________________________________ ERROR collecting tests/test_l1_working_memory.py _____________________________________________________________________
++ImportError while importing test module '/home/dmin/workspace/ChronoPersona/tests/test_l1_working_memory.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/usr/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++tests/test_l1_working_memory.py:5: in <module>
++    from chronopersona.memory_system.l1_working import (
++chronopersona/memory_system/__init__.py:3: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/l0_crdt/__init__.py:4: in <module>
++    from chronopersona.memory_system.l0_crdt.lww_map import ClockSkewConflict, LWWEntry, LWWMap
++chronopersona/memory_system/l0_crdt/lww_map.py:6: in <module>
++    from loguru import logger
++E   ModuleNotFoundError: No module named 'loguru'
++________________________________________________________________________ ERROR collecting tests/test_l2_episodic.py ________________________________________________________________________
++ImportError while importing test module '/home/dmin/workspace/ChronoPersona/tests/test_l2_episodic.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/usr/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++tests/test_l2_episodic.py:6: in <module>
++    from chronopersona.memory_system.l2_episodic import MockBGEEmbedder, MockEpisodicStore
++chronopersona/memory_system/__init__.py:3: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/l0_crdt/__init__.py:4: in <module>
++    from chronopersona.memory_system.l0_crdt.lww_map import ClockSkewConflict, LWWEntry, LWWMap
++chronopersona/memory_system/l0_crdt/lww_map.py:6: in <module>
++    from loguru import logger
++E   ModuleNotFoundError: No module named 'loguru'
++__________________________________________________________________________ ERROR collecting tests/test_lww_map.py __________________________________________________________________________
++ImportError while importing test module '/home/dmin/workspace/ChronoPersona/tests/test_lww_map.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/usr/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++tests/test_lww_map.py:5: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/__init__.py:3: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/l0_crdt/__init__.py:4: in <module>
++    from chronopersona.memory_system.l0_crdt.lww_map import ClockSkewConflict, LWWEntry, LWWMap
++chronopersona/memory_system/l0_crdt/lww_map.py:6: in <module>
++    from loguru import logger
++E   ModuleNotFoundError: No module named 'loguru'
++================================================================================= short test summary info ==================================================================================
++ERROR tests/test_l1_working_memory.py
++ERROR tests/test_l2_episodic.py
++ERROR tests/test_lww_map.py
++!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
++==================================================================================== 3 errors in 0.06s =====================================================================================
+
+# 2026-05-17 10:32:06.516591
++pip install loguru 
++Requirement already satisfied: loguru in /root/miniconda3/envs/chrono/lib/python3.11/site-packages (0.7.3)
++WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+
+# 2026-05-17 10:32:09.514409
++N
+
+# 2026-05-17 10:52:12.777683
++Y
+
+# 2026-05-17 10:53:07.963896
++(chrono) root@DESKTOP-HH:/home/dmin/workspace/ChronoPersona# pytest tests/ -v
++=================================================================================== test session starts ====================================================================================
++platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++collected 50 items                                                                                                                                                                         
++
++tests/test_l1_working_memory.py::TestTurnEntry::test_token_estimation_mixed PASSED                                                                                                   [  2%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_add_turn_and_get_context_order PASSED                                                                                 [  4%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_max_turns_compression PASSED                                                                                          [  6%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_token_threshold_compression PASSED                                                                                    [  8%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_custom_compressor PASSED                                                                                              [ 10%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_returns_correct_dimension PASSED                                                                                          [ 12%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_query_returns_vector PASSED                                                                                               [ 14%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_and_retrieve_basic PASSED                                                                                                 [ 16%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_branch_isolation PASSED                                                                                                       [ 18%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_retrieve_top_k_limit PASSED                                                                                                   [ 20%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_delete_memory PASSED                                                                                                          [ 22%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_empty_branch_retrieve PASSED                                                                                                  [ 24%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_with_empty_branch_raises PASSED                                                                                           [ 26%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_physical_ordering PASSED                                                                                                        [ 28%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_logical_tiebreak PASSED                                                                                                         [ 30%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_equality PASSED                                                                                                                 [ 32%]
++tests/test_lww_map.py::TestLWWMap::test_set_and_get_basic PASSED                                                                                                                     [ 34%]
++tests/test_lww_map.py::TestLWWMap::test_add_wins_merge PASSED                                                                                                                        [ 36%]
++tests/test_lww_map.py::TestLWWMap::test_clock_skew_detected FAILED                                                                                                                   [ 38%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t01_mock_full_turn PASSED                                                                                                    [ 40%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t02_branch_isolation PASSED                                                                                                  [ 42%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t03_lww_merge PASSED                                                                                                         [ 44%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t04_intent_retrieval PASSED                                                                                                  [ 46%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t05_persona_switch PASSED                                                                                                    [ 48%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t06_crdt_merge_basic PASSED                                                                                                          [ 50%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t07_clock_skew_detection PASSED                                                                                                      [ 52%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t08_conflict_preservation PASSED                                                                                                     [ 54%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast PASSED                                                                                                            [ 56%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay PASSED                                                                                                            [ 58%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t11_l0_read_write PASSED                                                                                                         [ 60%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t12_l1_working_window PASSED                                                                                                     [ 62%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t13_l2_episodic_write PASSED                                                                                                     [ 64%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t14_l3_semantic_fact PASSED                                                                                                      [ 66%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t15_checkout_snapshot PASSED                                                                                                     [ 68%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t16_state_machine PASSED                                                                                                           [ 70%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t17_intent_node PASSED                                                                                                             [ 72%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t18_memory_node PASSED                                                                                                             [ 74%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t19_llm_node PASSED                                                                                                                [ 76%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t20_output_node PASSED                                                                                                             [ 78%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t21_rest_schema PASSED                                                                                                       [ 80%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t22_websocket_event PASSED                                                                                                   [ 82%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t23_error_handling PASSED                                                                                                    [ 84%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t24_schema_validation PASSED                                                                                                 [ 86%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t25_auth_mock PASSED                                                                                                         [ 88%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t26_full_pipeline PASSED                                                                                                [ 90%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t27_persona_switch_regression PASSED                                                                                    [ 92%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t28_eval_injection PASSED                                                                                               [ 94%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t29_l0_get_set PASSED                                                                                                                  [ 96%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t30_l0_merge_conflict PASSED                                                                                                           [ 98%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t31_l0_checkpoint PASSED                                                                                                               [100%]
++
++========================================================================================= FAILURES =========================================================================================
++___________________________________________________________________________ TestLWWMap.test_clock_skew_detected ____________________________________________________________________________
++
++self = <tests.test_lww_map.TestLWWMap object at 0x7fc04ae5d2e0>
++
++    def test_clock_skew_detected(self) -> None:
++        """T37: Skew > 500ms triggers conflict record."""
++        lww = LWWMap("dev-a")
++        base = 1_000_000_000
++        lww.set("k", "local", HybridTimestamp(base, 0))
++        # 1 second difference > 500ms MAX_CLOCK_SKEW_NS
++        remote = {
++            "k": LWWEntry("remote", HybridTimestamp(base + 1_000_000_000, 0), "dev-b")
++        }
++>       conflicts = lww.merge(remote)
++
++tests/test_lww_map.py:67: 
++_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
++chronopersona/memory_system/l0_crdt/lww_map.py:135: in merge
++    conflict = self._compare_and_resolve(
++chronopersona/memory_system/l0_crdt/lww_map.py:70: in _compare_and_resolve
++    logger.warning(
++/usr/lib/python3.12/logging/__init__.py:1551: in warning
++    self._log(WARNING, msg, args, **kwargs)
++/usr/lib/python3.12/logging/__init__.py:1684: in _log
++    self.handle(record)
++/usr/lib/python3.12/logging/__init__.py:1700: in handle
++    self.callHandlers(record)
++/usr/lib/python3.12/logging/__init__.py:1762: in callHandlers
++    hdlr.handle(record)
++/usr/lib/python3.12/logging/__init__.py:1028: in handle
++    self.emit(record)
++/usr/lib/python3/dist-packages/_pytest/logging.py:372: in emit
++    super().emit(record)
++/usr/lib/python3.12/logging/__init__.py:1168: in emit
++    self.handleError(record)
++/usr/lib/python3.12/logging/__init__.py:1160: in emit
++    msg = self.format(record)
++/usr/lib/python3.12/logging/__init__.py:999: in format
++    return fmt.format(record)
++/usr/lib/python3/dist-packages/_pytest/logging.py:136: in format
++    return super().format(record)
++/usr/lib/python3.12/logging/__init__.py:703: in format
++    record.message = record.getMessage()
++_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
++
++self = <LogRecord: chronopersona.memory_system.l0_crdt.lww_map, 30, /home/dmin/workspace/ChronoPersona/chronopersona/memory_system/l0_crdt/lww_map.py, 70, "Clock skew detected for key '{}': {}ns > {}ns">
++
++    def getMessage(self):
++        """
++        Return the message for this LogRecord.
++    
++        Return the message for this LogRecord after merging any user-supplied
++        arguments with the message.
++        """
++        msg = str(self.msg)
++        if self.args:
++>           msg = msg % self.args
++E           TypeError: not all arguments converted during string formatting
++
++/usr/lib/python3.12/logging/__init__.py:392: TypeError
++===================================================================================== warnings summary =====================================================================================
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay
++  <string>:6: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
++
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t15_checkout_snapshot
++  <string>:5: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
++
++-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
++================================================================================= short test summary info ==================================================================================
++FAILED tests/test_lww_map.py::TestLWWMap::test_clock_skew_detected - TypeError: not all arguments converted during string formatting
++========================================================================= 1 failed, 49 passed, 5 warnings in 0.17s =========================================================================
+
+# 2026-05-17 10:53:10.308547
++N
+
+# 2026-05-17 10:57:52.851384
++pytest tests/ -v
++=================================================================================== test session starts ====================================================================================
++platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++collected 50 items                                                                                                                                                                         
++
++tests/test_l1_working_memory.py::TestTurnEntry::test_token_estimation_mixed PASSED                                                                                                   [  2%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_add_turn_and_get_context_order PASSED                                                                                 [  4%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_max_turns_compression PASSED                                                                                          [  6%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_token_threshold_compression PASSED                                                                                    [  8%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_custom_compressor PASSED                                                                                              [ 10%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_returns_correct_dimension PASSED                                                                                          [ 12%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_query_returns_vector PASSED                                                                                               [ 14%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_and_retrieve_basic PASSED                                                                                                 [ 16%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_branch_isolation PASSED                                                                                                       [ 18%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_retrieve_top_k_limit PASSED                                                                                                   [ 20%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_delete_memory PASSED                                                                                                          [ 22%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_empty_branch_retrieve PASSED                                                                                                  [ 24%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_with_empty_branch_raises PASSED                                                                                           [ 26%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_physical_ordering PASSED                                                                                                        [ 28%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_logical_tiebreak PASSED                                                                                                         [ 30%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_equality PASSED                                                                                                                 [ 32%]
++tests/test_lww_map.py::TestLWWMap::test_set_and_get_basic PASSED                                                                                                                     [ 34%]
++tests/test_lww_map.py::TestLWWMap::test_add_wins_merge PASSED                                                                                                                        [ 36%]
++tests/test_lww_map.py::TestLWWMap::test_clock_skew_detected FAILED                                                                                                                   [ 38%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t01_mock_full_turn PASSED                                                                                                    [ 40%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t02_branch_isolation PASSED                                                                                                  [ 42%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t03_lww_merge PASSED                                                                                                         [ 44%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t04_intent_retrieval PASSED                                                                                                  [ 46%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t05_persona_switch PASSED                                                                                                    [ 48%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t06_crdt_merge_basic PASSED                                                                                                          [ 50%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t07_clock_skew_detection PASSED                                                                                                      [ 52%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t08_conflict_preservation PASSED                                                                                                     [ 54%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast PASSED                                                                                                            [ 56%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay PASSED                                                                                                            [ 58%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t11_l0_read_write PASSED                                                                                                         [ 60%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t12_l1_working_window PASSED                                                                                                     [ 62%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t13_l2_episodic_write PASSED                                                                                                     [ 64%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t14_l3_semantic_fact PASSED                                                                                                      [ 66%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t15_checkout_snapshot PASSED                                                                                                     [ 68%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t16_state_machine PASSED                                                                                                           [ 70%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t17_intent_node PASSED                                                                                                             [ 72%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t18_memory_node PASSED                                                                                                             [ 74%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t19_llm_node PASSED                                                                                                                [ 76%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t20_output_node PASSED                                                                                                             [ 78%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t21_rest_schema PASSED                                                                                                       [ 80%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t22_websocket_event PASSED                                                                                                   [ 82%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t23_error_handling PASSED                                                                                                    [ 84%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t24_schema_validation PASSED                                                                                                 [ 86%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t25_auth_mock PASSED                                                                                                         [ 88%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t26_full_pipeline PASSED                                                                                                [ 90%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t27_persona_switch_regression PASSED                                                                                    [ 92%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t28_eval_injection PASSED                                                                                               [ 94%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t29_l0_get_set PASSED                                                                                                                  [ 96%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t30_l0_merge_conflict PASSED                                                                                                           [ 98%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t31_l0_checkpoint PASSED                                                                                                               [100%]
++
++========================================================================================= FAILURES =========================================================================================
++___________________________________________________________________________ TestLWWMap.test_clock_skew_detected ____________________________________________________________________________
++
++self = <tests.test_lww_map.TestLWWMap object at 0x7fc04ae5d2e0>
++
++    def test_clock_skew_detected(self) -> None:
++        """T37: Skew > 500ms triggers conflict record."""
++        lww = LWWMap("dev-a")
++        base = 1_000_000_000
++        lww.set("k", "local", HybridTimestamp(base, 0))
++        # 1 second difference > 500ms MAX_CLOCK_SKEW_NS
++        remote = {
++            "k": LWWEntry("remote", HybridTimestamp(base + 1_000_000_000, 0), "dev-b")
++        }
++>       conflicts = lww.merge(remote)
++
++tests/test_lww_map.py:67: 
++_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
++chronopersona/memory_system/l0_crdt/lww_map.py:135: in merge
++    conflict = self._compare_and_resolve(
++chronopersona/memory_system/l0_crdt/lww_map.py:70: in _compare_and_resolve
++    logger.warning(
++/usr/lib/python3.12/logging/__init__.py:1551: in warning
++    self._log(WARNING, msg, args, **kwargs)
++/usr/lib/python3.12/logging/__init__.py:1684: in _log
++    self.handle(record)
++/usr/lib/python3.12/logging/__init__.py:1700: in handle
++    self.callHandlers(record)
++/usr/lib/python3.12/logging/__init__.py:1762: in callHandlers
++    hdlr.handle(record)
++/usr/lib/python3.12/logging/__init__.py:1028: in handle
++    self.emit(record)
++/usr/lib/python3/dist-packages/_pytest/logging.py:372: in emit
++    super().emit(record)
++/usr/lib/python3.12/logging/__init__.py:1168: in emit
++    self.handleError(record)
++/usr/lib/python3.12/logging/__init__.py:1160: in emit
++    msg = self.format(record)
++/usr/lib/python3.12/logging/__init__.py:999: in format
++    return fmt.format(record)
++/usr/lib/python3/dist-packages/_pytest/logging.py:136: in format
++    return super().format(record)
++/usr/lib/python3.12/logging/__init__.py:703: in format
++    record.message = record.getMessage()
++_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
++
++self = <LogRecord: chronopersona.memory_system.l0_crdt.lww_map, 30, /home/dmin/workspace/ChronoPersona/chronopersona/memory_system/l0_crdt/lww_map.py, 70, "Clock skew detected for key '{}': {}ns > {}ns">
++
++    def getMessage(self):
++        """
++        Return the message for this LogRecord.
++    
++        Return the message for this LogRecord after merging any user-supplied
++        arguments with the message.
++        """
++        msg = str(self.msg)
++        if self.args:
++>           msg = msg % self.args
++E           TypeError: not all arguments converted during string formatting
++
++/usr/lib/python3.12/logging/__init__.py:392: TypeError
++===================================================================================== warnings summary =====================================================================================
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay
++  <string>:6: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
++
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t15_checkout_snapshot
++  <string>:5: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
++
++-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
++================================================================================= short test summary info ==================================================================================
++FAILED tests/test_lww_map.py::TestLWWMap::test_clock_skew_detected - TypeError: not all arguments converted during string formatting
++========================================================================= 1 failed, 49 passed, 5 warnings in 0.17s =========================================================================
++(chrono) root@DESKTOP-HH:/home/dmin/workspace/ChronoPersona# python -m pytest tests/ -v 
++/root/miniconda3/envs/chrono/bin/python: No module named pytest
++(chrono) root@DESKTOP-HH:/home/dmin/workspace/ChronoPersona# pytest tests/ -v 
++=================================================================================== test session starts ====================================================================================
++platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++collected 31 items / 3 errors                                                                                                                                                              
++
++========================================================================================== ERRORS ==========================================================================================
++_____________________________________________________________________ ERROR collecting tests/test_l1_working_memory.py _____________________________________________________________________
++ImportError while importing test module '/home/dmin/workspace/ChronoPersona/tests/test_l1_working_memory.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/usr/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++tests/test_l1_working_memory.py:5: in <module>
++    from chronopersona.memory_system.l1_working import (
++chronopersona/memory_system/__init__.py:3: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/l0_crdt/__init__.py:4: in <module>
++    from chronopersona.memory_system.l0_crdt.lww_map import ClockSkewConflict, LWWEntry, LWWMap
++chronopersona/memory_system/l0_crdt/lww_map.py:6: in <module>
++    from loguru import logger
++E   ModuleNotFoundError: No module named 'loguru'
++________________________________________________________________________ ERROR collecting tests/test_l2_episodic.py ________________________________________________________________________
++ImportError while importing test module '/home/dmin/workspace/ChronoPersona/tests/test_l2_episodic.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/usr/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++tests/test_l2_episodic.py:6: in <module>
++    from chronopersona.memory_system.l2_episodic import MockBGEEmbedder, MockEpisodicStore
++chronopersona/memory_system/__init__.py:3: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/l0_crdt/__init__.py:4: in <module>
++    from chronopersona.memory_system.l0_crdt.lww_map import ClockSkewConflict, LWWEntry, LWWMap
++chronopersona/memory_system/l0_crdt/lww_map.py:6: in <module>
++    from loguru import logger
++E   ModuleNotFoundError: No module named 'loguru'
++__________________________________________________________________________ ERROR collecting tests/test_lww_map.py __________________________________________________________________________
++ImportError while importing test module '/home/dmin/workspace/ChronoPersona/tests/test_lww_map.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/usr/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++tests/test_lww_map.py:5: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/__init__.py:3: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/l0_crdt/__init__.py:4: in <module>
++    from chronopersona.memory_system.l0_crdt.lww_map import ClockSkewConflict, LWWEntry, LWWMap
++chronopersona/memory_system/l0_crdt/lww_map.py:6: in <module>
++    from loguru import logger
++E   ModuleNotFoundError: No module named 'loguru'
++================================================================================= short test summary info ==================================================================================
++ERROR tests/test_l1_working_memory.py
++ERROR tests/test_l2_episodic.py
++ERROR tests/test_lww_map.py
++!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
++==================================================================================== 3 errors in 0.07s =====================================================================================
+
+# 2026-05-17 10:59:49.420579
++pip install pytest                                                                                                                                                                          
++python -m pytest tests/ -v
++Collecting pytest
++  Downloading pytest-9.0.3-py3-none-any.whl.metadata (7.6 kB)
++Collecting iniconfig>=1.0.1 (from pytest)
++  Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
++Requirement already satisfied: packaging>=22 in /root/miniconda3/envs/chrono/lib/python3.11/site-packages (from pytest) (26.0)
++Collecting pluggy<2,>=1.5 (from pytest)
++  Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
++Requirement already satisfied: pygments>=2.7.2 in /root/miniconda3/envs/chrono/lib/python3.11/site-packages (from pytest) (2.19.2)
++Downloading pytest-9.0.3-py3-none-any.whl (375 kB)
++Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
++Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
++Installing collected packages: pluggy, iniconfig, pytest
++Successfully installed iniconfig-2.3.0 pluggy-1.6.0 pytest-9.0.3
++WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
++=================================================================================== test session starts ====================================================================================
++platform linux -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0 -- /root/miniconda3/envs/chrono/bin/python
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++plugins: anyio-4.12.1
++collected 50 items                                                                                                                                                                         
++
++tests/test_l1_working_memory.py::TestTurnEntry::test_token_estimation_mixed PASSED                                                                                                   [  2%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_add_turn_and_get_context_order PASSED                                                                                 [  4%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_max_turns_compression PASSED                                                                                          [  6%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_token_threshold_compression PASSED                                                                                    [  8%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_custom_compressor PASSED                                                                                              [ 10%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_returns_correct_dimension PASSED                                                                                          [ 12%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_query_returns_vector PASSED                                                                                               [ 14%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_and_retrieve_basic PASSED                                                                                                 [ 16%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_branch_isolation PASSED                                                                                                       [ 18%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_retrieve_top_k_limit PASSED                                                                                                   [ 20%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_delete_memory PASSED                                                                                                          [ 22%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_empty_branch_retrieve PASSED                                                                                                  [ 24%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_with_empty_branch_raises PASSED                                                                                           [ 26%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_physical_ordering PASSED                                                                                                        [ 28%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_logical_tiebreak PASSED                                                                                                         [ 30%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_equality PASSED                                                                                                                 [ 32%]
++tests/test_lww_map.py::TestLWWMap::test_set_and_get_basic PASSED                                                                                                                     [ 34%]
++tests/test_lww_map.py::TestLWWMap::test_add_wins_merge PASSED                                                                                                                        [ 36%]
++tests/test_lww_map.py::TestLWWMap::test_clock_skew_detected PASSED                                                                                                                   [ 38%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t01_mock_full_turn PASSED                                                                                                    [ 40%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t02_branch_isolation PASSED                                                                                                  [ 42%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t03_lww_merge PASSED                                                                                                         [ 44%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t04_intent_retrieval PASSED                                                                                                  [ 46%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t05_persona_switch PASSED                                                                                                    [ 48%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t06_crdt_merge_basic PASSED                                                                                                          [ 50%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t07_clock_skew_detection PASSED                                                                                                      [ 52%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t08_conflict_preservation PASSED                                                                                                     [ 54%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast PASSED                                                                                                            [ 56%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay PASSED                                                                                                            [ 58%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t11_l0_read_write PASSED                                                                                                         [ 60%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t12_l1_working_window PASSED                                                                                                     [ 62%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t13_l2_episodic_write PASSED                                                                                                     [ 64%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t14_l3_semantic_fact PASSED                                                                                                      [ 66%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t15_checkout_snapshot PASSED                                                                                                     [ 68%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t16_state_machine PASSED                                                                                                           [ 70%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t17_intent_node PASSED                                                                                                             [ 72%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t18_memory_node PASSED                                                                                                             [ 74%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t19_llm_node PASSED                                                                                                                [ 76%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t20_output_node PASSED                                                                                                             [ 78%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t21_rest_schema PASSED                                                                                                       [ 80%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t22_websocket_event PASSED                                                                                                   [ 82%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t23_error_handling PASSED                                                                                                    [ 84%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t24_schema_validation PASSED                                                                                                 [ 86%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t25_auth_mock PASSED                                                                                                         [ 88%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t26_full_pipeline PASSED                                                                                                [ 90%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t27_persona_switch_regression PASSED                                                                                    [ 92%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t28_eval_injection PASSED                                                                                               [ 94%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t29_l0_get_set PASSED                                                                                                                  [ 96%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t30_l0_merge_conflict PASSED                                                                                                           [ 98%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t31_l0_checkpoint PASSED                                                                                                               [100%]
++
++==================================================================================== 50 passed in 0.11s ====================================================================================
+
+# 2026-05-17 11:01:58.706229
++/architect 整理当前进展，并告诉我下一步任务
+
+# 2026-05-17 18:48:37.330333
++y
+
+# 2026-05-17 19:17:52.318396
++Y
+
+# 2026-05-17 19:18:12.594652
++/ask 整理当前进展，并告诉我下一步任务
+
+# 2026-05-17 19:27:09.631506
++A
+
+# 2026-05-17 19:34:37.333588
++(chrono) root@DESKTOP-HH:/home/dmin/workspace/ChronoPersona# pytest tests/ -v 
++=================================================================================== test session starts ====================================================================================
++platform linux -- Python 3.12.3, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++collected 31 items / 4 errors                                                                                                                                                              
++
++========================================================================================== ERRORS ==========================================================================================
++_______________________________________________________________________ ERROR collecting tests/test_l0_sync_layer.py _______________________________________________________________________
++ImportError while importing test module '/home/dmin/workspace/ChronoPersona/tests/test_l0_sync_layer.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/usr/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++tests/test_l0_sync_layer.py:5: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/__init__.py:3: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/l0_crdt/__init__.py:4: in <module>
++    from chronopersona.memory_system.l0_crdt.lww_map import ClockSkewConflict, LWWEntry, LWWMap
++chronopersona/memory_system/l0_crdt/lww_map.py:6: in <module>
++    from loguru import logger
++E   ModuleNotFoundError: No module named 'loguru'
++_____________________________________________________________________ ERROR collecting tests/test_l1_working_memory.py _____________________________________________________________________
++ImportError while importing test module '/home/dmin/workspace/ChronoPersona/tests/test_l1_working_memory.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/usr/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++tests/test_l1_working_memory.py:5: in <module>
++    from chronopersona.memory_system.l1_working import (
++chronopersona/memory_system/__init__.py:3: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/l0_crdt/__init__.py:4: in <module>
++    from chronopersona.memory_system.l0_crdt.lww_map import ClockSkewConflict, LWWEntry, LWWMap
++chronopersona/memory_system/l0_crdt/lww_map.py:6: in <module>
++    from loguru import logger
++E   ModuleNotFoundError: No module named 'loguru'
++________________________________________________________________________ ERROR collecting tests/test_l2_episodic.py ________________________________________________________________________
++ImportError while importing test module '/home/dmin/workspace/ChronoPersona/tests/test_l2_episodic.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/usr/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++tests/test_l2_episodic.py:6: in <module>
++    from chronopersona.memory_system.l2_episodic import MockBGEEmbedder, MockEpisodicStore
++chronopersona/memory_system/__init__.py:3: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/l0_crdt/__init__.py:4: in <module>
++    from chronopersona.memory_system.l0_crdt.lww_map import ClockSkewConflict, LWWEntry, LWWMap
++chronopersona/memory_system/l0_crdt/lww_map.py:6: in <module>
++    from loguru import logger
++E   ModuleNotFoundError: No module named 'loguru'
++__________________________________________________________________________ ERROR collecting tests/test_lww_map.py __________________________________________________________________________
++ImportError while importing test module '/home/dmin/workspace/ChronoPersona/tests/test_lww_map.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/usr/lib/python3.12/importlib/__init__.py:90: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++tests/test_lww_map.py:5: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/__init__.py:3: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/l0_crdt/__init__.py:4: in <module>
++    from chronopersona.memory_system.l0_crdt.lww_map import ClockSkewConflict, LWWEntry, LWWMap
++chronopersona/memory_system/l0_crdt/lww_map.py:6: in <module>
++    from loguru import logger
++E   ModuleNotFoundError: No module named 'loguru'
++================================================================================= short test summary info ==================================================================================
++ERROR tests/test_l0_sync_layer.py
++ERROR tests/test_l1_working_memory.py
++ERROR tests/test_l2_episodic.py
++ERROR tests/test_lww_map.py
++!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
++==================================================================================== 4 errors in 0.07s =====================================================================================
+
+# 2026-05-17 19:39:02.051707
++(chrono) root@DESKTOP-HH:/home/dmin/workspace/ChronoPersona# python -m pytest tests/ -v
++=================================================================================== test session starts ====================================================================================
++platform linux -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0 -- /root/miniconda3/envs/chrono/bin/python
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++plugins: anyio-4.12.1
++collected 55 items                                                                                                                                                                         
++
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_set_get_roundtrip PASSED                                                                                                          [  1%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_merge_detects_conflict PASSED                                                                                                     [  3%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_branch_isolation PASSED                                                                                                           [  5%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_checkpoint_returns_dirty_keys PASSED                                                                                              [  7%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_empty_branch_id_raises PASSED                                                                                                     [  9%]
++tests/test_l1_working_memory.py::TestTurnEntry::test_token_estimation_mixed PASSED                                                                                                   [ 10%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_add_turn_and_get_context_order PASSED                                                                                 [ 12%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_max_turns_compression PASSED                                                                                          [ 14%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_token_threshold_compression PASSED                                                                                    [ 16%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_custom_compressor PASSED                                                                                              [ 18%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_returns_correct_dimension PASSED                                                                                          [ 20%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_query_returns_vector PASSED                                                                                               [ 21%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_and_retrieve_basic PASSED                                                                                                 [ 23%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_branch_isolation PASSED                                                                                                       [ 25%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_retrieve_top_k_limit PASSED                                                                                                   [ 27%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_delete_memory PASSED                                                                                                          [ 29%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_empty_branch_retrieve PASSED                                                                                                  [ 30%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_with_empty_branch_raises PASSED                                                                                           [ 32%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_physical_ordering PASSED                                                                                                        [ 34%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_logical_tiebreak PASSED                                                                                                         [ 36%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_equality PASSED                                                                                                                 [ 38%]
++tests/test_lww_map.py::TestLWWMap::test_set_and_get_basic PASSED                                                                                                                     [ 40%]
++tests/test_lww_map.py::TestLWWMap::test_add_wins_merge PASSED                                                                                                                        [ 41%]
++tests/test_lww_map.py::TestLWWMap::test_clock_skew_detected PASSED                                                                                                                   [ 43%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t01_mock_full_turn PASSED                                                                                                    [ 45%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t02_branch_isolation PASSED                                                                                                  [ 47%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t03_lww_merge PASSED                                                                                                         [ 49%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t04_intent_retrieval PASSED                                                                                                  [ 50%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t05_persona_switch PASSED                                                                                                    [ 52%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t06_crdt_merge_basic PASSED                                                                                                          [ 54%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t07_clock_skew_detection PASSED                                                                                                      [ 56%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t08_conflict_preservation PASSED                                                                                                     [ 58%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast PASSED                                                                                                            [ 60%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay PASSED                                                                                                            [ 61%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t11_l0_read_write PASSED                                                                                                         [ 63%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t12_l1_working_window PASSED                                                                                                     [ 65%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t13_l2_episodic_write PASSED                                                                                                     [ 67%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t14_l3_semantic_fact PASSED                                                                                                      [ 69%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t15_checkout_snapshot PASSED                                                                                                     [ 70%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t16_state_machine PASSED                                                                                                           [ 72%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t17_intent_node PASSED                                                                                                             [ 74%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t18_memory_node PASSED                                                                                                             [ 76%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t19_llm_node PASSED                                                                                                                [ 78%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t20_output_node PASSED                                                                                                             [ 80%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t21_rest_schema PASSED                                                                                                       [ 81%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t22_websocket_event PASSED                                                                                                   [ 83%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t23_error_handling PASSED                                                                                                    [ 85%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t24_schema_validation PASSED                                                                                                 [ 87%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t25_auth_mock PASSED                                                                                                         [ 89%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t26_full_pipeline PASSED                                                                                                [ 90%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t27_persona_switch_regression PASSED                                                                                    [ 92%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t28_eval_injection PASSED                                                                                               [ 94%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t29_l0_get_set PASSED                                                                                                                  [ 96%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t30_l0_merge_conflict PASSED                                                                                                           [ 98%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t31_l0_checkpoint PASSED                                                                                                               [100%]
++
++==================================================================================== 55 passed in 0.08s ====================================================================================
+
+# 2026-05-17 19:41:44.550622
++任务1和2执行完成后，执行任务3
+
+# 2026-05-17 19:52:51.397695
++y
+
+# 2026-05-17 19:55:35.151747
++(chrono) root@DESKTOP-HH:/home/dmin/workspace/ChronoPersona# python -m pytest tests/ -v
++=================================================================================== test session starts ====================================================================================
++platform linux -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0 -- /root/miniconda3/envs/chrono/bin/python
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++plugins: anyio-4.12.1
++collected 61 items                                                                                                                                                                         
++
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_set_get_roundtrip PASSED                                                                                                          [  1%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_merge_detects_conflict PASSED                                                                                                     [  3%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_branch_isolation PASSED                                                                                                           [  4%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_checkpoint_returns_dirty_keys PASSED                                                                                              [  6%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_empty_branch_id_raises PASSED                                                                                                     [  8%]
++tests/test_l1_working_memory.py::TestTurnEntry::test_token_estimation_mixed PASSED                                                                                                   [  9%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_add_turn_and_get_context_order PASSED                                                                                 [ 11%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_max_turns_compression PASSED                                                                                          [ 13%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_token_threshold_compression PASSED                                                                                    [ 14%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_custom_compressor PASSED                                                                                              [ 16%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_returns_correct_dimension PASSED                                                                                          [ 18%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_query_returns_vector PASSED                                                                                               [ 19%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_and_retrieve_basic PASSED                                                                                                 [ 21%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_branch_isolation PASSED                                                                                                       [ 22%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_retrieve_top_k_limit PASSED                                                                                                   [ 24%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_delete_memory PASSED                                                                                                          [ 26%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_empty_branch_retrieve PASSED                                                                                                  [ 27%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_with_empty_branch_raises PASSED                                                                                           [ 29%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_add_and_retrieve_basic PASSED                                                                                           [ 31%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_branch_isolation PASSED                                                                                                 [ 32%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_retrieve_top_k_limit PASSED                                                                                             [ 34%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_delete_memory PASSED                                                                                                    [ 36%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_empty_branch_retrieve PASSED                                                                                            [ 37%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_add_with_empty_branch_raises PASSED                                                                                     [ 39%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_physical_ordering PASSED                                                                                                        [ 40%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_logical_tiebreak PASSED                                                                                                         [ 42%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_equality PASSED                                                                                                                 [ 44%]
++tests/test_lww_map.py::TestLWWMap::test_set_and_get_basic PASSED                                                                                                                     [ 45%]
++tests/test_lww_map.py::TestLWWMap::test_add_wins_merge PASSED                                                                                                                        [ 47%]
++tests/test_lww_map.py::TestLWWMap::test_clock_skew_detected PASSED                                                                                                                   [ 49%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t01_mock_full_turn PASSED                                                                                                    [ 50%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t02_branch_isolation PASSED                                                                                                  [ 52%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t03_lww_merge PASSED                                                                                                         [ 54%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t04_intent_retrieval PASSED                                                                                                  [ 55%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t05_persona_switch PASSED                                                                                                    [ 57%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t06_crdt_merge_basic PASSED                                                                                                          [ 59%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t07_clock_skew_detection PASSED                                                                                                      [ 60%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t08_conflict_preservation PASSED                                                                                                     [ 62%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast PASSED                                                                                                            [ 63%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay PASSED                                                                                                            [ 65%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t11_l0_read_write PASSED                                                                                                         [ 67%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t12_l1_working_window PASSED                                                                                                     [ 68%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t13_l2_episodic_write PASSED                                                                                                     [ 70%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t14_l3_semantic_fact PASSED                                                                                                      [ 72%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t15_checkout_snapshot PASSED                                                                                                     [ 73%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t16_state_machine PASSED                                                                                                           [ 75%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t17_intent_node PASSED                                                                                                             [ 77%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t18_memory_node PASSED                                                                                                             [ 78%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t19_llm_node PASSED                                                                                                                [ 80%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t20_output_node PASSED                                                                                                             [ 81%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t21_rest_schema PASSED                                                                                                       [ 83%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t22_websocket_event PASSED                                                                                                   [ 85%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t23_error_handling PASSED                                                                                                    [ 86%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t24_schema_validation PASSED                                                                                                 [ 88%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t25_auth_mock PASSED                                                                                                         [ 90%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t26_full_pipeline PASSED                                                                                                [ 91%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t27_persona_switch_regression PASSED                                                                                    [ 93%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t28_eval_injection PASSED                                                                                               [ 95%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t29_l0_get_set PASSED                                                                                                                  [ 96%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t30_l0_merge_conflict PASSED                                                                                                           [ 98%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t31_l0_checkpoint PASSED                                                                                                               [100%]
++
++==================================================================================== 61 passed in 0.09s ====================================================================================
+
+# 2026-05-17 19:57:20.519528
++Y 选项A和B都要执行
+
+# 2026-05-17 19:57:23.063511
++Y
+
+# 2026-05-17 19:59:00.126303
++/ask 下一步任务是什么
+
+# 2026-05-17 20:02:31.845513
++/architect 执行任务2
+
+# 2026-05-17 20:06:14.550555
++y
+
+# 2026-05-17 20:16:51.127656
++/ask ==================================================================================== 76 passed in 0.09s ====================================================================================
+
+# 2026-05-17 20:23:37.294096
++==================================================================================== 76 passed in 0.07s ====================================================================================
+
+# 2026-05-17 20:29:51.392088
++==================================================================================== 76 passed in 0.07s ====================================================================================y
+
+# 2026-05-17 20:29:54.360111
++y
+
+# 2026-05-17 20:30:26.475999
++/ask (chrono) root@DESKTOP-HH:/home/dmin/workspace/ChronoPersona# python -m pytest tests/ -v 
++=================================================================================== test session starts ====================================================================================
++platform linux -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0 -- /root/miniconda3/envs/chrono/bin/python
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++plugins: anyio-4.12.1
++collected 122 items                                                                                                                                                                        
++
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_set_get_roundtrip PASSED                                                                                                          [  0%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_merge_detects_conflict PASSED                                                                                                     [  1%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_branch_isolation PASSED                                                                                                           [  2%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_checkpoint_returns_dirty_keys PASSED                                                                                              [  3%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_empty_branch_id_raises PASSED                                                                                                     [  4%]
++tests/test_l1_working_memory.py::TestTurnEntry::test_token_estimation_mixed PASSED                                                                                                   [  4%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_add_turn_and_get_context_order PASSED                                                                                 [  5%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_max_turns_compression PASSED                                                                                          [  6%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_token_threshold_compression PASSED                                                                                    [  7%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_custom_compressor PASSED                                                                                              [  8%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_returns_correct_dimension PASSED                                                                                          [  9%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_query_returns_vector PASSED                                                                                               [  9%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_and_retrieve_basic PASSED                                                                                                 [ 10%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_branch_isolation PASSED                                                                                                       [ 11%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_retrieve_top_k_limit PASSED                                                                                                   [ 12%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_delete_memory PASSED                                                                                                          [ 13%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_empty_branch_retrieve PASSED                                                                                                  [ 13%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_with_empty_branch_raises PASSED                                                                                           [ 14%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_add_and_retrieve_basic PASSED                                                                                           [ 15%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_branch_isolation PASSED                                                                                                 [ 16%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_retrieve_top_k_limit PASSED                                                                                             [ 17%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_delete_memory PASSED                                                                                                    [ 18%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_empty_branch_retrieve PASSED                                                                                            [ 18%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_add_with_empty_branch_raises PASSED                                                                                     [ 19%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_physical_ordering PASSED                                                                                                        [ 20%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_logical_tiebreak PASSED                                                                                                         [ 21%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_equality PASSED                                                                                                                 [ 22%]
++tests/test_lww_map.py::TestLWWMap::test_set_and_get_basic PASSED                                                                                                                     [ 22%]
++tests/test_lww_map.py::TestLWWMap::test_add_wins_merge PASSED                                                                                                                        [ 23%]
++tests/test_lww_map.py::TestLWWMap::test_clock_skew_detected PASSED                                                                                                                   [ 24%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_run_turn_returns_agent_output PASSED                                                                                          [ 25%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_run_turn_empty_branch_raises PASSED                                                                                           [ 26%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_switch_persona_updates_state PASSED                                                                                           [ 27%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_switch_persona_empty_branch_raises PASSED                                                                                     [ 27%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_get_emotion_state_returns_emotion_state PASSED                                                                                [ 28%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_get_memory_summary_returns_string PASSED                                                                                      [ 29%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_get_memory_summary_empty_branch_raises PASSED                                                                                 [ 30%]
++tests/test_mock_cost_tracker.py::TestMockCostTracker::test_record_empty_branch_raises PASSED                                                                                         [ 31%]
++tests/test_mock_cost_tracker.py::TestMockCostTracker::test_get_summary_returns_empty_dict PASSED                                                                                     [ 31%]
++tests/test_mock_cost_tracker.py::TestMockCostTracker::test_check_budget_returns_budget_status PASSED                                                                                 [ 32%]
++tests/test_mock_cost_tracker.py::TestMockCostTracker::test_check_budget_empty_branch_raises PASSED                                                                                   [ 33%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_get_perception_returns_embodied_state PASSED                                                                      [ 34%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_get_perception_empty_agent_raises PASSED                                                                          [ 35%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_execute_action_returns_perception_result PASSED                                                                   [ 36%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_execute_action_empty_agent_raises PASSED                                                                          [ 36%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_get_spatial_memory_returns_list PASSED                                                                            [ 37%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_get_spatial_memory_empty_agent_raises PASSED                                                                      [ 38%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_predict_action_returns_dict PASSED                                                                                [ 39%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_predict_action_empty_task_raises PASSED                                                                           [ 40%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_translate_action_token_returns_low_level_command PASSED                                                           [ 40%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_translate_action_token_empty_args_raises PASSED                                                                   [ 41%]
++tests/test_mock_memory_migration.py::TestMockMemoryMigrationService::test_migrate_empty_branch_raises PASSED                                                                         [ 42%]
++tests/test_mock_memory_migration.py::TestMockMemoryMigrationService::test_snapshot_returns_empty_dict PASSED                                                                         [ 43%]
++tests/test_mock_memory_migration.py::TestMockMemoryMigrationService::test_merge_branches_returns_merged_true PASSED                                                                  [ 44%]
++tests/test_mock_memory_migration.py::TestMockMemoryMigrationService::test_merge_branches_empty_source_raises PASSED                                                                  [ 45%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_add_returns_memory_id PASSED                                                                                              [ 45%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_add_empty_branch_raises PASSED                                                                                            [ 46%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_retrieve_returns_retrieved_context PASSED                                                                                 [ 47%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_retrieve_empty_branch_raises PASSED                                                                                       [ 48%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_commit_version_returns_version PASSED                                                                                     [ 49%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_commit_version_empty_branch_raises PASSED                                                                                 [ 50%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_checkout_branch_returns_snapshot PASSED                                                                                   [ 50%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_checkout_branch_empty_branch_raises PASSED                                                                                [ 51%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_get_facts_returns_list PASSED                                                                                             [ 52%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_get_facts_empty_branch_raises PASSED                                                                                      [ 53%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_link_entities_returns_true PASSED                                                                                         [ 54%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_link_entities_empty_branch_raises PASSED                                                                                  [ 54%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_route_returns_model_response PASSED                                                                                       [ 55%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_route_empty_branch_raises PASSED                                                                                          [ 56%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_get_cost_summary_returns_cost_report PASSED                                                                               [ 57%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_get_cost_summary_empty_branch_raises PASSED                                                                               [ 58%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_cache_clear_does_not_raise PASSED                                                                                         [ 59%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_cache_clear_empty_branch_raises PASSED                                                                                    [ 59%]
++tests/test_mock_persona_injector.py::TestMockPersonaInjector::test_inject_empty_branch_raises PASSED                                                                                 [ 60%]
++tests/test_mock_persona_injector.py::TestMockPersonaInjector::test_eject_empty_branch_raises PASSED                                                                                  [ 61%]
++tests/test_mock_persona_injector.py::TestMockPersonaInjector::test_inject_eject_no_exception PASSED                                                                                  [ 62%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t01_mock_full_turn PASSED                                                                                                    [ 63%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t02_branch_isolation PASSED                                                                                                  [ 63%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t03_lww_merge PASSED                                                                                                         [ 64%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t04_intent_retrieval PASSED                                                                                                  [ 65%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t05_persona_switch PASSED                                                                                                    [ 66%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t06_crdt_merge_basic PASSED                                                                                                          [ 67%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t07_clock_skew_detection PASSED                                                                                                      [ 68%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t08_conflict_preservation PASSED                                                                                                     [ 68%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast PASSED                                                                                                            [ 69%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay PASSED                                                                                                            [ 70%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t11_l0_read_write PASSED                                                                                                         [ 71%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t12_l1_working_window PASSED                                                                                                     [ 72%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t13_l2_episodic_write PASSED                                                                                                     [ 72%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t14_l3_semantic_fact PASSED                                                                                                      [ 73%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t15_checkout_snapshot PASSED                                                                                                     [ 74%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t16_state_machine PASSED                                                                                                           [ 75%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t17_intent_node PASSED                                                                                                             [ 76%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t18_memory_node PASSED                                                                                                             [ 77%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t19_llm_node PASSED                                                                                                                [ 77%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t20_output_node PASSED                                                                                                             [ 78%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t21_rest_schema PASSED                                                                                                       [ 79%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t22_websocket_event PASSED                                                                                                   [ 80%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t23_error_handling PASSED                                                                                                    [ 81%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t24_schema_validation PASSED                                                                                                 [ 81%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t25_auth_mock PASSED                                                                                                         [ 82%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t26_full_pipeline PASSED                                                                                                [ 83%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t27_persona_switch_regression PASSED                                                                                    [ 84%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t28_eval_injection PASSED                                                                                               [ 85%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t29_l0_get_set PASSED                                                                                                                  [ 86%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t30_l0_merge_conflict PASSED                                                                                                           [ 86%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t31_l0_checkpoint PASSED                                                                                                               [ 87%]
++tests/test_mock_skill_registry.py::TestMockSkillRegistry::test_register_empty_branch_raises PASSED                                                                                   [ 88%]
++tests/test_mock_skill_registry.py::TestMockSkillRegistry::test_execute_returns_mock_executed PASSED                                                                                  [ 89%]
++tests/test_mock_skill_registry.py::TestMockSkillRegistry::test_get_available_skills_returns_empty_list PASSED                                                                        [ 90%]
++tests/test_mock_skill_registry.py::TestMockSkillRegistry::test_execute_empty_branch_raises PASSED                                                                                    [ 90%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_commit_returns_version PASSED                                                                                       [ 91%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_commit_empty_branch_raises PASSED                                                                                   [ 92%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_checkout_returns_snapshot PASSED                                                                                    [ 93%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_checkout_empty_branch_raises PASSED                                                                                 [ 94%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_merge_returns_merge_result PASSED                                                                                   [ 95%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_merge_empty_branches_raises PASSED                                                                                  [ 95%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_log_returns_list_of_versions PASSED                                                                                 [ 96%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_log_empty_branch_raises PASSED                                                                                      [ 97%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_gc_returns_removed_count PASSED                                                                                     [ 98%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_gc_empty_branch_raises PASSED                                                                                       [ 99%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_gc_invalid_keep_last_n_raises PASSED                                                                                [100%]
++
++=================================================================================== 122 passed in 0.13s ====================================================================================
+
+# 2026-05-17 20:51:07.749571
++/architect 开发选项A
+
+# 2026-05-17 20:57:23.567058
++Y
+
+# 2026-05-17 21:26:02.128138
++python -m pytest tests/ -v                                                                                                                                                                                                          
++============================================= test session starts ==============================================
++platform linux -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0 -- /root/miniconda3/envs/chrono/bin/python
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++plugins: anyio-4.12.1
++collected 117 items / 1 error                                                                                  
++
++==================================================== ERRORS ====================================================
++_________________________________ ERROR collecting tests/test_l0_sync_layer.py _________________________________
++ImportError while importing test module '/home/dmin/workspace/ChronoPersona/tests/test_l0_sync_layer.py'.
++Hint: make sure your test modules/packages have valid Python names.
++Traceback:
++/root/miniconda3/envs/chrono/lib/python3.11/importlib/__init__.py:126: in import_module
++    return _bootstrap._gcd_import(name[level:], package, level)
++           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++tests/test_l0_sync_layer.py:5: in <module>
++    from chronopersona.memory_system.l0_crdt import (
++chronopersona/memory_system/__init__.py:18: in <module>
++    from chronopersona.memory_system.l3_semantic.simple_store import SimpleSemanticStore
++E   ModuleNotFoundError: No module named 'chronopersona.memory_system.l3_semantic.simple_store'
++=========================================== short test summary info ============================================
++ERROR tests/test_l0_sync_layer.py
++!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
++=============================================== 1 error in 0.13s ==============================================
+
+# 2026-05-17 21:33:04.314826
++Y
+
+# 2026-05-17 21:36:31.469530
++/ask ============================================= 122 passed in 0.13s ==============================================
+
+# 2026-05-17 21:42:08.312845
++y
+
+# 2026-05-17 22:05:32.450829
++/ask ============================================= 122 passed in 0.13s ==============================================
+
+# 2026-05-17 22:15:14.046050
++/ask python -m pytest tests/ --collect-only | grep agent_core                                                        
++    <Module test_mock_agent_core.py>
+
+# 2026-05-17 22:38:22.860661
++/ask (chrono) root@DESKTOP-HH:/home/dmin/workspace/ChronoPersona# python -m pytest tests/ -v                                                                                      
++============================================= test session starts ==============================================
++platform linux -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0 -- /root/miniconda3/envs/chrono/bin/python
++cachedir: .pytest_cache
++rootdir: /home/dmin/workspace/ChronoPersona
++plugins: anyio-4.12.1
++collected 122 items                                                                                            
++
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_set_get_roundtrip PASSED                              [  0%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_merge_detects_conflict PASSED                         [  1%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_branch_isolation PASSED                               [  2%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_checkpoint_returns_dirty_keys PASSED                  [  3%]
++tests/test_l0_sync_layer.py::TestL0SyncLayer::test_empty_branch_id_raises PASSED                         [  4%]
++tests/test_l1_working_memory.py::TestTurnEntry::test_token_estimation_mixed PASSED                       [  4%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_add_turn_and_get_context_order PASSED     [  5%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_max_turns_compression PASSED              [  6%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_token_threshold_compression PASSED        [  7%]
++tests/test_l1_working_memory.py::TestWorkingMemoryWindow::test_custom_compressor PASSED                  [  8%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_returns_correct_dimension PASSED              [  9%]
++tests/test_l2_episodic.py::TestMockBGEEmbedder::test_embed_query_returns_vector PASSED                   [  9%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_and_retrieve_basic PASSED                     [ 10%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_branch_isolation PASSED                           [ 11%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_retrieve_top_k_limit PASSED                       [ 12%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_delete_memory PASSED                              [ 13%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_empty_branch_retrieve PASSED                      [ 13%]
++tests/test_l2_episodic.py::TestMockEpisodicStore::test_add_with_empty_branch_raises PASSED               [ 14%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_add_and_retrieve_basic PASSED               [ 15%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_branch_isolation PASSED                     [ 16%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_retrieve_top_k_limit PASSED                 [ 17%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_delete_memory PASSED                        [ 18%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_empty_branch_retrieve PASSED                [ 18%]
++tests/test_l2_simple_store.py::TestSimpleEpisodicStore::test_add_with_empty_branch_raises PASSED         [ 19%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_physical_ordering PASSED                            [ 20%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_logical_tiebreak PASSED                             [ 21%]
++tests/test_lww_map.py::TestHybridTimestamp::test_hlc_equality PASSED                                     [ 22%]
++tests/test_lww_map.py::TestLWWMap::test_set_and_get_basic PASSED                                         [ 22%]
++tests/test_lww_map.py::TestLWWMap::test_add_wins_merge PASSED                                            [ 23%]
++tests/test_lww_map.py::TestLWWMap::test_clock_skew_detected PASSED                                       [ 24%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_run_turn_returns_agent_output PASSED              [ 25%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_run_turn_empty_branch_raises PASSED               [ 26%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_switch_persona_updates_state PASSED               [ 27%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_switch_persona_empty_branch_raises PASSED         [ 27%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_get_emotion_state_returns_emotion_state PASSED    [ 28%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_get_memory_summary_returns_string PASSED          [ 29%]
++tests/test_mock_agent_core.py::TestMockAgentCore::test_get_memory_summary_empty_branch_raises PASSED     [ 30%]
++tests/test_mock_cost_tracker.py::TestMockCostTracker::test_record_empty_branch_raises PASSED             [ 31%]
++tests/test_mock_cost_tracker.py::TestMockCostTracker::test_get_summary_returns_empty_dict PASSED         [ 31%]
++tests/test_mock_cost_tracker.py::TestMockCostTracker::test_check_budget_returns_budget_status PASSED     [ 32%]
++tests/test_mock_cost_tracker.py::TestMockCostTracker::test_check_budget_empty_branch_raises PASSED       [ 33%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_get_perception_returns_embodied_state PASSED [ 34%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_get_perception_empty_agent_raises PASSED [ 35%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_execute_action_returns_perception_result PASSED [ 36%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_execute_action_empty_agent_raises PASSED [ 36%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_get_spatial_memory_returns_list PASSED [ 37%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_get_spatial_memory_empty_agent_raises PASSED [ 38%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_predict_action_returns_dict PASSED    [ 39%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_predict_action_empty_task_raises PASSED [ 40%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_translate_action_token_returns_low_level_command PASSED [ 40%]
++tests/test_mock_embodied_adapter.py::TestMockEmbodiedAdapter::test_translate_action_token_empty_args_raises PASSED [ 41%]
++tests/test_mock_memory_migration.py::TestMockMemoryMigrationService::test_migrate_empty_branch_raises PASSED [ 42%]
++tests/test_mock_memory_migration.py::TestMockMemoryMigrationService::test_snapshot_returns_empty_dict PASSED [ 43%]
++tests/test_mock_memory_migration.py::TestMockMemoryMigrationService::test_merge_branches_returns_merged_true PASSED [ 44%]
++tests/test_mock_memory_migration.py::TestMockMemoryMigrationService::test_merge_branches_empty_source_raises PASSED [ 45%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_add_returns_memory_id PASSED                  [ 45%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_add_empty_branch_raises PASSED                [ 46%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_retrieve_returns_retrieved_context PASSED     [ 47%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_retrieve_empty_branch_raises PASSED           [ 48%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_commit_version_returns_version PASSED         [ 49%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_commit_version_empty_branch_raises PASSED     [ 50%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_checkout_branch_returns_snapshot PASSED       [ 50%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_checkout_branch_empty_branch_raises PASSED    [ 51%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_get_facts_returns_list PASSED                 [ 52%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_get_facts_empty_branch_raises PASSED          [ 53%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_link_entities_returns_true PASSED             [ 54%]
++tests/test_mock_memory_store.py::TestMockMemoryStore::test_link_entities_empty_branch_raises PASSED      [ 54%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_route_returns_model_response PASSED           [ 55%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_route_empty_branch_raises PASSED              [ 56%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_get_cost_summary_returns_cost_report PASSED   [ 57%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_get_cost_summary_empty_branch_raises PASSED   [ 58%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_cache_clear_does_not_raise PASSED             [ 59%]
++tests/test_mock_model_router.py::TestMockModelRouter::test_cache_clear_empty_branch_raises PASSED        [ 59%]
++tests/test_mock_persona_injector.py::TestMockPersonaInjector::test_inject_empty_branch_raises PASSED     [ 60%]
++tests/test_mock_persona_injector.py::TestMockPersonaInjector::test_eject_empty_branch_raises PASSED      [ 61%]
++tests/test_mock_persona_injector.py::TestMockPersonaInjector::test_inject_eject_no_exception PASSED      [ 62%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t01_mock_full_turn PASSED                        [ 63%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t02_branch_isolation PASSED                      [ 63%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t03_lww_merge PASSED                             [ 64%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t04_intent_retrieval PASSED                      [ 65%]
++tests/test_mock_pipeline.py::TestEndToEndAndBasic::test_t05_persona_switch PASSED                        [ 66%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t06_crdt_merge_basic PASSED                              [ 67%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t07_clock_skew_detection PASSED                          [ 68%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t08_conflict_preservation PASSED                         [ 68%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t09_sync_broadcast PASSED                                [ 69%]
++tests/test_mock_pipeline.py::TestCRDTCore::test_t10_offline_replay PASSED                                [ 70%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t11_l0_read_write PASSED                             [ 71%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t12_l1_working_window PASSED                         [ 72%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t13_l2_episodic_write PASSED                         [ 72%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t14_l3_semantic_fact PASSED                          [ 73%]
++tests/test_mock_pipeline.py::TestMemoryLayers::test_t15_checkout_snapshot PASSED                         [ 74%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t16_state_machine PASSED                               [ 75%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t17_intent_node PASSED                                 [ 76%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t18_memory_node PASSED                                 [ 77%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t19_llm_node PASSED                                    [ 77%]
++tests/test_mock_pipeline.py::TestAgentNodes::test_t20_output_node PASSED                                 [ 78%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t21_rest_schema PASSED                           [ 79%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t22_websocket_event PASSED                       [ 80%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t23_error_handling PASSED                        [ 81%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t24_schema_validation PASSED                     [ 81%]
++tests/test_mock_pipeline.py::TestAPISerialization::test_t25_auth_mock PASSED                             [ 82%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t26_full_pipeline PASSED                    [ 83%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t27_persona_switch_regression PASSED        [ 84%]
++tests/test_mock_pipeline.py::TestIntegrationRegression::test_t28_eval_injection PASSED                   [ 85%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t29_l0_get_set PASSED                                      [ 86%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t30_l0_merge_conflict PASSED                               [ 86%]
++tests/test_mock_pipeline.py::TestL0CRDT::test_t31_l0_checkpoint PASSED                                   [ 87%]
++tests/test_mock_skill_registry.py::TestMockSkillRegistry::test_register_empty_branch_raises PASSED       [ 88%]
++tests/test_mock_skill_registry.py::TestMockSkillRegistry::test_execute_returns_mock_executed PASSED      [ 89%]
++tests/test_mock_skill_registry.py::TestMockSkillRegistry::test_get_available_skills_returns_empty_list PASSED [ 90%]
++tests/test_mock_skill_registry.py::TestMockSkillRegistry::test_execute_empty_branch_raises PASSED        [ 90%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_commit_returns_version PASSED           [ 91%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_commit_empty_branch_raises PASSED       [ 92%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_checkout_returns_snapshot PASSED        [ 93%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_checkout_empty_branch_raises PASSED     [ 94%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_merge_returns_merge_result PASSED       [ 95%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_merge_empty_branches_raises PASSED      [ 95%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_log_returns_list_of_versions PASSED     [ 96%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_log_empty_branch_raises PASSED          [ 97%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_gc_returns_removed_count PASSED         [ 98%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_gc_empty_branch_raises PASSED           [ 99%]
++tests/test_mock_version_manager.py::TestMockVersionManager::test_gc_invalid_keep_last_n_raises PASSED    [100%]
++
++============================================= 122 passed in 0.12s ==============================================
+
+# 2026-05-17 23:13:56.359831
++(chrono) root@DESKTOP-HH:/home/dmin/workspace/ChronoPersona# ls -la chronopersona/agent_core/
++total 16
++drwxr-xr-x  4 dmin dmin 4096 May 12 22:25 .
++drwxr-xr-x 13 dmin dmin 4096 May 15 22:04 ..
++-rw-r--r--  1 dmin dmin    0 May 12 22:28 __init__.py
++drwxr-xr-x  2 dmin dmin 4096 May 12 22:25 emotion_engine
++drwxr-xr-x  2 dmin dmin 4096 May 12 22:25 nodes
++(chrono) root@DESKTOP-HH:/home/dmin/workspace/ChronoPersona# ls -la tests/test_agent_core_state_machine.py                                                                   
++ls: cannot access 'tests/test_agent_core_state_machine.py': No such file or directory
+
+# 2026-05-17 23:20:55.904697
++y
+
+# 2026-05-17 23:21:25.010122
++/ask ============================================= 129 passed in 0.13s ==============================================
+
+# 2026-05-17 23:24:15.799380
++/add work_report/work_log_template.md
+
+# 2026-05-17 23:25:04.704864
++/architect 基于work_log_template，生成周工作报告
+
+# 2026-05-17 23:27:30.486143
++A
+
+# 2026-05-17 23:33:31.437645
++y
+
+# 2026-05-17 23:34:53.911062
++基于work_log_template.md，生成周工作报告，文件写入work_report目录, 严禁执行生成/优化报告外的任何其余开发工作
+
+# 2026-05-17 23:37:45.455873
++Y

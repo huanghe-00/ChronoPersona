@@ -2,7 +2,7 @@ model: deepseek/deepseek-v4-pro
 weak-model: deepseek/deepseek-v4-flash
 model-settings-file: .aider.model.settings.yml
 edit-format: diff
-map-tokens: 2048
+map-tokens: 4096
 auto-lint: true
 auto-test: true
 dark-mode: true
