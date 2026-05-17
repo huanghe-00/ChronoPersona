@@ -15,6 +15,7 @@ from chronopersona.memory_system.l2_episodic import (
     MockBGEEmbedder,
     MockEpisodicStore,
 )
+from chronopersona.memory_system.l3_semantic.simple_store import SimpleSemanticStore
 
 __all__ = [
     "ClockSkewConflict",
@@ -24,6 +25,7 @@ __all__ = [
     "LWWMap",
     "MockBGEEmbedder",
     "MockEpisodicStore",
+    "SimpleSemanticStore",
     "TurnEntry",
     "WorkingMemoryWindow",
 ]
