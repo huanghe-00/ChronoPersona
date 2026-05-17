@@ -1,55 +1,51 @@
-"""Embodied perception and action translation schemas."""
+"""Embodied schemas for perception and action."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
-
-
-@dataclass
-class PerceptionResult:
-    """Result of executing an action in the embodied environment.
-
-    Attributes:
-        success: Whether the action was executed successfully.
-        new_state: Optional updated EmbodiedState after execution.
-        observation: Human-readable observation text.
-        metadata: Execution metadata.
-    """
-
-    success: bool = False
-    new_state: Optional[Any] = None
-    observation: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+from typing import Any, Dict, List
 
 
 @dataclass
 class SpatialRecord:
-    """Spatial memory record for embodied navigation.
+    """A spatial memory record for an object in the environment.
 
     Attributes:
-        location: Semantic location name (e.g. "kitchen").
-        coordinates: Numeric coordinates {x, y, theta}.
-        objects: Objects observed at this location.
-        timestamp: ISO-8601 timestamp.
+        object_id: Unique identifier of the object.
+        x: x-coordinate.
+        y: y-coordinate.
+        metadata: Additional unstructured metadata.
     """
 
-    location: str = ""
-    coordinates: Dict[str, float] = field(default_factory=dict)
-    objects: List[str] = field(default_factory=list)
-    timestamp: str = ""
+    object_id: str = ""
+    x: float = 0.0
+    y: float = 0.0
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class LowLevelCommand:
-    """Translated low-level robot command.
+    """Low-level command for a specific robot type.
 
     Attributes:
-        robot_type: Target platform (grid_2d, ros2_mobile, mujoco).
-        command: Low-level command string.
+        robot_type: The target robot type (e.g., 'grid_2d').
+        command: The command string.
         params: Command parameters.
     """
 
     robot_type: str = ""
     command: str = ""
     params: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class PerceptionResult:
+    """Result of executing an action.
+
+    Attributes:
+        success: Whether the action succeeded.
+        message: Optional human-readable message.
+    """
+
+    success: bool = False
+    message: str = ""
