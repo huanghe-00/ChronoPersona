@@ -1,7 +1,7 @@
 """MVCC versioning schemas for branch and entity-level snapshot management."""
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional
 
 
@@ -11,7 +11,7 @@ class Version:
 
     branch_id: str = ""
     version: str = ""
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     vector_clock: Dict[str, int] = field(default_factory=dict)
     parent: Optional[str] = None
     content_hash: str = ""
@@ -23,7 +23,7 @@ class Snapshot:
 
     branch_id: str = ""
     version: Optional[str] = None
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     state: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -34,7 +34,7 @@ class ChangeSet:
     branch_id: str = ""
     operations: List[Dict[str, Any]] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass
@@ -46,4 +46,4 @@ class MergeResult:
     merged_version: Optional[str] = None
     conflicts: List[Dict[str, Any]] = field(default_factory=list)
     auto_resolution_rate: float = 0.0
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
