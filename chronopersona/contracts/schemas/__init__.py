@@ -17,6 +17,7 @@ from chronopersona.contracts.schemas.embodied import (
     PerceptionResult,
     SpatialRecord,
 )
+from chronopersona.contracts.schemas.insight import Insight
 from chronopersona.contracts.schemas.model import (
     BudgetStatus,
     CostRecord,
@@ -42,6 +43,7 @@ __all__ = [
     "EmotionLabel",
     "EmotionState",
     "Fact",
+    "Insight",
     "LowLevelCommand",
     "MemoryEntry",
     "MergeResult",

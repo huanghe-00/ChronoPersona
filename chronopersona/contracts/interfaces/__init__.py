@@ -7,6 +7,7 @@ from chronopersona.contracts.interfaces.abstract_embodied_adapter import (
     AbstractEmbodiedAdapter,
 )
 from chronopersona.contracts.interfaces.abstract_episodic_store import AbstractEpisodicStore
+from chronopersona.contracts.interfaces.abstract_insight_generator import IInsightGenerator
 from chronopersona.contracts.interfaces.abstract_l0_sync import AbstractL0SyncLayer
 from chronopersona.contracts.interfaces.abstract_memory_migration_service import (
     IMemoryMigrationService,
@@ -32,6 +33,7 @@ __all__ = [
     "AbstractSemanticStore",
     "AbstractVersionManager",
     "ICostTracker",
+    "IInsightGenerator",
     "IMemoryMigrationService",
     "IPersonaInjector",
     "ISkill",
