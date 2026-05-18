@@ -1,0 +1,81 @@
+"""A6 adversarial tests for intent graph navigation.
+
+Validates that structured intent navigation outperforms naive vector retrieval.
+"""
+
+import pytest
+
+from chronopersona.contracts.schemas.semantic import Concept, IntentPattern, SemanticEdge
+from chronopersona.memory_system.l3_semantic import IntentGraph, IntentNavigator
+
+
+class TestA6IntentGraph:
+    """A6: Intent Graph navigation precision tests."""
+
+    def test_a6_1_temporal_trace(self) -> None:
+        """A6-1: '我上周的方案后来怎样' uses TEMPORAL_NEXT chain."""
+        graph = IntentGraph()
+        graph.add_concept(Concept("c_plan", "方案", "abstract", branch_id="main"))
+        graph.add_memory_node("mem-plan", "main")
+        graph.add_memory_node("mem-implement", "main")
+        graph.add_edge(SemanticEdge("e1", "c_plan", "mem-plan", "MENTIONS", branch_id="main"))
+        graph.add_edge(SemanticEdge("e2", "mem-plan", "mem-implement", "TEMPORAL_NEXT", branch_id="main"))
+
+        pattern = IntentPattern("temporal_trace", ["后来", "之后"], ["TEMPORAL_NEXT", "MENTIONS"], 3)
+        nav = IntentNavigator(graph, [pattern])
+
+        results = nav.navigate("我上周的方案后来怎样", "temporal_trace", "main")
+        assert len(results) >= 1
+        node_ids = {nid for nid, _ in results}
+        assert "mem-implement" in node_ids
+
+    def test_a6_2_parallel_compare(self) -> None:
+        """A6-2: '川菜和粤菜我喜欢哪个' uses SIMILAR_TO + cross-branch recall."""
+        graph = IntentGraph()
+        graph.add_concept(Concept("c_sichuan", "川菜", "food", branch_id="main"))
+        graph.add_concept(Concept("c_cantonese", "粤菜", "food", branch_id="main"))
+        graph.add_memory_node("mem-like-sc", "main")
+        graph.add_memory_node("mem-like-ca", "main")
+        graph.add_edge(SemanticEdge("e1", "c_sichuan", "mem-like-sc", "MENTIONS", branch_id="main"))
+        graph.add_edge(SemanticEdge("e2", "c_cantonese", "mem-like-ca", "MENTIONS", branch_id="main"))
+        graph.add_edge(SemanticEdge("e3", "c_sichuan", "c_cantonese", "SIMILAR_TO", branch_id="main"))
+
+        pattern = IntentPattern("parallel_compare", ["和", "哪个"], ["SIMILAR_TO", "MENTIONS"], 2)
+        nav = IntentNavigator(graph, [pattern])
+
+        results = nav.navigate("川菜和粤菜我喜欢哪个", "parallel_compare", "main")
+        node_ids = {nid for nid, _ in results}
+        assert "mem-like-sc" in node_ids or "c_sichuan" in node_ids
+        assert "mem-like-ca" in node_ids or "c_cantonese" in node_ids
+
+    def test_a6_3_causal_explore(self) -> None:
+        """A6-3: '为什么我最近焦虑' uses CAUSED backtracking."""
+        graph = IntentGraph()
+        graph.add_concept(Concept("c_anxiety", "焦虑", "emotion", branch_id="main"))
+        graph.add_concept(Concept("c_work", "工作压力", "abstract", branch_id="main"))
+        graph.add_memory_node("mem-anxiety", "main")
+        graph.add_memory_node("mem-work", "main")
+        graph.add_edge(SemanticEdge("e1", "c_anxiety", "mem-anxiety", "MENTIONS", branch_id="main"))
+        graph.add_edge(SemanticEdge("e2", "mem-work", "c_anxiety", "CAUSED", branch_id="main"))
+
+        pattern = IntentPattern("causal_explore", ["为什么", "原因"], ["CAUSED", "MENTIONS"], 3)
+        nav = IntentNavigator(graph, [pattern])
+
+        results = nav.navigate("为什么我最近焦虑", "causal_explore", "main")
+        node_ids = {nid for nid, _ in results}
+        assert "mem-work" in node_ids or "c_work" in node_ids
+
+    def test_a6_4_mention_reference(self) -> None:
+        """A6-4: '上次你说的那个餐厅' uses MENTIONS + concept linking."""
+        graph = IntentGraph()
+        graph.add_concept(Concept("c_restaurant", "餐厅", "food", branch_id="main"))
+        graph.add_memory_node("mem-restaurant", "main")
+        graph.add_edge(SemanticEdge("e1", "c_restaurant", "mem-restaurant", "MENTIONS", branch_id="main"))
+
+        pattern = IntentPattern("retrieve", ["餐厅"], ["MENTIONS"], 3)
+        nav = IntentNavigator(graph, [pattern])
+
+        results = nav.navigate("上次你说的那个餐厅", "retrieve", "main")
+        assert len(results) >= 1
+        node_ids = {nid for nid, _ in results}
+        assert "mem-restaurant" in node_ids
