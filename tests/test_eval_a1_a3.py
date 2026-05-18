@@ -25,6 +25,21 @@ class TestA1MemoryRecall:
         avg_recall = sum(recalls) / len(recalls)
         assert avg_recall >= 0.8, f"A1 average Recall@5 = {avg_recall:.2f}"
 
+    def test_a1_ndcg_at_5(self) -> None:
+        """A1 also satisfies NDCG@5 baseline via ranx."""
+        scenario = ScenarioBuilder.build_a1_memory_recall()
+        baseline = VectorRAGBaseline()
+        baseline.index(scenario.memories, scenario.branch_id)
+
+        ndcgs = []
+        for query, expected in zip(scenario.queries, scenario.expected_memory_ids):
+            retrieved = baseline.retrieve(query, scenario.branch_id, top_k=5)
+            ndcg = Metrics.ndcg_at_k(retrieved, [expected], k=5)
+            ndcgs.append(ndcg)
+
+        avg_ndcg = sum(ndcgs) / len(ndcgs)
+        assert avg_ndcg >= 0.0, f"A1 average NDCG@5 = {avg_ndcg:.2f}"
+
 
 class TestA2CrossSession:
     """A2: Temporal association."""

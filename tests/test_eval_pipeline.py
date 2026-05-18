@@ -24,8 +24,17 @@ class TestEvalPipeline:
         assert all(r["recall@5"] >= 0.0 for r in results)
 
     def test_metrics_edge_cases(self) -> None:
-        """Metrics handle empty inputs gracefully."""
+        """Metrics handle empty inputs and ranx-backed metrics work."""
         assert Metrics.recall_at_k([], ["a"], k=5) == 0.0
         assert Metrics.mrr([], ["a"]) == 0.0
+        assert Metrics.ndcg_at_k([], ["a"], k=5) == 0.0
+        assert Metrics.map([], ["a"]) == 0.0
         assert Metrics.answer_f1("", "test") == 0.0
         assert Metrics.answer_f1("test", "test") > 0.0
+
+    def test_ranx_ndcg_and_map_positive(self) -> None:
+        """ranx-backed NDCG and MAP return positive values for valid inputs."""
+        retrieved = ["d1", "d2", "d3"]
+        expected = ["d1"]
+        assert Metrics.ndcg_at_k(retrieved, expected, k=5) > 0.0
+        assert Metrics.map(retrieved, expected) > 0.0
