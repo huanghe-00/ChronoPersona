@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import re
 from typing import List
+
+import jieba
 
 from chronopersona.contracts.interfaces import IInsightGenerator
 from chronopersona.contracts.schemas import Insight, MemoryEntry
@@ -16,9 +17,11 @@ class SimpleInsightEngine(IInsightGenerator):
     from recent episodic memories without LLM calls.
     """
 
+    # 停用词扩展为真实词汇级（jieba 切分后的粒度）
     _STOP_WORDS: set[str] = {
         "的", "了", "是", "我", "你", "在", "和", "就", "都", "要",
         "有", "这", "那", "个", "上", "下", "不", "也", "很", "到",
+        "吗", "吧", "呢", "啊", "哦", "嗯", "嘛",
     }
 
     def generate(
@@ -92,14 +95,21 @@ class SimpleInsightEngine(IInsightGenerator):
         return turn_count_since_last >= 10
 
     def _extract_words(self, text: str) -> List[str]:
-        """Extract candidate Chinese words using simple heuristic.
+        """Extract candidate words using jieba segmentation.
 
-        Uses a sliding window of 2 characters over consecutive Chinese text.
+        Filters out single-character tokens, stop words, and pure punctuation.
+        Preserves English words and mixed alphanumeric tokens.
         """
-        chars = re.findall(r"[\u4e00-\u9fff]", text)
+        raw_tokens = jieba.lcut(text)
         result: list[str] = []
-        for i in range(len(chars) - 1):
-            word = chars[i] + chars[i + 1]
-            if word not in self._STOP_WORDS:
-                result.append(word)
+        for token in raw_tokens:
+            stripped = token.strip()
+            if len(stripped) < 2:
+                continue
+            if stripped in self._STOP_WORDS:
+                continue
+            # Filter pure punctuation
+            if all(not c.isalnum() for c in stripped):
+                continue
+            result.append(stripped)
         return result
