@@ -7,6 +7,7 @@ from chronopersona.contracts.interfaces import (
     AbstractMemoryStore,
     AbstractModelRouter,
     AbstractVersionManager,
+    IPersonaInjector,
 )
 from chronopersona.contracts.schemas import (
     AgentOutput,
@@ -37,10 +38,12 @@ class StateMachineAgentCore(AbstractAgentCore):
         model_router: AbstractModelRouter,
         version_manager: AbstractVersionManager | None = None,
         intent_graph: IntentGraph | None = None,
+        persona_injector: IPersonaInjector | None = None,
     ) -> None:
         self._memory_store = memory_store
         self._model_router = model_router
         self._version_manager = version_manager
+        self._persona_injector = persona_injector
         self._intent_node = IntentNode()
         self._memory_node = MemoryNode(memory_store, intent_graph=intent_graph)
         self._llm_node = LLMNode(model_router)
@@ -98,12 +101,16 @@ class StateMachineAgentCore(AbstractAgentCore):
         return f"User: {user_input}\nAgent:"
 
     def switch_persona(self, persona_id: str, branch_id: str) -> None:
-        """Switch active persona."""
+        """Switch active persona with eject → snapshot → inject."""
         if not branch_id:
             raise ValueError("branch_id must not be empty")
+        if self._persona_injector is not None:
+            self._persona_injector.eject(self._persona_id, branch_id)
         if self._version_manager is not None:
             self._version_manager.commit(branch_id, ChangeSet())
         self._persona_id = persona_id
+        if self._persona_injector is not None:
+            self._persona_injector.inject(persona_id, branch_id, self)
 
     def _get_or_create_window(self, branch_id: str, session_id: str = "default") -> WorkingMemoryWindow:
         """Get or create L1 WorkingMemoryWindow for the branch."""

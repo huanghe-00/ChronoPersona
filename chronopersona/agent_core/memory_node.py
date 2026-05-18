@@ -1,5 +1,6 @@
 """Memory retrieval node."""
 
+from dataclasses import replace
 from typing import Optional
 
 from chronopersona.contracts.interfaces import AbstractMemoryStore
@@ -44,8 +45,12 @@ class MemoryNode:
         ctx = self._memory_store.retrieve(query, branch_id, intent=effective_intent or "retrieve")
 
         # L3 intent graph boost (MVA simplified hybrid fusion)
-        # TODO(W3): Attach navigation_path to RetrievedContext when schema supports it
         if self._navigator is not None and effective_intent is not None and effective_intent != "retrieve":
             concept_scores = self._navigator.navigate(query, effective_intent, branch_id)
+            if concept_scores:
+                ctx = replace(
+                    ctx,
+                    navigation_path=[{"concept_id": c, "score": s} for c, s in concept_scores],
+                )
 
         return ctx

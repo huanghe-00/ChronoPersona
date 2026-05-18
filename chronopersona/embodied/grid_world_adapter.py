@@ -13,6 +13,11 @@ from chronopersona.contracts.schemas import (
     SpatialRecord,
 )
 
+DEFAULT_GRID_WIDTH: int = 100
+DEFAULT_GRID_HEIGHT: int = 100
+DEFAULT_FOV_ANGLE_DEG: float = 90.0
+DEFAULT_FOV_RANGE: float = 10.0
+
 
 class GridWorldAdapter(AbstractEmbodiedAdapter):
     """2D grid world adapter with coordinate, FOV, and movement support.
@@ -25,10 +30,10 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
 
     def __init__(
         self,
-        grid_width: int = 100,
-        grid_height: int = 100,
-        fov_angle_deg: float = 90.0,
-        fov_range: float = 10.0,
+        grid_width: int = DEFAULT_GRID_WIDTH,
+        grid_height: int = DEFAULT_GRID_HEIGHT,
+        fov_angle_deg: float = DEFAULT_FOV_ANGLE_DEG,
+        fov_range: float = DEFAULT_FOV_RANGE,
     ) -> None:
         self._grid_width = grid_width
         self._grid_height = grid_height
