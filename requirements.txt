@@ -43,4 +43,4 @@ mypy>=1.8.0
 scikit-learn>=1.4.0
 
 # === Chinese NLP ===
-jieba>=0.42.1
+jieba==0.42.1
