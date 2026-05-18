@@ -6,12 +6,25 @@ from chronopersona.contracts.interfaces import (
     AbstractAgentCore,
     AbstractMemoryStore,
     AbstractModelRouter,
+    AbstractVersionManager,
 )
-from chronopersona.contracts.schemas import AgentOutput, EmbodiedState, EmotionState, RetrievedContext
+from chronopersona.contracts.schemas import (
+    AgentOutput,
+    ChangeSet,
+    EmbodiedState,
+    EmotionState,
+    RetrievedContext,
+    Version,
+)
 from chronopersona.agent_core.intent_node import IntentNode
 from chronopersona.agent_core.llm_node import LLMNode
 from chronopersona.agent_core.memory_node import MemoryNode
 from chronopersona.agent_core.output_node import OutputNode
+from chronopersona.memory_system.l1_working.sliding_window import (
+    CompressedSummary,
+    TurnEntry,
+    WorkingMemoryWindow,
+)
 
 
 class StateMachineAgentCore(AbstractAgentCore):
@@ -21,15 +34,18 @@ class StateMachineAgentCore(AbstractAgentCore):
         self,
         memory_store: AbstractMemoryStore,
         model_router: AbstractModelRouter,
+        version_manager: AbstractVersionManager | None = None,
     ) -> None:
         self._memory_store = memory_store
         self._model_router = model_router
+        self._version_manager = version_manager
         self._intent_node = IntentNode()
         self._memory_node = MemoryNode(memory_store)
         self._llm_node = LLMNode(model_router)
         self._output_node = OutputNode()
         self._persona_id: str = "default"
         self._emotion_state: EmotionState = EmotionState()
+        self._working_windows: dict[str, WorkingMemoryWindow] = {}
 
     def run_turn(
         self,
@@ -43,22 +59,66 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         intent = self._intent_node.classify(user_input)
         context = self._memory_node.retrieve(user_input, branch_id, intent=intent.value)
-        prompt = self._build_prompt(user_input, context)
+        prompt = self._build_prompt(user_input, context, branch_id)
         response = self._llm_node.generate(prompt, branch_id)
-        return self._output_node.assemble(response, context, branch_id)
+        output = self._output_node.assemble(response, context, branch_id)
 
-    def _build_prompt(self, user_input: str, context: RetrievedContext) -> str:
-        """Build LLM prompt with retrieved context."""
-        memories = "\n".join(f"- {m.content}" for m in context.episodic_memories[:3])
-        if memories:
-            return f"Context:\n{memories}\n\nUser: {user_input}\nAgent:"
+        # Persist turn to L1 Working Memory
+        window = self._get_or_create_window(branch_id)
+        window.add_turn(user_input, output.reply_text)
+
+        return output
+
+    def _build_prompt(self, user_input: str, context: RetrievedContext, branch_id: str) -> str:
+        """Build LLM prompt with L1 working memory and L2/L3 retrieved context."""
+        window = self._get_or_create_window(branch_id)
+        l1_items = window.get_context(token_limit=2048)
+
+        l1_parts: list[str] = []
+        for item in l1_items:
+            if isinstance(item, TurnEntry):
+                l1_parts.append(item.to_text())
+            elif isinstance(item, CompressedSummary):
+                l1_parts.append(item.content)
+
+        l1_text = "\n".join(l1_parts)
+        l2_text = "\n".join(f"- {m.content}" for m in context.episodic_memories[:3])
+
+        parts: list[str] = []
+        if l1_text:
+            parts.append(f"[Recent Conversation]\n{l1_text}")
+        if l2_text:
+            parts.append(f"[Retrieved Memories]\n{l2_text}")
+
+        context_text = "\n\n".join(parts)
+        if context_text:
+            return f"{context_text}\n\nUser: {user_input}\nAgent:"
         return f"User: {user_input}\nAgent:"
 
     def switch_persona(self, persona_id: str, branch_id: str) -> None:
         """Switch active persona."""
         if not branch_id:
             raise ValueError("branch_id must not be empty")
+        if self._version_manager is not None:
+            self._version_manager.commit(branch_id, ChangeSet())
         self._persona_id = persona_id
+
+    def _get_or_create_window(self, branch_id: str, session_id: str = "default") -> WorkingMemoryWindow:
+        """Get or create L1 WorkingMemoryWindow for the branch."""
+        if branch_id not in self._working_windows:
+            self._working_windows[branch_id] = WorkingMemoryWindow(
+                branch_id=branch_id,
+                session_id=session_id,
+            )
+        return self._working_windows[branch_id]
+
+    def commit_session_snapshot(self, branch_id: str) -> Version:
+        """Commit a Session-MVCC snapshot for the given branch."""
+        if not branch_id:
+            raise ValueError("branch_id must not be empty")
+        if self._version_manager is None:
+            raise RuntimeError("version_manager not configured")
+        return self._version_manager.commit(branch_id, ChangeSet())
 
     def get_emotion_state(self) -> EmotionState:
         """Return current emotion state."""
