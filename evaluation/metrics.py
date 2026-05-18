@@ -15,6 +15,7 @@ class Metrics:
         retrieved_ids: List[str],
         expected_ids: List[str],
     ) -> tuple[Qrels, Run]:
+        """Convert flat id lists to ranx Qrels / Run objects."""
         qrels_data: Dict[str, Dict[str, int]] = {"q1": {}}
         for eid in expected_ids:
             qrels_data["q1"][eid] = 1
@@ -23,39 +24,51 @@ class Metrics:
         for rank, rid in enumerate(retrieved_ids, start=1):
             run_data["q1"][rid] = 1.0 / rank
 
+        # ranx Run requires at least one document per query
+        if not retrieved_ids:
+            run_data["q1"]["__dummy__"] = 0.0
+
         return Qrels(qrels_data), Run(run_data)
+
+    @staticmethod
+    def _eval_metric(qrels: Qrels, run: Run, metric: str) -> float:
+        """Safely evaluate a single metric, handling ranx return type variance."""
+        try:
+            result = evaluate(qrels, run, [metric])
+            # ranx may return dict-like Report or raw scalar depending on version
+            if hasattr(result, "get"):
+                return float(result.get(metric, 0.0))
+            return float(result)
+        except Exception:
+            return 0.0
 
     @staticmethod
     def recall_at_k(retrieved_ids: List[str], expected_ids: List[str], k: int) -> float:
         if not expected_ids:
             return 0.0
         qrels, run = Metrics._to_ranx(retrieved_ids, expected_ids)
-        result = evaluate(qrels, run, [f"recall@{k}"])
-        return float(result.get(f"recall@{k}", 0.0))
+        return Metrics._eval_metric(qrels, run, f"recall@{k}")
 
     @staticmethod
     def mrr(retrieved_ids: List[str], expected_ids: List[str]) -> float:
         if not expected_ids:
             return 0.0
         qrels, run = Metrics._to_ranx(retrieved_ids, expected_ids)
-        result = evaluate(qrels, run, ["mrr"])
-        return float(result.get("mrr", 0.0))
+        return Metrics._eval_metric(qrels, run, "mrr")
 
     @staticmethod
     def ndcg_at_k(retrieved_ids: List[str], expected_ids: List[str], k: int) -> float:
         if not expected_ids:
             return 0.0
         qrels, run = Metrics._to_ranx(retrieved_ids, expected_ids)
-        result = evaluate(qrels, run, [f"ndcg@{k}"])
-        return float(result.get(f"ndcg@{k}", 0.0))
+        return Metrics._eval_metric(qrels, run, f"ndcg@{k}")
 
     @staticmethod
     def map(retrieved_ids: List[str], expected_ids: List[str]) -> float:
         if not expected_ids:
             return 0.0
         qrels, run = Metrics._to_ranx(retrieved_ids, expected_ids)
-        result = evaluate(qrels, run, ["map"])
-        return float(result.get("map", 0.0))
+        return Metrics._eval_metric(qrels, run, "map")
 
     @staticmethod
     def answer_f1(prediction: str, reference: str) -> float:
