@@ -38,7 +38,7 @@ test-w2:
 	$(PYTHON) -m pytest tests/test_l0_sync_layer.py tests/test_l2_episodic.py tests/test_agent_core_state_machine.py tests/test_l1_working_memory.py tests/test_l0_l2_integration.py -v --tb=short
 
 test-w3:
-	$(PYTHON) -m pytest tests/test_semantic.py tests/test_intent_graph.py tests/test_mvo_seed.py -v --tb=short
+	$(PYTHON) -m pytest tests/test_semantic.py tests/test_intent_graph.py tests/test_intent_navigator.py tests/test_mvo_seed.py tests/test_a6_intent_graph.py tests/test_checkpoint_3_1.py -v --tb=short
 
 test-w4:
 	$(PYTHON) -m pytest tests/test_insight.py tests/test_caused_tier2.py -v --tb=short
