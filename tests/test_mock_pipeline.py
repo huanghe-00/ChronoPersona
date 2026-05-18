@@ -244,7 +244,12 @@ class TestL0CRDT:
         assert sync.get("key1", branch_id="main") == "value1"
 
     def test_t30_l0_merge_conflict(self):
-        """T30: L0 merge detects conflicts."""
+        """T30: L0 merge detects conflicts (Mock remote-wins; real L0SyncLayer uses HLC add-wins).
+
+        NOTE: This test uses MockL0SyncLayer which accepts raw string values
+        for convenience. The real L0SyncLayer.merge() requires Dict[str, LWWEntry]
+        and applies HLC add-wins semantics with clock-skew detection.
+        """
         sync = MockL0SyncLayer()
         sync.set("pref", "川菜", branch_id="main", device_id="phone")
         conflicts = sync.merge({"pref": "粤菜"}, branch_id="main")
