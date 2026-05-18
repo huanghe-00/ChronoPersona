@@ -4,10 +4,11 @@ from typing import Optional
 
 from chronopersona.contracts.interfaces import AbstractMemoryStore
 from chronopersona.contracts.schemas import RetrievedContext
+from chronopersona.memory_system.l3_semantic import IntentGraph, IntentNavigator
 
 
 class MemoryNode:
-    """Retrieves context from L1/L2 memory layers."""
+    """Retrieves context from L1/L2/L3 memory layers."""
 
     _VALID_INTENTS: frozenset[str] = frozenset({
         "retrieve",
@@ -20,13 +21,31 @@ class MemoryNode:
         "persona_switch",
     })
 
-    def __init__(self, memory_store: AbstractMemoryStore) -> None:
+    def __init__(
+        self,
+        memory_store: AbstractMemoryStore,
+        intent_graph: IntentGraph | None = None,
+    ) -> None:
         self._memory_store = memory_store
+        self._navigator: IntentNavigator | None = None
+        if intent_graph is not None:
+            self._navigator = IntentNavigator(intent_graph)
 
     def retrieve(self, query: str, branch_id: str, intent: Optional[str] = None) -> RetrievedContext:
-        """Retrieve relevant memories for the given query."""
+        """Retrieve relevant memories with optional intent graph navigation."""
         if not branch_id:
             raise ValueError("branch_id must not be empty")
-        if intent is not None and intent not in self._VALID_INTENTS:
-            intent = "retrieve"
-        return self._memory_store.retrieve(query, branch_id, intent=intent or "retrieve")
+
+        effective_intent = intent
+        if effective_intent is not None and effective_intent not in self._VALID_INTENTS:
+            effective_intent = "retrieve"
+
+        # L2 vector retrieval
+        ctx = self._memory_store.retrieve(query, branch_id, intent=effective_intent or "retrieve")
+
+        # L3 intent graph boost (MVA simplified hybrid fusion)
+        # TODO(W3): Attach navigation_path to RetrievedContext when schema supports it
+        if self._navigator is not None and effective_intent is not None and effective_intent != "retrieve":
+            concept_scores = self._navigator.navigate(query, effective_intent, branch_id)
+
+        return ctx

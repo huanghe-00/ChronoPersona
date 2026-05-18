@@ -25,6 +25,7 @@ from chronopersona.memory_system.l1_working.sliding_window import (
     TurnEntry,
     WorkingMemoryWindow,
 )
+from chronopersona.memory_system.l3_semantic import IntentGraph
 
 
 class StateMachineAgentCore(AbstractAgentCore):
@@ -35,12 +36,13 @@ class StateMachineAgentCore(AbstractAgentCore):
         memory_store: AbstractMemoryStore,
         model_router: AbstractModelRouter,
         version_manager: AbstractVersionManager | None = None,
+        intent_graph: IntentGraph | None = None,
     ) -> None:
         self._memory_store = memory_store
         self._model_router = model_router
         self._version_manager = version_manager
         self._intent_node = IntentNode()
-        self._memory_node = MemoryNode(memory_store)
+        self._memory_node = MemoryNode(memory_store, intent_graph=intent_graph)
         self._llm_node = LLMNode(model_router)
         self._output_node = OutputNode()
         self._persona_id: str = "default"
