@@ -59,7 +59,7 @@ class SimpleEpisodicStore(AbstractEpisodicStore):
         query: str,
         branch_id: str,
         top_k: int = 5,
-        intent: Optional[str] = None,
+        intent: str | None = None,
     ) -> RetrievedContext:
         """Retrieve top-k most similar memories for the given query.
 
