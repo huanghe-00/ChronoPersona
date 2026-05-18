@@ -3,7 +3,7 @@
 import pytest
 
 from chronopersona.contracts.schemas import MemoryEntry, RetrievedContext
-from chronopersona.memory_system.l2_episodic import MockBGEEmbedder, MockEpisodicStore
+from chronopersona.memory_system.l2_episodic import MockBGEEmbedder, MockEpisodicStore, SimpleEpisodicStore
 
 
 class TestMockBGEEmbedder:
@@ -76,3 +76,34 @@ class TestMockEpisodicStore:
         store = MockEpisodicStore()
         with pytest.raises(ValueError):
             store.add(MemoryEntry(content="test"), branch_id="")
+
+
+class TestSimpleEpisodicStore:
+    """T51-T53: SimpleEpisodicStore (cosine similarity) tests."""
+
+    def test_add_and_retrieve_basic(self) -> None:
+        """T51: Add and retrieve a memory entry via cosine similarity."""
+        store = SimpleEpisodicStore()
+        entry = MemoryEntry(content="I enjoy hiking in the mountains")
+        mid = store.add(entry, branch_id="main")
+        assert mid.startswith("l2-simple-")
+
+        ctx = store.retrieve("hiking", branch_id="main")
+        assert isinstance(ctx, RetrievedContext)
+        assert len(ctx.episodic_memories) >= 1
+        assert any("hiking" in m.content for m in ctx.episodic_memories)
+
+    def test_branch_isolation(self) -> None:
+        """T52: Different branches are isolated."""
+        store = SimpleEpisodicStore()
+        store.add(MemoryEntry(content="secret"), branch_id="therapist")
+        ctx = store.retrieve("secret", branch_id="rpg-hero")
+        assert len(ctx.episodic_memories) == 0
+
+    def test_retrieve_top_k_limit(self) -> None:
+        """T53: Retrieve respects top_k limit."""
+        store = SimpleEpisodicStore()
+        for i in range(10):
+            store.add(MemoryEntry(content=f"memory {i}"), branch_id="main")
+        ctx = store.retrieve("memory", branch_id="main", top_k=3)
+        assert len(ctx.episodic_memories) <= 3

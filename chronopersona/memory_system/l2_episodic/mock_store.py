@@ -1,6 +1,6 @@
 """Mock episodic memory store for L2."""
 
-from typing import Dict, List, Optional
+from __future__ import annotations
 
 from chronopersona.contracts.interfaces.abstract_episodic_store import AbstractEpisodicStore
 from chronopersona.contracts.schemas import MemoryEntry, RetrievedContext
@@ -11,7 +11,7 @@ class MockEpisodicStore(AbstractEpisodicStore):
     """In-memory mock implementation of L2 episodic store."""
 
     def __init__(self) -> None:
-        self._store: Dict[str, Dict[str, MemoryEntry]] = {}  # branch_id -> {memory_id: entry}
+        self._store: dict[str, dict[str, MemoryEntry]] = {}  # branch_id -> {memory_id: entry}
         self._embedder = MockBGEEmbedder()
         self._counter = 0
 
@@ -31,7 +31,7 @@ class MockEpisodicStore(AbstractEpisodicStore):
         query: str,
         branch_id: str,
         top_k: int = 5,
-        intent: Optional[str] = None,
+        intent: str | None = None,
     ) -> RetrievedContext:
         """Retrieve relevant memories using mock similarity."""
         if branch_id not in self._store:
@@ -47,7 +47,8 @@ class MockEpisodicStore(AbstractEpisodicStore):
         query_vec = self._embedder.embed_query(query)
         entries = list(self._store[branch_id].values())
 
-        # Simple mock similarity based on content overlap
+        # Simple mock similarity: character set overlap.
+        # NOT for production — real implementation uses BGE cosine similarity.
         scored = []
         for entry in entries:
             overlap = len(set(query) & set(entry.content))

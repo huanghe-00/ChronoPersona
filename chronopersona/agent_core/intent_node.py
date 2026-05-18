@@ -12,7 +12,11 @@ class Intent(str, Enum):
 
 
 class IntentNode:
-    """Lightweight intent classifier based on keyword matching."""
+    """Lightweight intent classifier based on keyword matching.
+
+    TODO (W5): Replace with T0/T1 model router (Qwen3.5-9B / DS-V4-flash)
+    for production-grade 8-class intent classification.
+    """
 
     GREETING_KEYWORDS: set[str] = {"hello", "hi", "你好", "hey", "morning"}
     MEMORY_KEYWORDS: set[str] = {"remember", "recall", "memory", "记得", "回忆", "想起"}

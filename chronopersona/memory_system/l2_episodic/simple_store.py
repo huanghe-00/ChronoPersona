@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from chronopersona.contracts.interfaces import AbstractEpisodicStore
 from chronopersona.contracts.schemas import MemoryEntry, RetrievedContext
@@ -17,7 +17,7 @@ class SimpleEpisodicStore(AbstractEpisodicStore):
     for cosine similarity, avoiding external dependencies.
     """
 
-    def __init__(self, embedder: Optional[MockBGEEmbedder] = None) -> None:
+    def __init__(self, embedder: MockBGEEmbedder | None = None) -> None:
         self._embedder = embedder or MockBGEEmbedder()
         # branch_id -> list of MemoryEntry
         self._entries: Dict[str, List[MemoryEntry]] = {}

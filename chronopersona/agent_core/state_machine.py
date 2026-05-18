@@ -7,7 +7,7 @@ from chronopersona.contracts.interfaces import (
     AbstractMemoryStore,
     AbstractModelRouter,
 )
-from chronopersona.contracts.schemas import AgentOutput, EmbodiedState, EmotionState
+from chronopersona.contracts.schemas import AgentOutput, EmbodiedState, EmotionState, RetrievedContext
 from chronopersona.agent_core.intent_node import IntentNode
 from chronopersona.agent_core.llm_node import LLMNode
 from chronopersona.agent_core.memory_node import MemoryNode
@@ -47,7 +47,7 @@ class StateMachineAgentCore(AbstractAgentCore):
         response = self._llm_node.generate(prompt, branch_id)
         return self._output_node.assemble(response, context, branch_id)
 
-    def _build_prompt(self, user_input: str, context: object) -> str:
+    def _build_prompt(self, user_input: str, context: RetrievedContext) -> str:
         """Build LLM prompt with retrieved context."""
         memories = "\n".join(f"- {m.content}" for m in context.episodic_memories[:3])
         if memories:

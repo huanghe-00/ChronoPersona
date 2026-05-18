@@ -34,6 +34,12 @@ class MockL0SyncLayer(AbstractL0SyncLayer):
         )
 
     def merge(self, remote_state: Dict[str, Any], branch_id: str) -> Dict[str, Any]:
+        """Mock merge: remote-wins for simplicity.
+
+        NOTE: The real L0SyncLayer uses HLC add-wins semantics with
+        clock-skew detection.  This mock unconditionally overwrites
+        local values with remote values for testing convenience.
+        """
         if not branch_id:
             raise ValueError("branch_id must not be empty")
         local = self._state.get(branch_id, {})

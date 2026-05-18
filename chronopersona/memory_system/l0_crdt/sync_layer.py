@@ -46,11 +46,8 @@ class L0SyncLayer(AbstractL0SyncLayer):
             if isinstance(value, LWWEntry):
                 remote_entries[key] = value
             else:
-                # Fallback: wrap raw value with current timestamp
-                remote_entries[key] = LWWEntry(
-                    value=value,
-                    timestamp=HybridTimestamp.now(),
-                    device_id=self.device_id,
+                raise TypeError(
+                    f"merge requires LWWEntry values, got {type(value).__name__} for key '{key}'"
                 )
         conflicts = lww.merge(remote_entries)
         result: Dict[str, Any] = {}

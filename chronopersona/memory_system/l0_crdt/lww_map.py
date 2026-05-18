@@ -36,6 +36,7 @@ class LWWMap:
         self._store: Dict[str, LWWEntry] = {}
         self._dirty_keys: Set[str] = set()
         self._skew_conflicts: Dict[str, Tuple[LWWEntry, LWWEntry]] = {}
+        self._logical_counter: int = 0
 
     def _compare_and_resolve(
         self,
@@ -88,7 +89,7 @@ class LWWMap:
         self,
         key: str,
         value: Any,
-        timestamp: HybridTimestamp,
+        timestamp: Optional[HybridTimestamp] = None,
         device_id: Optional[str] = None,
     ) -> Optional[ClockSkewConflict]:
         """Set key using add-wins semantics.
@@ -98,6 +99,9 @@ class LWWMap:
         """
         local = self._store.get(key)
         resolved_device_id = device_id if device_id is not None else self.device_id
+        if timestamp is None:
+            self._logical_counter += 1
+            timestamp = HybridTimestamp.now(logical=self._logical_counter)
         return self._compare_and_resolve(
             key=key,
             local=local,
@@ -138,6 +142,7 @@ class LWWMap:
         conflicts: List[ClockSkewConflict] = []
         for key, remote_entry in remote_entries.items():
             local = self._store.get(key)
+            self._logical_counter += 1
             conflict = self._compare_and_resolve(
                 key=key,
                 local=local,
