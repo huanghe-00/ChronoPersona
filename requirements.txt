@@ -47,3 +47,6 @@ jieba==0.42.1
 
 # === Vector Search ===
 faiss-cpu>=1.7.4
+
+# === Serialization ===
+orjson>=3.9.0
