@@ -55,7 +55,7 @@ class ScenarioBuilder:
             branch_id="main",
             memories=memories,
             queries=["我上周的方案后来怎么样了", "那个方案通过了吗"],
-            expected_memory_ids=["a2-m3"],
+            expected_memory_ids=["a2-m3", "a2-m3"],
         )
 
     @staticmethod
