@@ -43,6 +43,10 @@ class IntentGraph:
         max_hops: int = 3,
         branch_id: str = "main",
     ) -> list[Tuple[str, int, float]]:
+        """BFS navigation from start node along specified edge types.
+
+        Supports bidirectional traversal for causal and associative edges.
+        """
         if not branch_id:
             raise ValueError("branch_id must not be empty")
         edges = self._edges.get(branch_id, [])
@@ -54,18 +58,21 @@ class IntentGraph:
             node_id, hop, weight = queue.popleft()
             if hop >= max_hops:
                 continue
+
             for edge in edges:
-                if edge.source_id != node_id:
-                    continue
-                if edge.edge_type not in entry_edge_types:
-                    continue
-                target = edge.target_id
-                if target in visited:
-                    continue
-                visited.add(target)
-                new_weight = weight * edge.weight * 0.9
-                results.append((target, hop + 1, new_weight))
-                queue.append((target, hop + 1, new_weight))
+                candidates: list[str] = []
+                if edge.source_id == node_id and edge.edge_type in entry_edge_types:
+                    candidates.append(edge.target_id)
+                if edge.target_id == node_id and edge.edge_type in entry_edge_types:
+                    candidates.append(edge.source_id)
+
+                for target in candidates:
+                    if target in visited:
+                        continue
+                    visited.add(target)
+                    new_weight = weight * edge.weight * 0.9
+                    results.append((target, hop + 1, new_weight))
+                    queue.append((target, hop + 1, new_weight))
 
         results.sort(key=lambda x: x[2], reverse=True)
         return results
