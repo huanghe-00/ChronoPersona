@@ -92,6 +92,14 @@ class SimpleInsightEngine(IInsightGenerator):
         return turn_count_since_last >= 10
 
     def _extract_words(self, text: str) -> List[str]:
-        """Extract candidate Chinese words using simple heuristic."""
-        chars = re.findall(r"[\u4e00-\u9fff]{2,}", text)
-        return [c for c in chars if c not in self._STOP_WORDS]
+        """Extract candidate Chinese words using simple heuristic.
+
+        Uses a sliding window of 2 characters over consecutive Chinese text.
+        """
+        chars = re.findall(r"[\u4e00-\u9fff]", text)
+        result: list[str] = []
+        for i in range(len(chars) - 1):
+            word = chars[i] + chars[i + 1]
+            if word not in self._STOP_WORDS:
+                result.append(word)
+        return result
