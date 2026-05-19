@@ -11,6 +11,7 @@ from chronopersona.mocks.mock_model_router import MockModelRouter
 from chronopersona.mocks.mock_persona_injector import MockPersonaInjector
 from chronopersona.mocks.mock_skill import MockSkill
 from chronopersona.mocks.mock_skill_registry import MockSkillRegistry
+from chronopersona.mocks.mock_sync_manager import MockSyncManager
 from chronopersona.mocks.mock_version_manager import MockVersionManager
 
 __all__ = [
@@ -25,5 +26,6 @@ __all__ = [
     "MockPersonaInjector",
     "MockSkill",
     "MockSkillRegistry",
+    "MockSyncManager",
     "MockVersionManager",
 ]

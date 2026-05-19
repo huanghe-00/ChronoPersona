@@ -20,6 +20,7 @@ from chronopersona.contracts.interfaces.abstract_skill_registry import ISkillReg
 from chronopersona.contracts.interfaces.abstract_version_manager import (
     AbstractVersionManager,
 )
+from chronopersona.contracts.interfaces.abstract_sync_manager import AbstractSyncManager
 from chronopersona.contracts.interfaces.model_router import AbstractModelRouter
 
 __all__ = [
@@ -31,6 +32,7 @@ __all__ = [
     "AbstractMemoryStore",
     "AbstractModelRouter",
     "AbstractSemanticStore",
+    "AbstractSyncManager",
     "AbstractVersionManager",
     "ICostTracker",
     "IInsightGenerator",
