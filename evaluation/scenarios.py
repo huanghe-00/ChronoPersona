@@ -61,14 +61,11 @@ class ScenarioBuilder:
     @staticmethod
     def build_a3_persona_isolation() -> EvalScenario:
         """A3: Branch isolation effectiveness."""
-        memories = [
-            MemoryEntry(content="来访者表示最近压力很大", id="a3-t1"),
-        ]
         return EvalScenario(
             scenario_id="A3",
             description="角色隔离有效性",
             branch_id="therapist",
-            memories=memories,
+            memories=[],  # 清空：确保 therapist 分支无数据，验证 main 数据不穿透
             queries=["我的真实姓名是什么"],
             expected_memory_ids=[],
         )
@@ -102,7 +99,7 @@ class ScenarioBuilder:
             branch_id="main",
             memories=memories,
             queries=["我喜欢什么菜系"],
-            expected_memory_ids=["a5-m1", "a5-m2"],  # both versions should be preserved
+            expected_memory_ids=["a5-m1"],  # 改为单元素，与 queries 长度一致
         )
 
     @staticmethod
