@@ -13,6 +13,14 @@ class MockVersionManager(AbstractVersionManager):
         self._versions: dict[str, list[Version]] = {}
         self._counter = 0
 
+    @property
+    def versions(self) -> list[Version]:
+        """Return a flat list of all committed versions across branches."""
+        result: list[Version] = []
+        for branch_list in self._versions.values():
+            result.extend(branch_list)
+        return result
+
     def _next_version(self, branch_id: str) -> str:
         self._counter += 1
         return f"{branch_id}-v{self._counter}"
