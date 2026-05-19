@@ -12,6 +12,7 @@ class MockBGEEmbedder(AbstractEmbedder):
 
     def embed_query(self, text: str) -> list[float]:
         """Generate mock query embedding."""
+        text = text or ""
         return self._mock_vector(text)
 
     @staticmethod
