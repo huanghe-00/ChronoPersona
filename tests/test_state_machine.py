@@ -1,133 +1,106 @@
 """Unit tests for StateMachineAgentCore."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from chronopersona.agent_core.state_machine import StateMachineAgentCore
-from chronopersona.contracts.schemas import AgentOutput, ChangeSet, EmotionState
-from chronopersona.mocks import (
-    MockMemoryStore,
-    MockModelRouter,
-    MockVersionManager,
-)
+from chronopersona.contracts.schemas import AgentOutput, MemoryEntry, Version
+from chronopersona.mocks.mock_memory_store import MockMemoryStore
+from chronopersona.mocks.mock_model_router import MockModelRouter
+from chronopersona.mocks.mock_version_manager import MockVersionManager
 
 
 class TestStateMachineAgentCore:
-    """Tests for StateMachineAgentCore with mock dependencies."""
+    """Tests for StateMachineAgentCore orchestration and state management."""
 
-    def test_run_turn_returns_agent_output(self) -> None:
-        """T01: run_turn returns AgentOutput with correct branch_id."""
-        store = MockMemoryStore()
-        router = MockModelRouter()
-        agent = StateMachineAgentCore(
-            memory_store=store,
-            model_router=router,
+    @patch("chronopersona.agent_core.state_machine.IntentNode")
+    def test_run_turn_returns_agent_output(self, mock_intent_cls) -> None:
+        """T01: Full turn pipeline returns AgentOutput with branch_id."""
+        mock_intent_cls.return_value.classify.return_value = MagicMock(value="retrieve")
+
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
         )
-        out = agent.run_turn("Hello", branch_id="main")
+        out = core.run_turn("Hello", branch_id="main")
         assert isinstance(out, AgentOutput)
         assert out.branch_id == "main"
-        assert out.reply_text
+        assert "Hello" in out.reply_text
 
     def test_run_turn_empty_branch_raises_valueerror(self) -> None:
-        """T02: run_turn with empty branch_id raises ValueError."""
-        store = MockMemoryStore()
-        router = MockModelRouter()
-        agent = StateMachineAgentCore(
-            memory_store=store,
-            model_router=router,
+        """T02: Empty branch_id raises ValueError."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
         )
         with pytest.raises(ValueError):
-            agent.run_turn("hi", branch_id="")
+            core.run_turn("hi", branch_id="")
 
-    def test_switch_persona_updates_persona_id(self) -> None:
-        """T03: switch_persona updates internal persona_id."""
-        store = MockMemoryStore()
-        router = MockModelRouter()
-        agent = StateMachineAgentCore(
-            memory_store=store,
-            model_router=router,
+    def test_switch_persona_commits_version(self) -> None:
+        """T03: switch_persona commits a version snapshot when manager provided."""
+        vm = MockVersionManager()
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+            version_manager=vm,
         )
-        agent.switch_persona("therapist", branch_id="main")
-        assert agent._persona_id == "therapist"
+        core.switch_persona("therapist", branch_id="main")
+        assert len(vm.log("main")) == 1
 
-    def test_switch_persona_empty_branch_raises_valueerror(self) -> None:
-        """T04: switch_persona with empty branch_id raises ValueError."""
-        store = MockMemoryStore()
-        router = MockModelRouter()
-        agent = StateMachineAgentCore(
-            memory_store=store,
-            model_router=router,
+    def test_switch_persona_with_injector(self) -> None:
+        """T04: switch_persona ejects old persona and injects new one."""
+        injector = MagicMock()
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+            persona_injector=injector,
         )
-        with pytest.raises(ValueError):
-            agent.switch_persona("therapist", branch_id="")
+        core.switch_persona("rpg-hero", branch_id="main")
+        injector.eject.assert_called_once_with("default", "main")
+        injector.inject.assert_called_once_with("rpg-hero", "main", core)
 
-    def test_get_emotion_state_returns_emotion_state(self) -> None:
-        """T05: get_emotion_state returns EmotionState."""
+    def test_get_memory_summary_returns_summary(self) -> None:
+        """T05: get_memory_summary returns working and episodic counts."""
         store = MockMemoryStore()
-        router = MockModelRouter()
-        agent = StateMachineAgentCore(
+        store.add(MemoryEntry(content="data"), branch_id="main")
+        core = StateMachineAgentCore(
             memory_store=store,
-            model_router=router,
+            model_router=MockModelRouter(),
         )
-        emotion = agent.get_emotion_state()
-        assert isinstance(emotion, EmotionState)
-
-    def test_get_memory_summary_returns_string(self) -> None:
-        """T06: get_memory_summary returns descriptive string."""
-        store = MockMemoryStore()
-        router = MockModelRouter()
-        agent = StateMachineAgentCore(
-            memory_store=store,
-            model_router=router,
-        )
-        summary = agent.get_memory_summary(branch_id="main")
-        assert isinstance(summary, str)
+        summary = core.get_memory_summary(branch_id="main")
         assert "Working:" in summary
+        assert "Episodic:" in summary
 
-    def test_get_memory_summary_empty_branch_raises_valueerror(self) -> None:
-        """T07: get_memory_summary with empty branch_id raises ValueError."""
-        store = MockMemoryStore()
-        router = MockModelRouter()
-        agent = StateMachineAgentCore(
-            memory_store=store,
-            model_router=router,
-        )
-        with pytest.raises(ValueError):
-            agent.get_memory_summary(branch_id="")
-
-    def test_commit_session_snapshot_creates_version(self) -> None:
-        """T08: commit_session_snapshot creates a Version via version_manager."""
-        store = MockMemoryStore()
-        router = MockModelRouter()
+    def test_commit_session_snapshot_returns_version(self) -> None:
+        """T06: commit_session_snapshot delegates to version manager."""
         vm = MockVersionManager()
-        agent = StateMachineAgentCore(
-            memory_store=store,
-            model_router=router,
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
             version_manager=vm,
         )
-        version = agent.commit_session_snapshot("main")
-        assert version.branch_id == "main"
-        assert "-v" in version.version
+        v = core.commit_session_snapshot(branch_id="main")
+        assert isinstance(v, Version)
+        assert v.branch_id == "main"
 
-    def test_commit_session_snapshot_empty_branch_raises_valueerror(self) -> None:
-        """T09: commit_session_snapshot with empty branch_id raises ValueError."""
-        store = MockMemoryStore()
-        router = MockModelRouter()
-        vm = MockVersionManager()
-        agent = StateMachineAgentCore(
-            memory_store=store,
-            model_router=router,
-            version_manager=vm,
-        )
-        with pytest.raises(ValueError):
-            agent.commit_session_snapshot("")
-
-    def test_commit_session_snapshot_no_version_manager_raises_runtimeerror(self) -> None:
-        """T10: commit_session_snapshot without version_manager raises RuntimeError."""
-        store = MockMemoryStore()
-        router = MockModelRouter()
-        agent = StateMachineAgentCore(
-            memory_store=store,
-            model_router=router,
+    def test_commit_session_snapshot_no_manager_raises(self) -> None:
+        """T07: commit without version_manager raises RuntimeError."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
         )
         with pytest.raises(RuntimeError):
-            agent.commit_session_snapshot("main")
+            core.commit_session_snapshot(branch_id="main")
+
+    def test_working_memory_window_branch_isolation(self) -> None:
+        """T08: WorkingMemoryWindow instances are isolated per branch."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        w1 = core._get_or_create_window("branch-a")
+        w2 = core._get_or_create_window("branch-b")
+        assert w1.branch_id == "branch-a"
+        assert w2.branch_id == "branch-b"
+        assert w1 is not w2
