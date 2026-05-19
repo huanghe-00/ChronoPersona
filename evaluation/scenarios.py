@@ -72,3 +72,66 @@ class ScenarioBuilder:
             queries=["我的真实姓名是什么"],
             expected_memory_ids=[],
         )
+
+    @staticmethod
+    def build_a4_shared_main() -> EvalScenario:
+        """A4: Main branch shared facts accessible from other branches."""
+        memories = [
+            MemoryEntry(content="我的真实姓名是张三", id="a4-m1"),
+            MemoryEntry(content="我住在北京朝阳区", id="a4-m2"),
+        ]
+        return EvalScenario(
+            scenario_id="A4",
+            description="Main 分支共享穿透",
+            branch_id="main",
+            memories=memories,
+            queries=["我叫什么名字", "我住在哪里"],
+            expected_memory_ids=["a4-m1", "a4-m2"],
+        )
+
+    @staticmethod
+    def build_a5_multi_device_conflict() -> EvalScenario:
+        """A5: Multi-device conflict detection (CRDT merge)."""
+        memories = [
+            MemoryEntry(content="手机端偏好：川菜", id="a5-m1"),
+            MemoryEntry(content="车机端偏好：粤菜", id="a5-m2"),
+        ]
+        return EvalScenario(
+            scenario_id="A5",
+            description="多端冲突检测",
+            branch_id="main",
+            memories=memories,
+            queries=["我喜欢什么菜系"],
+            expected_memory_ids=["a5-m1", "a5-m2"],  # both versions should be preserved
+        )
+
+    @staticmethod
+    def build_a6_intent_graph_navigation() -> EvalScenario:
+        """A6: Intent graph navigation vs pure vector retrieval."""
+        memories = [
+            MemoryEntry(content="上周一我提交了一个关于用户增长的产品方案", id="a6-m1"),
+            MemoryEntry(content="周三的时候方案评审通过了", id="a6-m2"),
+            MemoryEntry(content="周五我收到反馈说方案需要补充竞品分析", id="a6-m3"),
+            MemoryEntry(content="我喜欢川菜，尤其是水煮鱼", id="a6-m4"),
+            MemoryEntry(content="粤菜我也喜欢，但更偏爱川菜", id="a6-m5"),
+            MemoryEntry(content="最近工作压力很大，经常失眠", id="a6-m6"),
+            MemoryEntry(content="上次提到的那个餐厅叫蜀味轩", id="a6-m7"),
+        ]
+        return EvalScenario(
+            scenario_id="A6",
+            description="意图图谱导航 vs 纯向量检索",
+            branch_id="main",
+            memories=memories,
+            queries=[
+                "我上周的方案后来怎么样了",
+                "川菜和粤菜我喜欢哪个",
+                "为什么我最近焦虑",
+                "上次你说的那个餐厅",
+            ],
+            expected_memory_ids=[
+                "a6-m3",  # 方案后续进展
+                "a6-m4",  # 川菜偏好
+                "a6-m6",  # 焦虑原因
+                "a6-m7",  # 餐厅名称
+            ],
+        )
