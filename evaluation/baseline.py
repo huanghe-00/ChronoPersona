@@ -1,18 +1,22 @@
-"""Pure vector RAG baseline for comparison."""
+"""Pure vector RAG baseline for comparison.
+
+Uses SimpleEpisodicStore (cosine similarity) as the default backend
+to provide a realistic baseline for evaluation scenarios.
+"""
 
 from __future__ import annotations
 
 from typing import Dict, List
 
 from chronopersona.contracts.schemas import MemoryEntry
-from chronopersona.memory_system.l2_episodic import MockEpisodicStore
+from chronopersona.memory_system.l2_episodic import SimpleEpisodicStore
 
 
 class VectorRAGBaseline:
     """Baseline using only vector similarity (no intent graph)."""
 
     def __init__(self) -> None:
-        self._store = MockEpisodicStore()
+        self._store = SimpleEpisodicStore()
         self._id_map: Dict[str, str] = {}
 
     def index(self, memories: List[MemoryEntry], branch_id: str) -> None:

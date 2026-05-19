@@ -12,6 +12,7 @@
 | **Mock 就绪** | 所有外部依赖（DB、向量库、LLM）必须保留 Mock 实现 | `make test` 依赖 Docker，MVA 阶段不可用 |
 | **MVA 裁剪** | Neo4j / 2D Canvas / LoCoMo 在 MVA 阶段不实现 | 范围蔓延，8 周 deadline 失控 |
 | **类型硬化** | 所有公共函数必须有类型注解，复杂数据用 Pydantic Model | 代码不可维护 |
+| **W1 基线** | 258 个测试用例全部通过，覆盖率 94% | 后续修改不得破坏此基线 |
 
 ---
 

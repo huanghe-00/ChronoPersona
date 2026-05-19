@@ -1,4 +1,8 @@
-"""Evaluation scenario definitions for A1-A3 adversarial tests."""
+"""Evaluation scenario definitions for A1-A6 adversarial tests.
+
+All scenarios are designed to be used with VectorRAGBaseline
+(SimpleEpisodicStore backend) for pure vector retrieval comparison.
+"""
 
 from __future__ import annotations
 
@@ -21,7 +25,11 @@ class EvalScenario:
 
 
 class ScenarioBuilder:
-    """Builder for constructing evaluation scenarios."""
+    """Builder for constructing evaluation scenarios.
+
+    All scenarios use SimpleEpisodicStore-compatible MemoryEntry objects
+    with explicit IDs for deterministic evaluation.
+    """
 
     @staticmethod
     def build_a1_memory_recall() -> EvalScenario:
