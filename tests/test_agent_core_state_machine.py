@@ -51,22 +51,3 @@ class TestStateMachineAgentCore:
         assert "Working:" in summary
 
 
-class TestIntentNode:
-    """Tests for IntentNode classification."""
-
-    def test_classify_greeting(self) -> None:
-        """Greeting keywords are recognized."""
-        node = IntentNode()
-        assert node.classify("Hello there") == "greeting"
-        assert node.classify("你好") == "greeting"
-
-    def test_classify_memory_query(self) -> None:
-        """Memory query keywords are recognized."""
-        node = IntentNode()
-        assert node.classify("Do you remember yesterday") == "memory_query"
-        assert node.classify("回忆一下") == "memory_query"
-
-    def test_classify_general(self) -> None:
-        """General query falls back to general intent."""
-        node = IntentNode()
-        assert node.classify("random stuff") == "general"

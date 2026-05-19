@@ -22,7 +22,6 @@ class TestCheckpoint31:
         core = StateMachineAgentCore(
             memory_store=l2,
             model_router=MockModelRouter(),
-            intent_graph=graph,
         )
 
         turns = [

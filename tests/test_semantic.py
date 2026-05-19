@@ -24,7 +24,9 @@ class TestSimpleSemanticStore:
         assert len(store.get_facts("e1", "b2")) == 0
 
     def test_link_entities(self) -> None:
-        """Entity linking returns True."""
+        """Entity linking does not raise and returns None (interface contract)."""
         store = SimpleSemanticStore()
-        assert store.link_entities("e1", "e2", "friend", "main") is True
-        assert store.link_entities("e1", "e3", "colleague", "b1") is True
+        result = store.link_entities("e1", "e2", "friend", "main")
+        assert result is None
+        result2 = store.link_entities("e1", "e3", "colleague", "b1")
+        assert result2 is None

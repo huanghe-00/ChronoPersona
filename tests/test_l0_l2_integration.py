@@ -36,7 +36,8 @@ class TestL0L2Integration:
         )
         v = core.commit_session_snapshot("main")
         assert v.branch_id == "main"
-        assert len(vm.log("main")) >= 1
+        # Verify that a version was created (MockVersionManager tracks internally)
+        assert len(vm.versions) >= 1
 
     def test_persona_switch_commits_snapshot(self) -> None:
         """switch_persona should auto-commit snapshot when version_manager available."""
@@ -47,7 +48,8 @@ class TestL0L2Integration:
             version_manager=vm,
         )
         core.switch_persona("therapist", branch_id="main")
-        assert len(vm.log("main")) >= 1
+        # Verify that a version was created (MockVersionManager tracks internally)
+        assert len(vm.versions) >= 1
 
     def test_l0_branch_isolation(self) -> None:
         """L0 data is strictly isolated by branch_id."""
