@@ -2,7 +2,7 @@
 
 import pytest
 
-from chronopersona.agent_core.state_machine import StateMachineAgentCore
+from chronopersona.agent_core import StateMachineAgentCore
 from chronopersona.memory_system.l0_crdt import HybridTimestamp, L0SyncLayer, LWWEntry
 from chronopersona.mocks import MockMemoryStore, MockModelRouter, MockVersionManager
 
