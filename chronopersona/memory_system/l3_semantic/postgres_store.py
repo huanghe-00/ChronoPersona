@@ -5,7 +5,9 @@ from typing import List, Optional
 from loguru import logger
 
 from chronopersona.contracts.schemas import Fact
-from chronopersona.contracts.interfaces.semantic_store import ISemanticStore
+from chronopersona.contracts.interfaces.abstract_semantic_store import (
+    AbstractSemanticStore as ISemanticStore,
+)
 
 
 class PostgresSemanticStore(ISemanticStore):
