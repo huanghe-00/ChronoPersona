@@ -38,7 +38,7 @@ class SimpleSemanticStore(AbstractSemanticStore):
         target: str,
         relation: str,
         branch_id: str,
-    ) -> bool:
+    ) -> None:
         """Create a relationship between two entities."""
         if not branch_id:
             raise ValueError("branch_id must not be empty")
@@ -47,4 +47,3 @@ class SimpleSemanticStore(AbstractSemanticStore):
             "target": target,
             "relation": relation,
         })
-        return True
