@@ -14,19 +14,19 @@ class TestL0SyncLayerReal:
 
     def test_get_set_basic(self) -> None:
         """T01: set and get a key within a branch."""
-        sync: AbstractL0SyncLayer = L0SyncLayer()
+        sync: AbstractL0SyncLayer = L0SyncLayer(device_id="test-device")
         sync.set("pref", "川菜", branch_id="main", device_id="phone-a")
         assert sync.get("pref", branch_id="main") == "川菜"
 
     def test_branch_isolation(self) -> None:
         """T02: keys must not leak across branches."""
-        sync: AbstractL0SyncLayer = L0SyncLayer()
+        sync: AbstractL0SyncLayer = L0SyncLayer(device_id="test-device")
         sync.set("k1", "v1", branch_id="branch-a", device_id="dev-1")
         assert sync.get("k1", branch_id="branch-b") is None
 
     def test_empty_branch_raises_valueerror(self) -> None:
         """T03: empty branch_id or device_id raises ValueError."""
-        sync: AbstractL0SyncLayer = L0SyncLayer()
+        sync: AbstractL0SyncLayer = L0SyncLayer(device_id="test-device")
         with pytest.raises(ValueError):
             sync.set("k", "v", branch_id="", device_id="dev")
         with pytest.raises(ValueError):
@@ -34,7 +34,7 @@ class TestL0SyncLayerReal:
 
     def test_checkpoint_returns_dirty_keys(self) -> None:
         """T04: checkpoint flushes dirty keys and returns them."""
-        sync: AbstractL0SyncLayer = L0SyncLayer()
+        sync: AbstractL0SyncLayer = L0SyncLayer(device_id="test-device")
         sync.set("k1", "v1", branch_id="main", device_id="dev-a")
         sync.set("k2", "v2", branch_id="main", device_id="dev-a")
         keys: list[str] = sync.checkpoint("main")
@@ -43,17 +43,17 @@ class TestL0SyncLayerReal:
 
     def test_get_delta_full_state_when_no_vector_clock(self) -> None:
         """T05: get_delta without vector clock returns full state."""
-        sync: AbstractL0SyncLayer = L0SyncLayer()
+        sync: AbstractL0SyncLayer = L0SyncLayer(device_id="test-device")
         sync.set("k1", "v1", branch_id="main", device_id="dev-a")
         delta: Dict[str, Any] = sync.get_delta("main")
         assert "k1" in delta
 
-    def test_merge_detects_conflict(self) -> None:
-        """T06: merge returns conflict report for concurrently written keys."""
-        sync: AbstractL0SyncLayer = L0SyncLayer()
+    def test_merge_rejects_non_lww_entry_values(self) -> None:
+        """T06: merge raises TypeError when remote_state contains raw values."""
+        sync: AbstractL0SyncLayer = L0SyncLayer(device_id="test-device")
         sync.set("pref", "local", branch_id="main", device_id="dev-a")
-        conflicts: Dict[str, Any] = sync.merge({"pref": "remote"}, branch_id="main")
-        assert "pref" in conflicts
+        with pytest.raises(TypeError):
+            sync.merge({"pref": "remote"}, branch_id="main")
 
 
 class TestMockL0SyncLayer:
