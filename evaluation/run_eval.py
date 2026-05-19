@@ -7,8 +7,10 @@ across scenarios A1-A6.
 from __future__ import annotations
 
 import sys
+from itertools import zip_longest
 from typing import Dict, List, Tuple
 
+from chronopersona.contracts.schemas import MemoryEntry
 from evaluation.baseline import VectorRAGBaseline
 from evaluation.metrics import Metrics
 from evaluation.scenarios import ScenarioBuilder
@@ -27,16 +29,30 @@ def run_scenario(
     baseline = VectorRAGBaseline()
     baseline.index(scenario.memories, branch_id=scenario.branch_id)
 
+    # A3: Cross-branch isolation — index sensitive data in main branch
+    # to verify therapist branch queries do not leak across.
+    if scenario_id == "A3":
+        baseline.index(
+            [MemoryEntry(content="我的真实姓名是张三", id="a3-sensitive-main")],
+            branch_id="main",
+        )
+
     # For now, intent graph path uses the same baseline (placeholder)
     # In future, replace with IntentGraphRetriever
     retriever = baseline  # TODO: swap with IntentGraphRetriever when ready
 
     recalls: List[float] = []
-    for query, expected_id in zip(scenario.queries, scenario.expected_memory_ids):
+    for query, expected_id in zip_longest(
+        scenario.queries, scenario.expected_memory_ids, fillvalue=None
+    ):
         retrieved_ids = retriever.retrieve(
             query, branch_id=scenario.branch_id, top_k=5
         )
-        recall = Metrics.recall_at_k(retrieved_ids, [expected_id], k=5)
+        if expected_id is None:
+            # Isolation test: expect zero leakage
+            recall = 1.0 if not retrieved_ids else 0.0
+        else:
+            recall = Metrics.recall_at_k(retrieved_ids, [expected_id], k=5)
         recalls.append(recall)
 
     avg_recall = sum(recalls) / len(recalls) if recalls else 0.0
