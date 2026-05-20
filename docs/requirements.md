@@ -1354,6 +1354,63 @@ class SkillPermissionDenied(Exception):
 - `therapist` 人格配置 `forbidden_skills: ["rpg_dice_roll"]`
 - 若用户通过提示词注入（prompt injection）诱导 LLM 调用 `rpg_dice_roll` → 第二层校验拦截，返回礼貌拒绝
 
+### 4.12 记忆蒸馏与 Dreaming 机制（借鉴 Anthropic 主动反思架构）
+
+**核心哲学**：L2 Episodic 向 L3 Semantic 的转化不是简单复制，而是**蒸馏（Distillation）**——信息密度从"高冗余、高噪声"向"高结构化、低冗余"跃迁。
+
+**Dreaming（Memory Consolidation Agent）**：
+
+触发条件：每 24 小时、每完成 5 个会话周期、或系统空闲时自动启动。
+
+执行流程：
+1. **读取阶段**：从 L2 拉取近期高重要性会话（按 `importance` 预过滤，仅处理 top-K）。
+2. **模式提取（Pattern Extraction）**：识别重复交互模式。
+   - 示例："用户每次提到'优化性能'时，后续都会要求查看火焰图"
+   - 示例："当代码包含 `unsafe` 块时，Agent 应主动提示安全检查清单"
+3. **噪声清理（Noise Reduction）**：去除临时性、上下文依赖过强的内容，保留可泛化的行为规则。
+4. **知识固化（Crystallization）**：将自然语言经验转化为结构化规则，存储格式为 **三元组 + 向量嵌入** 的混合形式：
+   ```python
+   BehavioralRule(
+       trigger="用户提及性能优化",
+       action="主动建议查看火焰图",
+       confidence=0.92,
+       source_memory_ids=["mem-001", "mem-003"],
+       branch_id="main",
+   )
+   ```
+5. **写入语义记忆**：更新 L3 `insights` 表，建立反向索引，确保主 Agent 通过 RAG 快速召回。
+
+**与 RAG 的本质区别**：RAG 是"外部知识注入"（读文档），Dreaming 是"经验学习"（从自身操作历史中提炼启发式规则）。模型权重不变，但系统行为持续进化。
+
+**W1 实现状态**：`SimpleInsightEngine` 已实现 Tier 1 关键词共现（Phase A 骨架）。Phase B 模式提取标记为 `[FUTURE]`，W2 启动轻量级骨架。
+
+### 4.13 差异化遗忘与重要性评分（借鉴 Anthropic "Pull on demand, never fill up"）
+
+**三层记忆的差异化衰减策略**：
+
+| 层级 | 衰减函数 | 生命周期 | 清空/保留策略 |
+|------|---------|---------|--------------|
+| **L1 Working** | 无衰减，会话结束即清空 | 单会话 | 仅保留最后 N 轮作为摘要，原始轮次在 L2 |
+| **L2 Episodic** | 指数衰减 `R = e^(-t/S)`，S = importance × ttl_base | 中期（数小时至数天） | `importance < 0.2` 且过期 → 软删除；`gc()` 定期清理，MVCC 历史保留审计 |
+| **L3 Semantic** | 极慢衰减，近似永久 | 长期（跨会话） | 通过"反学习"（Unlearning）处理过时知识：新旧冲突时旧知识标记 `deprecated`，不物理删除 |
+
+**多因子重要性评分模型**：
+
+```
+importance = σ(
+    w1 × entropy_gain      # 信息熵增益：LLM 困惑度越高越重要
+  + w2 × task_success      # 任务成功关联：RLHF 反馈
+  + w3 × log1p(access_count)  # 访问频率：LFU 信号
+  + w4 × user_explicit     # 用户显式标记："记住这个"
+)
+
+effective_score = vector_similarity × importance × exp(-elapsed_hours / (ttl_base × importance))
+```
+
+**Schema 落地**：`MemoryEntry` 已包含 `importance` / `access_count` / `ttl_hours` / `entropy_gain` / `last_accessed` 字段。`SimpleEpisodicStore.retrieve()` 已按 `importance × freq_boost` 加权排序。
+
+**W1 实现状态**：Schema 与检索加权已落地；指数衰减 `gc()` 与 `entropy_gain` 计算标记为 `[FUTURE]`，W2 实现。
+
 ## 5. 数据模型设计
 
 ### 5.1 PostgreSQL Schema
