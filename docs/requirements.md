@@ -66,7 +66,7 @@
 | Mem0 | ✅ 向量库 | ❌ 无 | ❌ 无 | ❌ 纯向量 | ❌ 无 | ❌ 无 |
 | Zep | ✅ 向量+图 | ❌ 无 | ❌ 无 | ❌ 纯向量 | ❌ 无 | ❌ 无 |
 | Letta (MemGPT) | ✅ 分层 | ❌ 无 | ❌ 无 | ❌ 纯向量 | ❌ 无 | ❌ 无 |
-| Anthropic Claude | ✅ 分层+蒸馏 | ❌ 无 | ❌ 无 | ❌ 纯向量 | ❌ 无 | ✅ Dreaming |
+| 认知仿生标杆（行业实践） | ✅ 分层+蒸馏 | ❌ 无 | ❌ 无 | ❌ 纯向量 | ❌ 无 | ✅ Dreaming |
 | **ChronoPersona** | ✅ 分层+版本+蒸馏 | ✅ CRDT | ✅ MVCC | ✅ 意图图谱 | ✅ 极简 VLA | ✅ Dreaming |
 
 ---
@@ -1386,7 +1386,7 @@ class SkillPermissionDenied(Exception):
 - `therapist` 人格配置 `forbidden_skills: ["rpg_dice_roll"]`
 - 若用户通过提示词注入（prompt injection）诱导 LLM 调用 `rpg_dice_roll` → 第二层校验拦截，返回礼貌拒绝
 
-### 4.12 记忆蒸馏与 Dreaming 机制（借鉴 Anthropic 主动反思架构）
+### 4.12 记忆蒸馏与 Dreaming 机制（借鉴认知仿生主动反思架构）
 
 **核心哲学**：L2 Episodic 向 L3 Semantic 的转化不是简单复制，而是**蒸馏（Distillation）**——信息密度从"高冗余、高噪声"向"高结构化、低冗余"跃迁。
 
@@ -1416,7 +1416,7 @@ class SkillPermissionDenied(Exception):
 
 **W1 实现状态**：`SimpleInsightEngine` 已实现 Tier 1 关键词共现（Phase A 骨架）。Phase B 模式提取标记为 `[FUTURE]`，W2 启动轻量级骨架。
 
-### 4.13 差异化遗忘与重要性评分（借鉴 Anthropic "Pull on demand, never fill up"）
+### 4.13 差异化遗忘与重要性评分（借鉴行业实践 "Pull on demand, never fill up"）
 
 **三层记忆的差异化衰减策略**：
 

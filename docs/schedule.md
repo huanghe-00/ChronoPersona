@@ -31,7 +31,7 @@
 - 真实实现交付：`L0SyncLayer`（HLC + add-wins + clock-skew）、`GridWorldAdapter`（FOV + 边界钳制）、`IntentGraph`/`IntentNavigator`（BFS + 意图模式匹配）、`StateMachineAgentCore`（端到端状态机）、`WorkingMemoryWindow`（滑动窗口 + 动态压缩）。
 - 关键缺陷修复：`L0SyncLayer.get_delta()` 运行时 `NameError`（缺失 `self.`）。
 - PLACEHOLDER 合规：`test_caused_tier2.py` 正确 skip，无违规实现复杂算法。
-- Anthropic 借鉴点吸收：`MemoryEntry` 重要性评分 Schema 落地、L2 检索加权实现。
+- 借鉴点吸收：`MemoryEntry` 重要性评分 Schema 落地、L2 检索加权实现。
 
 **W1 验收测试矩阵**：
 
