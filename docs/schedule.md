@@ -1,9 +1,9 @@
 # ChronoPersona 项目执行排期表
 
-**版本**: v1.0  
+**版本**: v1.5  
 **基线日期**: 2026-05-15 (周五)  
 **总工期**: 8 周（2026-05-11 ~ 2026-07-05）  
-**当前状态**: Week 2 第 3 天（L2 Episodic Mock 完成）
+**当前状态**: Week 1 已完成，Week 2 启动中（258 passed / 94% coverage / W1 MVA 闭合）
 
 ---
 
@@ -11,8 +11,8 @@
 
 | 周次 | 日期范围 | 阶段主题 | 核心交付物 | 状态 |
 |------|---------|---------|-----------|------|
-| **W1** | 05-11 ~ 05-17 | 契约与孤岛 | 接口冻结、Mock 全量、test_mock_pipeline 通过 | 🟡 收尾中 |
-| **W2** | 05-18 ~ 05-24 | L0-L2 记忆核心 | LWW-CRDT、L1 滑动窗口、L2 Qdrant Mock、Session-MVCC | 🟡 进行中 |
+| **W1** | 05-11 ~ 05-17 | 契约与孤岛 | 接口冻结(14个)、Mock全量(12个)、真实节点(5个)、测试258 passed 覆盖率94% | ✅ 已完成 |
+| **W2** | 05-18 ~ 05-24 | 评估基线与骨架预热 | Dreaming骨架、L2指数衰减GC、Eval基线、PersonaInjector | 🟡 进行中 |
 | **W3** | 05-25 ~ 05-31 | L3 + Intent Graph | PostgreSQL Schema、CTE 导航、MVO 种子、6 步检索 | ⚪ 未开始 |
 | **W4** | 06-01 ~ 06-07 | Insight + 反思 | InsightGenerator、CAUSED Tier 2、A1/A2 召回测试 | ⚪ 未开始 |
 | **W5** | 06-08 ~ 06-14 | Agent 核心循环 | LangGraph 状态机、LSTM 脚本、RL/VLA Placeholder | ⚪ 未开始 |
@@ -22,30 +22,38 @@
 
 ---
 
-## 2. Week 1 收尾（今日 05-15 紧急）
+## 2. Week 1 完成总结（05-15 基线锚定）
 
-**假设**: Week 1 从 05-11（周一）启动，已消耗 4 个工作日。
+**实际达成**：
+- `contracts/interfaces/` 14 个抽象接口全部冻结并导出。
+- `mocks/` 12 个 Mock 实现 100% 覆盖对应接口。
+- `tests/` 新增 12 个专门测试文件，全量 **258 passed, 1 skipped, 0 failed**；语句覆盖率 **94%**。
+- 真实实现交付：`L0SyncLayer`（HLC + add-wins + clock-skew）、`GridWorldAdapter`（FOV + 边界钳制）、`IntentGraph`/`IntentNavigator`（BFS + 意图模式匹配）、`StateMachineAgentCore`（端到端状态机）、`WorkingMemoryWindow`（滑动窗口 + 动态压缩）。
+- 关键缺陷修复：`L0SyncLayer.get_delta()` 运行时 `NameError`（缺失 `self.`）。
+- PLACEHOLDER 合规：`test_caused_tier2.py` 正确 skip，无违规实现复杂算法。
+- Anthropic 借鉴点吸收：`MemoryEntry` 重要性评分 Schema 落地、L2 检索加权实现。
 
-**今日必须完成（硬阻塞）**:
-- [ ] `contracts/interfaces/` 下全部接口文件冻结，合并至 `main`（仅 W1 核心 5 个接口，`IPersonaInjector`/`ICostTracker` 等留 [FUTURE] 空壳）
-- [ ] `mocks/` 全量实现与 `tests/test_mock_pipeline.py` 通过（28 个用例）
-- [ ] LWW-CRDT 接口替换 Yjs（`IL0SyncLayer` / `ILWWMap`）
-- [ ] PostgreSQL Schema + MVO 种子 SQL 文件合入（仅 6 张核心表，`insights`/`embodied_interactions` 标记为 [FUTURE]）
+**W1 验收测试矩阵**：
 
-**28 个测试用例清单（W1 验收）**:
-
-| 编号 | 用例类别 | 数量 | 验证目标 |
-|------|---------|------|---------|
-| T01-T05 | 端到端与基础 | 5 | Mock 对话、分支隔离、LWW merge、意图检索、人格注入 |
-| T06-T10 | CRDT 核心 | 5 | merge、clock skew、conflict、sync broadcast、offline replay |
-| T29-T31 | L0 CRDT 接口 | 3 | get/set、merge conflict、checkpoint |
-| T11-T15 | Memory 层级 | 5 | L0/L1/L2/L3 读写、checkout、snapshot |
-| T16-T20 | Agent 节点 | 5 | state machine、intent、memory node、LLM node、output node |
-| T21-T25 | API 与序列化 | 5 | REST、WebSocket、error handling、schema validation、auth mock |
-| T26-T28 | 集成回归 | 3 | full pipeline、persona switch、eval injection |
-| T29-T31 | L0 CRDT | 3 | get/set、merge conflict、checkpoint |
-
-**若今日未完成**: 占用 **W2 前 2 天（05-18/19）** 收尾，但不得超过 2 天，否则触发 **Checkpoint 1.1**（砍 Insight 模块，保 L0-L3 核心链路）。
+| 编号 | 测试文件 | 用例数 | 验证目标 |
+|------|---------|--------|---------|
+| T01-T31 | `test_mock_pipeline.py` | 31 | 核心守卫：端到端、CRDT、Memory、Agent、API、集成回归 |
+| T32-T39 | `test_l0_crdt.py` | 8 | 真实 L0SyncLayer + MockL0SyncLayer：get/set、分支隔离、merge、checkpoint、delta |
+| T40-T45 | `test_working_memory.py` | 6 | L1 滑动窗口：压缩触发、逆序上下文、token 上限 |
+| T46-T50 | `test_model_router.py` | 5 | MockModelRouter：route、cost、cache_clear 边界 |
+| T51-T58 | `test_version_manager.py` | 8 | MockVersionManager：commit、checkout、merge、gc 边界 |
+| T59-T65 | `test_agent_core.py` | 7 | MockAgentCore：run_turn、switch_persona、emotion、memory_summary |
+| T66-T69 | `test_embodied_adapter.py` | 4 | MockEmbodiedAdapter：perception、translate_action_token |
+| T70-T74 | `test_insight_generator.py` | 5 | MockInsightGenerator：generate、should_trigger 阈值 |
+| T75-T77 | `test_sync_manager.py` | 3 | SyncManager + MockSyncManager：apply_remote、checkpoint |
+| T78-T81 | `test_intent_graph.py` | 4 | IntentGraph：概念隔离、边类型校验、BFS 导航、max_hops |
+| T82-T85 | `test_intent_navigator.py` | 4 | IntentNavigator：模式匹配、未知意图、空分支、无入口节点 |
+| T86-T93 | `test_grid_world.py` | 9 | GridWorldAdapter：坐标运动、FOV、边界钳制、action_token 翻译 |
+| T94-T101 | `test_state_machine.py` | 8 | StateMachineAgentCore：全链路、persona 切换、version commit、分支隔离 |
+| T102-T103 | `test_llm_node.py` | 2 | LLMNode：delegation、空分支校验 |
+| T104-T106 | `test_output_node.py` | 3 | OutputNode：assembly、emotion 默认、memory_id 过滤 |
+| T107-T110 | `test_memory_node.py` | 4 | MemoryNode：retrieve、意图降级、intent graph boost |
+| **合计** | **16 个测试文件** | **258** | **全部通过** |
 
 ---
 
