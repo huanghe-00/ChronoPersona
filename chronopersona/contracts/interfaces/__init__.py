@@ -21,6 +21,9 @@ from chronopersona.contracts.interfaces.abstract_version_manager import (
     AbstractVersionManager,
 )
 from chronopersona.contracts.interfaces.abstract_sync_manager import AbstractSyncManager
+from chronopersona.contracts.interfaces.abstract_consolidation_agent import (
+    IConsolidationAgent,
+)
 from chronopersona.contracts.interfaces.abstract_write_domain_lock import IWriteDomainLock
 from chronopersona.contracts.interfaces.model_router import AbstractModelRouter
 
@@ -41,5 +44,6 @@ __all__ = [
     "IPersonaInjector",
     "ISkill",
     "ISkillRegistry",
+    "IConsolidationAgent",
     "IWriteDomainLock",
 ]

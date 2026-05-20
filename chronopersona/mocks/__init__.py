@@ -13,6 +13,7 @@ from chronopersona.mocks.mock_skill import MockSkill
 from chronopersona.mocks.mock_skill_registry import MockSkillRegistry
 from chronopersona.mocks.mock_sync_manager import MockSyncManager
 from chronopersona.mocks.mock_version_manager import MockVersionManager
+from chronopersona.mocks.mock_consolidation_agent import MockConsolidationAgent
 from chronopersona.mocks.mock_write_domain_lock import MockWriteDomainLock
 
 __all__ = [
@@ -29,5 +30,6 @@ __all__ = [
     "MockSkillRegistry",
     "MockSyncManager",
     "MockVersionManager",
+    "MockConsolidationAgent",
     "MockWriteDomainLock",
 ]
