@@ -3,7 +3,7 @@
 **版本**: v1.5  
 **基线日期**: 2026-05-15 (周五)  
 **总工期**: 8 周（2026-05-11 ~ 2026-07-05）  
-**当前状态**: Week 1 已完成，Week 2 启动中（258 passed / 94% coverage / W1 MVA 闭合）
+**当前状态**: Week 1 已完成，Week 2 启动中（262 passed / 94% coverage / W1 MVA 闭合）
 
 ---
 
@@ -11,7 +11,7 @@
 
 | 周次 | 日期范围 | 阶段主题 | 核心交付物 | 状态 |
 |------|---------|---------|-----------|------|
-| **W1** | 05-11 ~ 05-17 | 契约与孤岛 | 接口冻结(14个)、Mock全量(12个)、真实节点(5个)、测试258 passed 覆盖率94% | ✅ 已完成 |
+| **W1** | 05-11 ~ 05-17 | 契约与孤岛 | 接口冻结(14个)、Mock全量(12个)、真实节点(5个)、测试262 passed 覆盖率94% | ✅ 已完成 |
 | **W2** | 05-18 ~ 05-24 | 评估基线与骨架预热 | Dreaming骨架、L2指数衰减GC、Eval基线、PersonaInjector | 🟡 进行中 |
 | **W3** | 05-25 ~ 05-31 | L3 + Intent Graph | PostgreSQL Schema、CTE 导航、MVO 种子、6 步检索 | ⚪ 未开始 |
 | **W4** | 06-01 ~ 06-07 | Insight + 反思 | InsightGenerator、CAUSED Tier 2、A1/A2 召回测试 | ⚪ 未开始 |
@@ -27,7 +27,7 @@
 **实际达成**：
 - `contracts/interfaces/` 14 个抽象接口全部冻结并导出。
 - `mocks/` 12 个 Mock 实现 100% 覆盖对应接口。
-- `tests/` 新增 12 个专门测试文件，全量 **258 passed, 1 skipped, 0 failed**；语句覆盖率 **94%**。
+- `tests/` 新增 12 个专门测试文件，全量 **262 passed, 1 skipped, 0 failed**；语句覆盖率 **94%**。
 - 真实实现交付：`L0SyncLayer`（HLC + add-wins + clock-skew）、`GridWorldAdapter`（FOV + 边界钳制）、`IntentGraph`/`IntentNavigator`（BFS + 意图模式匹配）、`StateMachineAgentCore`（端到端状态机）、`WorkingMemoryWindow`（滑动窗口 + 动态压缩）。
 - 关键缺陷修复：`L0SyncLayer.get_delta()` 运行时 `NameError`（缺失 `self.`）。
 - PLACEHOLDER 合规：`test_caused_tier2.py` 正确 skip，无违规实现复杂算法。
@@ -53,7 +53,7 @@
 | T102-T103 | `test_llm_node.py` | 2 | LLMNode：delegation、空分支校验 |
 | T104-T106 | `test_output_node.py` | 3 | OutputNode：assembly、emotion 默认、memory_id 过滤 |
 | T107-T110 | `test_memory_node.py` | 4 | MemoryNode：retrieve、意图降级、intent graph boost |
-| **合计** | **16 个测试文件** | **258** | **全部通过** |
+| **合计** | **16 个测试文件** | **262** | **全部通过** |
 
 ---
 
@@ -157,7 +157,7 @@
 
 | 检查点 | 日期 | 通过标准 | 未通过兜底 |
 |--------|------|---------|-----------|
-| **M1** | 05-17 | `make test` 258 passed, 94% coverage, 接口冻结 ✅ 已完成 | W2 前 2 天收尾，Insight 模块降级 |
+| **M1** | 05-17 | `make test` 262 passed, 94% coverage, 接口冻结 ✅ 已完成 | W2 前 2 天收尾，Insight 模块降级 |
 | **Checkpoint 3.1** | 05-30 | L3 10 轮稳定性 + CTE Recall@5 ≥ 0.6 | W4 修 L3，Insight 延至 W5 |
 | **M2** | 06-07 | A1/A2 召回测试自动化通过 | 砍 CAUSED Tier 2，保 Tier 1 |
 | **M3** | 06-14 | 端到端 Agent 对话可用，情感状态机可观测 | 砍 LSTM 训练，保 Rule-based 情感 |
@@ -187,7 +187,7 @@
 2. 搭建 `evaluation/baseline.py` 并编写 `tests/test_eval_end_to_end.py`。
 3. 实现 `persona/injector.py`（PersonaInjector 注入/弹出契约）。
 4. 实现 `l3_semantic/unlearning.py`（过时知识标记，不物理删除）。
-5. 全量回归 `make test` 保持 258+ passed。
+5. 全量回归 `make test` 保持 262+ passed。
 
 ---
 
