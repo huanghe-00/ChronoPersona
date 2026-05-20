@@ -6,6 +6,7 @@ import pytest
 
 from chronopersona.contracts.interfaces import IConsolidationAgent
 from chronopersona.memory_system.insight.consolidation_agent import ConsolidationAgent
+from chronopersona.mocks.mock_consolidation_agent import MockConsolidationAgent
 
 
 class TestConsolidationAgent:
