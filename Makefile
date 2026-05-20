@@ -44,7 +44,7 @@ test-w4:
 	$(PYTHON) -m pytest tests/test_insight.py tests/test_simple_insight_engine.py tests/test_caused_tier2.py tests/test_eval_a1_a3.py tests/test_eval_pipeline.py -v --tb=short
 
 test-w5:
-	$(PYTHON) -m pytest tests/test_agent_core.py tests/test_state_machine.py tests/test_llm_node.py tests/test_memory_node.py tests/test_output_node.py -v --tb=short
+	$(PYTHON) -m pytest tests/test_agent_core.py tests/test_state_machine.py tests/test_agent_core_state_machine.py -v --tb=short
 
 test-w6:
 	$(PYTHON) -m pytest tests/test_a1_a3.py tests/test_a6_intent_graph.py tests/test_eval_pipeline.py tests/test_model_router.py tests/test_version_manager.py -v --tb=short
