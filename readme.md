@@ -92,6 +92,7 @@ graph TD
     G --> H[(PostgreSQL<br/>Intent Graph)]
     C --> I[(Qdrant<br/>Episodic Vector)]
     G --> J[(LWW-CRDT<br/>Multi-device Sync)]
+```
 
 ---
 
