@@ -1724,7 +1724,7 @@ MemoryEntry
 ├── entities: List[str]
 ├── emotion_tags: List[str]
 ├── created_at: datetime
-├── importance: float           -- Anthropic 借鉴：多因子评分
+├── importance: float           -- 多因子评分
 ├── access_count: int           -- LFU 信号
 ├── ttl_hours: Optional[float]  -- 指数衰减参数
 ├── entropy_gain: Optional[float]  -- 信息熵增益
