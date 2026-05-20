@@ -19,9 +19,6 @@ class TestEvalPipeline:
             retrieved = baseline.retrieve(query, scenario.branch_id, top_k=5)
             recall = Metrics.recall_at_k(retrieved, expected_ids, k=5)
             results.append({"query": query, "recall@5": recall})
-            retrieved = baseline.retrieve(query, scenario.branch_id, top_k=5)
-            recall = Metrics.recall_at_k(retrieved, [expected], k=5)
-            results.append({"query": query, "recall@5": recall})
 
         assert len(results) == len(scenario.queries)
         assert all(r["recall@5"] >= 0.0 for r in results)
