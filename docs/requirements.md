@@ -608,6 +608,9 @@ class SyncManager:
         执行流：
           1. 冻结 lww_map.dirty_keys 快照
           2. 调用 version_manager.commit(branch_id, snapshot)
+```
+
+**W1 实现状态**：`LWWMap`、`HybridTimestamp`、`L0SyncLayer`、`SyncManager` 已全部真实实现并单元测试覆盖。支持 multi-device add-wins、HLC 逻辑时钟、500ms clock-skew 检测与冲突标记。`MockL0SyncLayer` 保留用于快速测试。
           3. 按 entity_id 分组写入 entity_versions
           4. 冲突解决：比较 HLC
              • HLC 可比较 → LWW，旧版标记 superseded
@@ -2015,16 +2018,14 @@ async def test_concurrent_write_creates_conflict_edge():
 
 | 交付物 | 说明 |
 |--------|------|
-| `contracts/interfaces/` | 5 个抽象接口文件（硬化） |
-| `contracts/schemas/` | 数据实体定义 |
-| `contracts/openapi/api.yaml` | REST + WebSocket 规范 |
-| `mocks/` | 所有依赖的 Mock 实现 |
-| `tests/test_mock_pipeline.py` | 全 Mock 端到端测试 |
+| `contracts/interfaces/` | **14 个抽象接口文件全部冻结**（含 W4+ 预留空壳） |
+| `contracts/schemas/` | 18 个数据实体定义（含 `MemoryEntry` 重要性评分字段） |
+| `mocks/` | **12 个 Mock 实现，全部通过专门单元测试** |
+| `tests/` | **16 个测试文件，258 passed，94% 语句覆盖率** |
+| 真实实现 | `L0SyncLayer`、`GridWorldAdapter`、`IntentGraph`、`IntentNavigator`、`StateMachineAgentCore`、`WorkingMemoryWindow`、`LLMNode`、`MemoryNode`、`OutputNode` |
 | `Makefile` | `make test` 一键执行 |
-| `CLAUDE.md` / `.cursorrules` | Vibe Coding 规范 |
-| 自研 LWW-CRDT 接口 | `contracts/interfaces/` 中替换 Yjs 为 LWWMap |
-| PostgreSQL Schema + MVO 种子 | 包含 4.5.1.1 的初始数据 |
-| 8 类边 Tier 1 规则 | MENTIONS / TEMPORAL_NEXT / CAUSED 模板等基础构建器 |
+| LWW-CRDT 自研 | 替换 Yjs，`LWWMap` + `HybridTimestamp` + `SyncManager` |
+| MVO 种子 | 200 概念 + 6 条硬编码意图策略 |
 
 **里程碑**：`make test` 通过 28 个测试用例，包含一个完整的"用户输入 → Agent 回复" Mock 流程。
 
