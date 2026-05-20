@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from chronopersona.contracts.interfaces.abstract_episodic_store import AbstractEpisodicStore
 from chronopersona.contracts.schemas import MemoryEntry, RetrievedContext
 from chronopersona.memory_system.l2_episodic.embedder import MockBGEEmbedder
@@ -56,6 +58,11 @@ class MockEpisodicStore(AbstractEpisodicStore):
 
         scored.sort(key=lambda x: x[0], reverse=True)
         top_entries = [entry for _, entry in scored[:top_k]]
+
+        now_str = datetime.now().isoformat()
+        for entry in top_entries:
+            entry.access_count += 1
+            entry.last_accessed = now_str
 
         return RetrievedContext(
             episodic_memories=top_entries,

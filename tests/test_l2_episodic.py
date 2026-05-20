@@ -77,6 +77,14 @@ class TestMockEpisodicStore:
         with pytest.raises(ValueError):
             store.add(MemoryEntry(content="test"), branch_id="")
 
+    def test_retrieve_updates_access_count_mock(self) -> None:
+        """T56b: Mock retrieve also increments access_count."""
+        store = MockEpisodicStore()
+        store.add(MemoryEntry(content="mock track"), branch_id="main")
+        ctx = store.retrieve("mock track", branch_id="main")
+        assert ctx.episodic_memories[0].access_count == 1
+        assert ctx.episodic_memories[0].last_accessed is not None
+
 
 class TestSimpleEpisodicStore:
     """T51-T53: SimpleEpisodicStore (cosine similarity) tests."""
@@ -107,3 +115,27 @@ class TestSimpleEpisodicStore:
             store.add(MemoryEntry(content=f"memory {i}"), branch_id="main")
         ctx = store.retrieve("memory", branch_id="main", top_k=3)
         assert len(ctx.episodic_memories) <= 3
+
+    def test_memory_entry_has_importance_fields(self) -> None:
+        """T54: MemoryEntry has importance metadata with correct defaults."""
+        entry = MemoryEntry(content="test")
+        assert entry.importance == 0.5
+        assert entry.access_count == 0
+        assert entry.ttl_hours is None
+        assert entry.last_accessed is None
+
+    def test_retrieve_updates_access_stats(self) -> None:
+        """T55: Retrieve increments access_count and sets last_accessed."""
+        store = SimpleEpisodicStore()
+        store.add(MemoryEntry(content="track me"), branch_id="main")
+        ctx = store.retrieve("track me", branch_id="main")
+        assert ctx.episodic_memories[0].access_count == 1
+        assert ctx.episodic_memories[0].last_accessed is not None
+
+    def test_importance_affects_ranking(self) -> None:
+        """T56: Higher importance boosts ranking when similarity is equal."""
+        store = SimpleEpisodicStore()
+        store.add(MemoryEntry(content="common text", importance=0.1), branch_id="main")
+        store.add(MemoryEntry(content="common text", importance=0.9), branch_id="main")
+        ctx = store.retrieve("common text", branch_id="main", top_k=2)
+        assert ctx.episodic_memories[0].importance == 0.9

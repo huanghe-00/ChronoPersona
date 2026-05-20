@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from datetime import datetime
 from typing import Dict, List
 
 from chronopersona.contracts.interfaces import AbstractEpisodicStore
@@ -74,12 +75,22 @@ class SimpleEpisodicStore(AbstractEpisodicStore):
             return RetrievedContext()
 
         query_vec = self._embedder.embed_query(query)
-        scored = [
-            (self._cosine_similarity(query_vec, vec), entry)
-            for vec, entry in zip(vectors, entries)
-        ]
+        scored = []
+        for vec, entry in zip(vectors, entries):
+            sim = self._cosine_similarity(query_vec, vec)
+            importance = max(entry.importance, 0.01)
+            freq_boost = 1.0 + math.log1p(entry.access_count)
+            score = sim * importance * freq_boost
+            scored.append((score, entry))
+
         scored.sort(key=lambda x: x[0], reverse=True)
-        top = [entry for _, entry in scored[:top_k]]
+
+        now_str = datetime.now().isoformat()
+        top = []
+        for _, entry in scored[:top_k]:
+            entry.access_count += 1
+            entry.last_accessed = now_str
+            top.append(entry)
         return RetrievedContext(
             episodic_memories=top,
             total_tokens=sum(len(m.content) for m in top),

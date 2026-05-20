@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Dict, List
 
 import faiss
@@ -70,6 +71,11 @@ class FaissEpisodicStore(AbstractEpisodicStore):
 
         scores, indices = index.search(vec, actual_k)
         top_entries = [self._entries[branch_id][i] for i in indices[0] if i >= 0]
+
+        now_str = datetime.now().isoformat()
+        for entry in top_entries:
+            entry.access_count += 1
+            entry.last_accessed = now_str
 
         return RetrievedContext(
             episodic_memories=top_entries,

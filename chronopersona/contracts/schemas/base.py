@@ -33,6 +33,11 @@ class MemoryEntry:
     entities: List[str] = field(default_factory=list)
     emotion_tags: List[str] = field(default_factory=list)
     created_at: str = ""
+    importance: float = 0.5
+    access_count: int = 0
+    ttl_hours: Optional[float] = None
+    entropy_gain: Optional[float] = None
+    last_accessed: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
