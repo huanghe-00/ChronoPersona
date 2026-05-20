@@ -59,16 +59,16 @@
 
 ## 3. 详细阶段计划
 
-### Week 2: L0-L2 记忆核心（05-18 ~ 05-24）
+### Week 2: 评估基线与骨架预热（05-18 ~ 05-24）
 
 | 日期 | 重点任务 | 产出物 | 检查标准 |
 |------|---------|--------|---------|
-| 05-18 (一) | L0 `LWWMap` 实现 + HLC 时钟 | `l0_crdt/lww_map.py` | 单测覆盖 merge、clock skew 检测 |
-| 05-19 (二) | L1 Working Memory 滑动窗口 + 压缩 | `l1_working/sliding_window.py` | 超 token 阈值触发 LLM 摘要 |
-| 05-20 (三) | L2 Episodic Mock 接入 + BGE Embedding | `l2_episodic/mock_store.py` | ✅ Qdrant Mock 支持 payload 过滤 |
-| 05-21 (四) | L2 Session-MVCC Snapshot | `session_snapshots` 表写入 | 会话结束自动打 snapshot |
-| 05-22 (五) | L0-L2 集成 + 多端冲突模拟 | `tests/test_l0_l2_integration.py` | CONTRADICTS 边正确生成 |
-| 05-23~24 | 缓冲 / 文档 / CR 修复 | — | `make test` 全绿 |
+| 05-18 (一) | Dreaming 骨架 + L2 指数衰减 GC | `consolidation_agent.py` | 单测覆盖 decay 触发与清理 |
+| 05-19 (二) | Eval 基线搭建 + 端到端评估脚本 | `evaluation/baseline.py` + `tests/test_eval_end_to_end.py` | 纯向量 RAG 基线可运行 |
+| 05-20 (三) | PersonaInjector 实现 + 注入/弹出契约 | `persona/injector.py` | 切换人格后 L1 上下文正确注入 |
+| 05-21 (四) | L3 Unlearning 骨架 + 过时知识标记 | `l3_semantic/unlearning.py` | deprecated 标记写入，不物理删除 |
+| 05-22 (五) | 集成回归 + 文档刷新 | `tests/test_mock_pipeline.py` 全量通过 | `make test` 全绿 |
+| 05-23~24 | 缓冲 / CR 修复 / 排期审视 | — | Week 2 交付物冻结 |
 
 ### Week 3: L3 + Intent Graph（05-25 ~ 05-31）
 
@@ -157,7 +157,7 @@
 
 | 检查点 | 日期 | 通过标准 | 未通过兜底 |
 |--------|------|---------|-----------|
-| **M1** | 05-17 | `make test` 28 个用例通过，接口冻结 | W2 前 2 天收尾，Insight 模块降级 |
+| **M1** | 05-17 | `make test` 258 passed, 94% coverage, 接口冻结 ✅ 已完成 | W2 前 2 天收尾，Insight 模块降级 |
 | **Checkpoint 3.1** | 05-30 | L3 10 轮稳定性 + CTE Recall@5 ≥ 0.6 | W4 修 L3，Insight 延至 W5 |
 | **M2** | 06-07 | A1/A2 召回测试自动化通过 | 砍 CAUSED Tier 2，保 Tier 1 |
 | **M3** | 06-14 | 端到端 Agent 对话可用，情感状态机可观测 | 砍 LSTM 训练，保 Rule-based 情感 |
@@ -181,12 +181,13 @@
 ## 6. 本周行动项（Action Items）
 
 **负责人**: 全体  
-**截止日期**: 2026-05-15 20:00
+**截止日期**: 2026-05-22 20:00
 
-1. `contracts/interfaces/` 全部接口通过 Code Review 并合并。
-2. `tests/test_mock_pipeline.py` 在 CI 中跑通 28 个用例。
-3. `mocks/` 下所有依赖（Qdrant/PostgreSQL/LLM）Mock 实现 100% 覆盖。
-4. 冻结接口后，任何变更必须经过 **接口变更审批单**（防止 Week 2 后仍改接口导致连锁反应）。
+1. 实现 `consolidation_agent.py`（Dreaming 骨架 + L2 指数衰减 GC）。
+2. 搭建 `evaluation/baseline.py` 并编写 `tests/test_eval_end_to_end.py`。
+3. 实现 `persona/injector.py`（PersonaInjector 注入/弹出契约）。
+4. 实现 `l3_semantic/unlearning.py`（过时知识标记，不物理删除）。
+5. 全量回归 `make test` 保持 258+ passed。
 
 ---
 
