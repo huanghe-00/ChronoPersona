@@ -15,6 +15,7 @@ class IntentGraph:
         self._concepts: Dict[str, Dict[str, Concept]] = {}
         self._memory_nodes: Dict[str, Dict[str, str]] = {}
         self._edges: Dict[str, List[SemanticEdge]] = {}
+        self._deprecated_edges: Dict[str, Set[str]] = {}  # branch_id -> set(edge_id)
 
     def add_concept(self, concept: Concept) -> None:
         if not concept.branch_id:
@@ -77,11 +78,23 @@ class IntentGraph:
         results.sort(key=lambda x: x[2], reverse=True)
         return results
 
+    def deprecate_edge(self, edge_id: str, branch_id: str) -> None:
+        if not branch_id:
+            raise ValueError("branch_id must not be empty")
+        self._deprecated_edges.setdefault(branch_id, set()).add(edge_id)
+
+    def reactivate_edge(self, edge_id: str, branch_id: str) -> None:
+        if not branch_id:
+            raise ValueError("branch_id must not be empty")
+        self._deprecated_edges.setdefault(branch_id, set()).discard(edge_id)
+
     def get_concepts(self, branch_id: str) -> list[Concept]:
         return list(self._concepts.get(branch_id, {}).values())
 
     def get_edges(self, branch_id: str, edge_type: str | None = None) -> list[SemanticEdge]:
         edges = self._edges.get(branch_id, [])
+        deprecated = self._deprecated_edges.get(branch_id, set())
+        edges = [e for e in edges if e.id not in deprecated]
         if edge_type is None:
             return edges
         return [e for e in edges if e.edge_type == edge_type]
