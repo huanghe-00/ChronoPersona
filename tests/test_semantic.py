@@ -3,7 +3,7 @@
 import pytest
 
 from chronopersona.contracts.schemas import Fact
-from chronopersona.memory_system.l3_semantic.simple_semantic_store import SimpleSemanticStore
+from chronopersona.memory_system.l3_semantic.simple_store import SimpleSemanticStore
 
 
 class TestSimpleSemanticStore:
