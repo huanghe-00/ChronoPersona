@@ -86,11 +86,11 @@
 | 2D Canvas 渲染 | ❌ 纯文本描述 | ✅ 极简 HTML Canvas |
 | LoCoMo 适配 | ❌ 不做 | ❌ 不做 |
 | Qdrant | 🟡 Mock 实现 | ✅ Docker 真实接入 |
-| PostgreSQL | 🟡 Mock 实现 | ✅ Docker 真实接入 |
-| 主动反思 | 🟡 Placeholder 接口 | ✅ 完整实现 |
+| PostgreSQL | 🟡 混合：PostgresSemanticStore 接口就绪，IntentGraph 为内存实现 | ✅ Docker 真实接入 |
+| 主动反思 | 🟡 MVA 已实现 SimpleInsightEngine（关键词共现），LLM 驱动洞察为 W4+ | ✅ 完整实现 |
 | 可训练情感模型 | 🟡 LSTM 训练脚本 + Placeholder | ✅ 可选接入 |
 | VLA 微调通道 | 🟡 接口预留 | ✅ 默认 LLM 实现 |
-| **统一日志系统** | 🟡 Placeholder | ✅ 全链路 trace + 统计 |
+| **统一日志系统** | ✅ loguru 已落地，L0 CRDT / L1 压缩 / Agent 核心路径已接入 | ✅ 全链路 trace + 统计 |
 | **人格工程优化** | 🟡 Placeholder | ✅ 混合格式 Anchor + 有机约束 + 风格指纹 |
 
 ---
