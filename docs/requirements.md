@@ -642,6 +642,37 @@ class SyncManager:
 - `dirty_keys` 存活超过 1 小时未刷盘 → 强制触发 checkpoint
 - checkpoint 失败超过 3 次 → 告警并保留操作日志供排查
 
+#### 4.1.2 无冲突域写入契约（借鉴 Cursor 物理隔离优先原则）
+
+**核心原则**：在高度结构化数据领域（记忆/知识图谱），**物理隔离优于自动合并**。自动合并仅适用于无冲突域或原子级操作，语义级冲突必须引入仲裁。
+
+**分层写入域锁定**：
+
+| 层级 | 写入域单位 | 并发规则 | 隔离机制 |
+|------|-----------|---------|---------|
+| **L0** | key-value 键 | 同 key 跨设备写入 → LWW-CRDT add-wins | HLC 全序比较，冲突保留双版本 |
+| **L1** | session 上下文 | 仅当前会话写入，session 结束即丢弃 | 会话级物理隔离，无需跨端合并 |
+| **L2** | session_id 分区 | 不同 session 间无交集 | 分区即隔离，session_id 作为物理分片键 |
+| **L3** | concept_id / edge_id | **禁止对同一 entity_id 并发写入不同属性** | 写入前检查 entity 锁（W2 实现） |
+
+**架构契约（W2 落地）**：
+```python
+class WriteDomainLock:
+    """显式化无冲突域划分，确保同 entity 不被并发修改。"""
+    
+    def acquire(self, layer: str, entity_id: str, branch_id: str) -> bool:
+        """
+        返回 True 表示获得写入权；False 表示该 entity 正被其他设备/Agent 修改。
+        L0: key 级锁
+        L1: session 级锁（单会话天然串行）
+        L2: session_id 级锁（不同 session 并行）
+        L3: concept_id / edge_id 级锁
+        """
+        ...
+```
+
+**价值**：规避 Cursor 所警告的"文本级 CRDT 合并结构化数据导致语法崩溃"问题。ChronoPersona 的分层设计已隐含此思想，显式化为契约后可在多端场景下避免隐式冲突。
+
 ### 4.2 MVCC Version & Branch Manager
 
 **混合粒度设计**：

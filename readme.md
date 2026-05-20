@@ -52,6 +52,18 @@
 | **差异化遗忘** | 工作/情景/语义三层不同衰减函数 | L1 会话结束清空、L2 指数衰减 `R=e^(-t/S)`、L3 `deprecated` 反学习 |
 | **Pull on demand** | 按需拉取，绝不填满 | 意图图谱导航按需召回，低重要性记忆自动驱逐 |
 
+---
+
+## 🏗️ 工程化借鉴（结构化数据领域的务实合并哲学）
+
+吸收多 Agent 架构的核心工程洞察：**在高度结构化领域，物理隔离 + 启发式选择远比盲目追求全自动合并更务实**。
+
+| 借鉴点 | 行业实践 | ChronoPersona 落地 |
+|--------|---------|-------------------|
+| **物理隔离优先** | Git Worktree 完全隔离文件系统 | L1 session 结束即丢弃；L2 按 session_id 物理分片；L3 禁止同 entity 并发写入 |
+| **无冲突域划分** | DB/业务/展示层分离 | L0 key 级、L1 session 级、L2 partition 级、L3 entity 级写入域锁定 |
+| **结构化操作原语** | AST-level InsertNode/DeleteNode | L3 图操作原语（AddConcept/LinkEntities/DeprecateConcept），禁止文本级 diff |
+
 ## 📦 快速开始
 
 ```bash

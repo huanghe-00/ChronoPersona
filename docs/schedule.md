@@ -63,7 +63,7 @@
 
 | 日期 | 重点任务 | 产出物 | 检查标准 |
 |------|---------|--------|---------|
-| 05-18 (一) | Dreaming 骨架 + L2 指数衰减 GC | `consolidation_agent.py` | 单测覆盖 decay 触发与清理 |
+| 05-18 (一) | **显式化无冲突域契约** + Dreaming 骨架 + L2 指数衰减 GC | `write_domain_lock.py` + `consolidation_agent.py` | L0-L3 写入边界单测 + decay 单测通过 |
 | 05-19 (二) | Eval 基线搭建 + 端到端评估脚本 | `evaluation/baseline.py` + `tests/test_eval_end_to_end.py` | 纯向量 RAG 基线可运行 |
 | 05-20 (三) | PersonaInjector 实现 + 注入/弹出契约 | `persona/injector.py` | 切换人格后 L1 上下文正确注入 |
 | 05-21 (四) | L3 Unlearning 骨架 + 过时知识标记 | `l3_semantic/unlearning.py` | deprecated 标记写入，不物理删除 |
