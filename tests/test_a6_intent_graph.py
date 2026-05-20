@@ -72,7 +72,7 @@ class TestA6IntentGraph:
         graph.add_memory_node("mem-restaurant", "main")
         graph.add_edge(SemanticEdge("e1", "c_restaurant", "mem-restaurant", "MENTIONS", branch_id="main"))
 
-        pattern = IntentPattern("retrieve", ["餐厅"], ["MENTIONS"], 3, branch_scope="current")
+        pattern = IntentPattern("retrieve", ["餐厅"], ["MENTIONS"], 3)
         nav = IntentNavigator(graph, [pattern])
 
         results = nav.navigate("上次你说的那个餐厅", "retrieve", "main")
