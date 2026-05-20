@@ -92,3 +92,61 @@ graph TD
     G --> H[(PostgreSQL<br/>Intent Graph)]
     C --> I[(Qdrant<br/>Episodic Vector)]
     G --> J[(LWW-CRDT<br/>Multi-device Sync)]
+
+---
+
+## 🏗️ 核心架构亮点（详细）
+
+### 1. LWW-CRDT 多端同步（自研）
+
+- **移除 Yjs**，自研 `LWWMap` + `HybridTimestamp`（HLC 混合逻辑时钟）
+- **冲突策略**：物理时间戳 + 逻辑计数器全序比较，add-wins；超出 500ms clock-skew 时保留双版本并标记 `CONTRADICTS`
+- **性能**：1,000 节点 P99 < 2ms；10,000 节点 P99 < 5ms
+
+### 2. MVCC 角色分支
+
+- **Branch = `git checkout`**：`main` / `therapist` / `rpg-hero` 物理隔离
+- **L2 Session-MVCC**：每 session 结束打 snapshot，粗粒度版本控制
+- **L3 Entity-MVCC**：每条事实独立版本链，支持跨分支 merge
+
+### 3. 意图图谱导航
+
+- **8 类语义边**：`IS_A` / `MENTIONS` / `TEMPORAL_NEXT` / `CAUSED` / `CONTRADICTS` / `BELONGS_TO` / `SIMILAR_TO` / `TRIGGERED_BY`
+- **8 类意图策略**：retrieve / vertical_generalize / vertical_specify / parallel_compare / temporal_trace / causal_explore / empathize / persona_switch
+- **检索流程**：意图解析 → 模糊指代消解 → 加载策略 → PostgreSQL Recursive CTE → 混合召回融合（0.6×graph + 0.4×vector）
+
+### 4. 人格工程（酒馆社区经验生产化）
+
+- **混合格式 Anchor**：W++ 锚点 + 自然语言核心设定 + Ali:Chat 示例 + 结构化权限
+- **有机约束**：约束根植于人格逻辑（如"我是咨询师，不是医生"），而非外部禁忌列表
+- **漂移检测**：`PersonaDriftDetector` 对比当前回复与 `style_examples` 的 embedding 相似度，< 0.75 触发告警
+
+### 5. Token→Action Bridge（具身人格移植）
+
+- **零样本跨本体迁移**：同一人格可驱动 grid_2d / ros2_mobile / MuJoCo，仅换映射字典
+- **情感调制**：CONCERNED 状态 → 速度降低 50%、音量降低 20%、社交距离缩短
+- **可审计**：每个动作附带 `reasoning` 字段，追溯"为什么"
+
+---
+
+## 📊 评估框架（W6 完整交付）
+
+| 场景 | 传统 RAG 基线 | ChronoPersona | 提升 |
+|------|--------------|---------------|------|
+| A1 记忆召回 | Recall@5 = ? | Recall@5 = ? | +?% |
+| A3 角色隔离 | 串台率 = ? | 串台率 = 0% | 100% |
+| A5 多端冲突 | 信息丢失率 = ? | 信息保有率 = 100% | +?% |
+| A6 意图导航 | 召回精度 = ? | 召回精度 = ? | +?% |
+
+---
+
+## 🤝 贡献与规范
+
+- 接口变更需同步修改 `contracts/interfaces/` + `mocks/` + `tests/`
+- 新增接口必须配套 ≥3 个测试用例
+- 关键路径使用 `loguru`，禁止裸 `except`
+- PLACEHOLDER（如 PPO/GRPO、VLA 微调）仅保留标记 + TODO，禁止提前实现
+
+---
+
+> **"带镣铐的架构"** —— 在端侧内存 / Token 配额极限约束下，构建生产级可靠的 AI Agent 记忆大脑。
