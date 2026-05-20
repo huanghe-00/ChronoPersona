@@ -3,11 +3,11 @@
 from typing import Dict, Set, Tuple
 
 from chronopersona.contracts.interfaces.abstract_write_domain_lock import (
-    AbstractWriteDomainLock,
+    IWriteDomainLock,
 )
 
 
-class MockWriteDomainLock(AbstractWriteDomainLock):
+class MockWriteDomainLock(IWriteDomainLock):
     """Mock write-domain lock that always succeeds.
 
     Useful for tests that do not need real locking semantics.

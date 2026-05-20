@@ -3,11 +3,11 @@
 from typing import Dict, Set, Tuple
 
 from chronopersona.contracts.interfaces.abstract_write_domain_lock import (
-    AbstractWriteDomainLock,
+    IWriteDomainLock,
 )
 
 
-class WriteDomainLock(AbstractWriteDomainLock):
+class WriteDomainLock(IWriteDomainLock):
     """Simple in-memory lock manager for write domains.
 
     Locks are identified by (layer, entity_id, branch_id).
