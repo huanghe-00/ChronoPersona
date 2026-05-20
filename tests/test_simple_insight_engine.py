@@ -3,7 +3,7 @@
 import pytest
 
 from chronopersona.contracts.schemas import MemoryEntry
-from chronopersona.memory_system.insight import SimpleInsightEngine
+from chronopersona.memory_system.insight.simple_insight_engine import SimpleInsightEngine
 
 
 class TestSimpleInsightEngine:

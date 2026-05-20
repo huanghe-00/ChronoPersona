@@ -15,7 +15,10 @@ class TestEvalPipeline:
         baseline.index(scenario.memories, scenario.branch_id)
 
         results = []
-        for query, expected in zip(scenario.queries, scenario.expected_memory_ids):
+        for query, expected_ids in zip(scenario.queries, scenario.expected_memory_ids):
+            retrieved = baseline.retrieve(query, scenario.branch_id, top_k=5)
+            recall = Metrics.recall_at_k(retrieved, expected_ids, k=5)
+            results.append({"query": query, "recall@5": recall})
             retrieved = baseline.retrieve(query, scenario.branch_id, top_k=5)
             recall = Metrics.recall_at_k(retrieved, [expected], k=5)
             results.append({"query": query, "recall@5": recall})

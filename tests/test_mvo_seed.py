@@ -2,7 +2,8 @@
 
 import pytest
 
-from chronopersona.memory_system.l3_semantic import IntentGraph, MVOSeedLoader
+from chronopersona.memory_system.l3_semantic.intent_graph import IntentGraph
+from chronopersona.memory_system.l3_semantic.mvo_seed_loader import MVOSeedLoader
 
 
 class TestMVOSeedLoader:

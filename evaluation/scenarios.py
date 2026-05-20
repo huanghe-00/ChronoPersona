@@ -107,7 +107,7 @@ class ScenarioBuilder:
             branch_id="main",
             memories=memories,
             queries=["我喜欢什么菜系"],
-            expected_memory_ids=["a5-m1"],  # 改为单元素，与 queries 长度一致
+            expected_memory_ids=["a5-m1", "a5-m2"],  # 两个版本都应被召回
         )
 
     @staticmethod

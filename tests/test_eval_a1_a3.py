@@ -65,7 +65,7 @@ class TestA3PersonaIsolation:
 
     def test_a3_isolation_recall_zero(self) -> None:
         """Cross-branch query should return zero relevant memories."""
-        from chronopersona.memory_system.l2_episodic import SimpleEpisodicStore
+        from chronopersona.memory_system.l2_episodic.simple_store import SimpleEpisodicStore
         from chronopersona.contracts.schemas import MemoryEntry
 
         store = SimpleEpisodicStore()

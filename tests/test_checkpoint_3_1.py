@@ -58,7 +58,7 @@ class TestCheckpoint31:
         assert len(ctx.episodic_memories) >= 1
 
         # Verify L3 graph navigation works after 10 turns
-        pattern = IntentPattern("retrieve", ["川菜"], ["MENTIONS"], 3)
+        pattern = IntentPattern("retrieve", ["川菜"], ["MENTIONS"], 3, branch_scope="current")
         nav = IntentNavigator(graph, [pattern])
         results = nav.navigate("我喜欢川菜", "retrieve", "main")
         assert len(results) >= 1
