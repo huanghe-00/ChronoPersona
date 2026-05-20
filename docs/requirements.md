@@ -609,15 +609,15 @@ class SyncManager:
         执行流：
           1. 冻结 lww_map.dirty_keys 快照
           2. 调用 version_manager.commit(branch_id, snapshot)
-```
-
-**W1 实现状态**：`LWWMap`、`HybridTimestamp`、`L0SyncLayer`、`SyncManager` 已全部真实实现并单元测试覆盖。支持 multi-device add-wins、HLC 逻辑时钟、500ms clock-skew 检测与冲突标记。`MockL0SyncLayer` 保留用于快速测试。
           3. 按 entity_id 分组写入 entity_versions
           4. 冲突解决：比较 HLC
              • HLC 可比较 → LWW，旧版标记 superseded
              • HLC 不可比较（超出 MAX_CLOCK_SKEW）→ 保留双版本，创建 CONTRADICTS 边
           5. 清空 dirty_keys，广播 checkpoint_ack
         """
+```
+
+**W1 实现状态**：`LWWMap`、`HybridTimestamp`、`L0SyncLayer`、`SyncManager` 已全部真实实现并单元测试覆盖。支持 multi-device add-wins、HLC 逻辑时钟、500ms clock-skew 检测与冲突标记。`MockL0SyncLayer` 保留用于快速测试。
 ```
 
 #### 4.1.1 故障恢复与同步保障
@@ -804,8 +804,6 @@ async def _handle_caused(self, rel, turn):
     # 4. 不匹配模板 → 降级为 CORRELATED（弱相关，不进入因果推理链）
     pass
 ```
-
-**关键设计**：所有 Tier 1 边标记 `mva_only` 溯源位，支持后续审核升级。不匹配模板的因果表达降级为 `CORRELATED` 边，避免污染因果推理链。
 
 **关键设计**：所有 Tier 1 边标记 `mva_only` 溯源位，支持后续审核升级。不匹配模板的因果表达降级为 `CORRELATED` 边，避免污染因果推理链。
 
