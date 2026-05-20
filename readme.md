@@ -40,11 +40,11 @@
 
 ---
 
-## 🧬 Anthropic 架构借鉴
+## 🧬 认知仿生架构借鉴
 
-本项目的记忆设计并非简单的"向量数据库+RAG"，而是吸收 Anthropic 认知仿生架构的工程化落地：
+本项目的记忆设计并非简单的"向量数据库+RAG"，而是吸收认知仿生记忆架构的工程化落地：
 
-| 借鉴点 | Anthropic 原文 | ChronoPersona 实现 |
+| 借鉴点 | 行业标杆设计 | ChronoPersona 实现 |
 |--------|----------------|-------------------|
 | **记忆蒸馏** | L2→L3 是密度跃迁（去噪+结构化） | `ReflectionAgent` 两阶段：Phase A 实体链接 + Phase B 模式提取（W2 骨架） |
 | **Dreaming** | 空闲时段 Consolidation Agent 固化经验 | `MemoryConsolidationAgent` 每 5 session / 每日凌晨触发，提取 BehavioralRule |
