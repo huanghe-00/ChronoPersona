@@ -18,7 +18,8 @@
 7. [模型路由策略](#7-模型路由策略)
 8. [测试与评估设计](#8-测试与评估设计)
 9. [8周执行路线图](#9-8周执行路线图)
-10. [风险与兜底策略](#10-风险与兜底策略)
+10. [Cursor 多 Agent 架构深度调研：对 ChronoPersona 的借鉴分析](#10-cursor-多-agent-架构深度调研对-chronopersona-的借鉴分析)
+11. [风险与兜底策略](#11-风险与兜底策略)
 
 ---
 
@@ -2187,7 +2188,158 @@ async def test_concurrent_write_creates_conflict_edge():
 
 ---
 
-## 10. 风险与兜底策略
+## 10. Cursor 多 Agent 架构深度调研：对 ChronoPersona 的借鉴分析
+
+### 10.1 调研总结：Cursor 的真实架构 vs 技术误解
+
+| 维度 | 社区误解 | Cursor 实际实现 |
+|------|---------|----------------|
+| **核心机制** | CRDT 自动合并多 Agent 结果 | **Git Worktree 物理隔离 + Best-of-N 选择** |
+| **冲突处理** | 文本级 CRDT 解决冲突 | **不解决冲突，直接丢弃非最优结果** |
+| **Agent 协作** | 运行时共享状态、协同编辑 | **零协作，完全隔离，互不感知** |
+| **合并策略** | N 个部分结果合并为 1 个整体 | **明确禁止合并，人工/启发式选其一** |
+| **适用边界** | 通用代码生成 | **仅限无重叠写入域的模块化任务** |
+
+**Cursor 的核心洞察**：代码是高度结构化的 AST，而非纯文本。文本级 CRDT 会导致**语法崩溃、类型冲突、引用断裂**。因此工程上选择**物理隔离（Worktree）**规避合并难题，**人工/启发式选择（Best-of-N）**保证质量。
+
+### 10.2 借鉴价值矩阵（按优先级）
+
+#### P0：高度值得借鉴（与 ChronoPersona 当前架构强共鸣）
+
+**1. 物理隔离优先 → 强化 MVCC Branch 的"临时探索"语义**
+
+| Cursor 实践 | ChronoPersona 现状 | 借鉴落地 |
+|------------|-------------------|---------|
+| Git Worktree 完全隔离文件系统 | `main`/`therapist`/`rpg-hero` 持久分支 | 引入 **scratch branch**（临时探索分支）机制 |
+| N 个 Agent 独立运行后选最优 | 单一路径的 `run_turn()` | `explore_branch(task, n=3)` 创建 N 个临时分支并行推理，父 Agent 评估后 cherry-pick 最优结果 |
+
+**价值**：在 ActionPlanner（动作规划）或 Persona Switch（人格切换）场景中，可同时生成 N 个候选 plan，通过启发式评分（安全性/情感一致性/记忆引用完整度）选择最优，而非单一路径。**这与 Cursor 的 Best-of-N 机制异曲同工。**
+
+**2. 无冲突域划分 → 细化 L0/L1/L2/L3 写入边界**
+
+| Cursor 实践 | ChronoPersona 映射 | 借鉴落地 |
+|------------|-------------------|---------|
+| DB 层/业务层/展示层分离 | L0/L1/L2/L3 已分层 | 明确**同层同级不并发写入同一实体**的硬规则 |
+
+具体写入域锁定：
+- **L0**：仅 key-value 状态（偏好、配置、情感状态）。`LWWMap` 天然适合，因为 key 级 add-wins 无歧义。
+- **L1**：仅当前会话上下文。会话结束即丢弃，**物理上无需跨端合并**。
+- **L2**：仅按 `session_id` 分区的 episodic 记忆。session 间无交集，**分区即隔离**。
+- **L3**：仅图节点/边操作。**禁止对同一 concept_id 并发写入不同属性**。
+
+**价值**：Cursor 指出"无冲突域划分是规避合并难题的根本"。ChronoPersona 的分层已隐含此思想，但需显式强化为**架构契约**。
+
+**3. 结构化操作而非文本级操作 → L3 IntentGraph 已是正确方向**
+
+| Cursor 实践 | ChronoPersona 映射 | 验证 |
+|------------|-------------------|------|
+| AST-level 操作原语（InsertNode/DeleteNode/MoveNode） | L3 图操作原语（AddConcept/LinkEntities/DeprecateConcept） | ✅ 一致 |
+
+Cursor 的核心教训是：**结构化数据必须用结构化操作原语，禁止文本级 diff/merge**。ChronoPersona 的 L3 已经采用节点+边+属性的图模型，而非原始文本拼接，这避免了 Cursor 所警告的"语法崩溃"问题。
+
+**强化建议**：为 L3 语义操作引入**全局唯一 Stable ID**（类似 Cursor 的 AST 节点 UUID），替代依赖 `name` 或 `content_summary` 的弱标识。这使得跨设备的图合并可在节点级别确定性执行。
+
+#### P1：中等借鉴价值（需适配到记忆领域）
+
+**4. 依赖图感知合并顺序 → L3 语义边拓扑排序刷盘**
+
+| Cursor 实践 | ChronoPersona 映射 |
+|------------|-------------------|
+| 先 Contract（接口）→ 再 Implementation（实现）→ 最后 Test（测试） | 先 IS_A（概念定义）→ 再 MENTIONS（实例关联）→ 最后 CAUSED/TRIGGERED_BY（因果边） |
+
+**落地**：在 `SyncManager.checkpoint()` 中对 L3 dirty keys 按语义依赖拓扑排序：
+```python
+# 批次 1：概念层级（IS_A）
+checkpoint_batch_1 = filter(is_concept_node, dirty_keys)
+# 批次 2：实例关联（MENTIONS）
+checkpoint_batch_2 = filter(is_memory_node, dirty_keys)
+# 批次 3：因果/触发边（CAUSED, TRIGGERED_BY）
+checkpoint_batch_3 = filter(is_causal_edge, dirty_keys)
+```
+
+**价值**：确保多端同步时，概念定义先达成一致，再同步基于这些概念的关联，避免"先同步边、后同步节点"导致的悬空引用。
+
+**5. 语义三路合并（3-Way Semantic Merge）→ CONTRADICTS 边 + LLM 仲裁升级**
+
+| Cursor 实践 | ChronoPersona 当前 | 升级方案 |
+|------------|-------------------|---------|
+| Base/Left/Right AST 三路合并，冲突时父 Agent 仲裁 | `CONTRADICTS` 边标记冲突，自动 add-wins | **高价值冲突触发 LLM Semantic Merge Agent** |
+
+**触发条件**：
+- `importance > 0.8` 或 `entity_type in ['preference', 'belief', 'identity']`
+- HLC 不可比较（超出 500ms skew）
+- 双方修改非简单覆盖（如一方改 `value`，另一方改 `metadata.confidence`）
+
+**仲裁流程**：
+```
+CONTRADICTS 检测
+    │
+    ▼
+[Semantic Merge Agent] ──► 输入 Base（旧值）+ Left（本地值）+ Right（远程值）
+    │                         调用 DS-V4-flash（轻量模型）
+    ▼
+输出：融合后的值 + confidence + reasoning
+    │
+    ▼
+写入 L3 为新版本，旧版本标记 deprecated（非删除）
+```
+
+**价值**：对于用户核心偏好（如"喜欢川菜" vs "讨厌川菜"），简单 add-wins 会丢失语义。LLM 仲裁可以产出"用户对川菜的偏好存在矛盾，可能取决于具体场景"这样的**元洞察**。
+
+**6. Best-of-N 选择机制 → Reflection Agent 的候选 Insight 生成**
+
+| Cursor 实践 | ChronoPersona 映射 |
+|------------|-------------------|
+| N 个 Agent 生成完整方案，启发式/人工选最优 | `SimpleInsightEngine` 单一路径关键词共现 |
+
+**落地**：`MemoryConsolidationAgent`（Dreaming）在 Phase B（模式提取）时，可以生成 N 个候选 `BehavioralRule`，通过以下启发式选择：
+- 规则覆盖的 `source_memory_ids` 数量（覆盖越多越可信）
+- 规则与现有 L3 知识的一致性（避免与 `CONTRADICTS` 边冲突）
+- 规则的 `confidence` 评分
+
+### 10.3 需要规避的陷阱（Cursor 的教训）
+
+| 陷阱 | Cursor 的遭遇 | ChronoPersona 的应对 |
+|------|-------------|---------------------|
+| **文本级 CRDT 合并结构化数据** | 代码语法崩溃、类型冲突 | L3 禁止文本级 diff，强制节点级操作 |
+| **试图合并 N 个完整实现** | 官方明确警告不可行 | L0 冲突保留双版本（CONTRADICTS），不强行合并为单一值 |
+| **忽略引用完整性** | 变量重命名 vs 新引用断裂 | L3 边操作使用 Stable ID，而非文本匹配 |
+| **无域划分的并行写入** | 同一文件多 Agent 修改必冲突 | 同层同 entity_id 禁止并发写入（架构契约） |
+
+### 10.4 与当前 W2 排期的对齐建议
+
+基于 `docs/schedule.md` 的 Week 2-4 规划，建议将 Cursor 借鉴点嵌入以下任务：
+
+| 排期任务 | Cursor 借鉴点 | 具体动作 |
+|---------|--------------|---------|
+| **W2: Dreaming 骨架** | Best-of-N Insight 选择 | `MemoryConsolidationAgent` 生成 3 个候选 BehavioralRule，选最优写入 |
+| **W2: L2 指数衰减 GC** | 无冲突域划分 | 明确 `session_id` 作为 L2 物理分区键，session 间永不冲突 |
+| **W3: L3 CTE 导航** | 依赖感知刷盘顺序 | `SyncManager.checkpoint()` 按 IS_A → MENTIONS → CAUSED 拓扑排序 |
+| **W4: Insight 完整实现** | Semantic Merge Agent | `CONTRADICTS` 边触发 LLM 三路仲裁，产出融合洞察 |
+| **W5: Agent 核心循环** | Branch 级 Best-of-N | `StateMachineAgentCore` 支持 `explore_branch(n=3)` 临时分支探索 |
+
+### 10.5 结论
+
+Cursor 的架构选择揭示了一个**跨领域通用原则**：
+
+> **在高度结构化领域（代码/记忆/知识图谱），物理隔离 + 启发式选择，远比盲目追求全自动 CRDT 合并更务实。自动合并只适用于无冲突域或原子级操作（key-value、节点级），语义级冲突必须引入仲裁者（人工或 LLM）。**
+
+ChronoPersona 的当前设计已无意中遵循了此原则：
+- ✅ L0 用 key-value LWW-CRDT（原子级，适合自动合并）
+- ✅ L1/L2 用会话/分区隔离（物理无冲突）
+- ✅ L3 用图节点操作（结构化，非文本级）
+
+**下一步关键动作**：
+1. **显式化无冲突域契约**（写入前检查同 entity_id 是否被其他设备锁定）
+2. **引入 scratch branch + Best-of-N**（临时分支探索机制）
+3. **升级 L3 为 Stable ID + 依赖感知合并**（替代弱文本标识）
+4. **高价值冲突启用 LLM Semantic Merge**（替代简单 add-wins）
+
+这将在不引入 AST-CRDT 过重复杂度的前提下，获得 Cursor 架构的精髓。
+
+---
+
+## 11. 风险与兜底策略
 
 | 风险 | 影响 | 兜底策略 |
 |------|------|---------|
