@@ -1,61 +1,41 @@
-"""Insight trigger scheduler using APScheduler."""
+"""InsightScheduler implementation."""
 
-from __future__ import annotations
+from typing import Any, List
 
-from typing import Dict, List
-
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
-
-from chronopersona.contracts.interfaces import IInsightGenerator
-from chronopersona.contracts.schemas import Insight, MemoryEntry
+from loguru import logger
 
 
 class InsightScheduler:
-    """Periodic insight trigger with round-count and cron dual mode.
-
-    Wraps APScheduler BackgroundScheduler for production-grade cron jobs.
-    """
+    """Trigger consolidation on turn-based and daily schedules."""
 
     def __init__(
         self,
-        generator: IInsightGenerator,
-        turn_threshold: int = 10,
+        consolidation_agent: Any,
+        trigger_rounds: int = 10,
     ) -> None:
-        self._generator = generator
-        self._turn_threshold = turn_threshold
-        self._turn_counts: Dict[str, int] = {}
-        self._scheduler = BackgroundScheduler()
-        self._scheduler.add_job(
-            self._daily_scan,
-            trigger=CronTrigger(hour=3, minute=0),
-            id="insight_daily",
-            replace_existing=True,
-        )
-        self._scheduler.start()
+        self._agent = consolidation_agent
+        self._trigger_rounds = trigger_rounds
+        self._last_trigger_turn: dict[str, int] = {}
 
-    def on_turn_end(
-        self,
-        branch_id: str,
-        recent_memories: List[MemoryEntry],
-    ) -> List[Insight]:
-        """Increment turn counter and trigger insight generation if threshold reached."""
+    def maybe_trigger(self, branch_id: str, turn_count: int) -> List[Any]:
         if not branch_id:
             raise ValueError("branch_id must not be empty")
 
-        self._turn_counts[branch_id] = self._turn_counts.get(branch_id, 0) + 1
-        if self._turn_counts[branch_id] >= self._turn_threshold:
-            self._turn_counts[branch_id] = 0
-            return self._generator.generate(branch_id, recent_memories)
-        return []
+        last = self._last_trigger_turn.get(branch_id, 0)
+        if turn_count - last < self._trigger_rounds:
+            return []
 
-    def _daily_scan(self) -> None:
-        """Daily forced scan regardless of turn count.
+        if not self._agent.should_trigger(branch_id):
+            return []
 
-        TODO(W4+): Integrate with memory store to fetch recent_memories.
-        """
-        pass
+        logger.info(
+            "InsightScheduler: triggering consolidation for {} at turn {}",
+            branch_id,
+            turn_count,
+        )
+        self._last_trigger_turn[branch_id] = turn_count
+        return self._agent.consolidate(branch_id, top_k=10)
 
-    def shutdown(self) -> None:
-        """Shutdown background scheduler."""
-        self._scheduler.shutdown()
+    def cleanup_expired(self, branch_id: str) -> int:
+        # [FUTURE] Query L3 insights table for valid_until < now()
+        return 0
