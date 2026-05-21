@@ -1,5 +1,8 @@
 """Checkpoint 3.1: 10-turn conversation stability test."""
 
+import os
+import tempfile
+
 import pytest
 
 from chronopersona.agent_core import StateMachineAgentCore
@@ -17,7 +20,22 @@ class TestCheckpoint31:
         """Simulate 10 turns and verify memory layers remain consistent."""
         l2 = SimpleEpisodicStore()
         graph = IntentGraph()
-        MVOSeedLoader(graph).load("main", "main")
+        with tempfile.TemporaryDirectory() as tmp:
+            with open(os.path.join(tmp, "main.yaml"), "w") as f:
+                f.write(
+                    "concepts:\n"
+                    "  - id: c1\n"
+                    "    name: 川菜\n"
+                    "    concept_type: food\n"
+                    "    parent_id: null\n"
+                    "    branch_id: main\n"
+                    "  - id: c2\n"
+                    "    name: 粤菜\n"
+                    "    concept_type: food\n"
+                    "    parent_id: null\n"
+                    "    branch_id: main\n"
+                )
+            MVOSeedLoader(graph, config_dir=tmp).load("main", "main")
 
         core = StateMachineAgentCore(
             memory_store=l2,
