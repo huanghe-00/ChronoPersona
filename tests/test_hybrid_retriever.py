@@ -40,7 +40,7 @@ class TestHybridRetriever:
 
         ids = [m.id for m in ctx.episodic_memories]
         assert "m1" in ids
-        assert any("nav_c2" in i for i in ids)
+        assert "c2" in ids
 
     def test_empty_branch_raises_valueerror(self) -> None:
         """T03: Empty branch_id raises ValueError."""
