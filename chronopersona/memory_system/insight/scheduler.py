@@ -45,7 +45,8 @@ class InsightScheduler:
         if turn_count - last < self._trigger_rounds:
             return []
 
-        if not self._agent.should_trigger(branch_id):
+        turn_count_since_last = turn_count - self._last_trigger_turn.get(branch_id, 0)
+        if not self._agent.should_trigger(branch_id, turn_count_since_last):
             return []
 
         logger.info(
