@@ -1,10 +1,11 @@
 """Tests for InsightScheduler."""
 
+from unittest.mock import MagicMock
+
 import pytest
 
 from chronopersona.contracts.schemas import MemoryEntry
 from chronopersona.memory_system.insight import InsightScheduler
-from chronopersona.mocks import MockInsightGenerator
 
 
 class TestInsightScheduler:
@@ -12,7 +13,10 @@ class TestInsightScheduler:
 
     def test_turn_trigger_fires_at_threshold(self) -> None:
         """Trigger fires when turn count reaches threshold."""
-        gen = MockInsightGenerator()
+        gen = MagicMock()
+        gen.should_trigger.return_value = True
+        gen.consolidate.return_value = [{"rule": "r1"}]
+
         sched = InsightScheduler(gen, turn_threshold=3)
         try:
             memories = [MemoryEntry(content="test")]
@@ -20,13 +24,16 @@ class TestInsightScheduler:
             assert sched.on_turn_end("main", memories) == []
             insights = sched.on_turn_end("main", memories)
             assert len(insights) == 1
-            assert insights[0].insight_type == "pattern"
+            assert insights[0]["rule"] == "r1"
         finally:
             sched.shutdown()
 
     def test_turn_trigger_not_fired_before_threshold(self) -> None:
         """No trigger before threshold."""
-        gen = MockInsightGenerator()
+        gen = MagicMock()
+        gen.should_trigger.return_value = True
+        gen.consolidate.return_value = [{"rule": "r1"}]
+
         sched = InsightScheduler(gen, turn_threshold=5)
         try:
             memories = [MemoryEntry(content="x")]
@@ -37,7 +44,7 @@ class TestInsightScheduler:
 
     def test_empty_branch_raises(self) -> None:
         """Empty branch_id raises ValueError."""
-        gen = MockInsightGenerator()
+        gen = MagicMock()
         sched = InsightScheduler(gen)
         try:
             with pytest.raises(ValueError):
@@ -47,7 +54,10 @@ class TestInsightScheduler:
 
     def test_branch_isolation(self) -> None:
         """Turn counts are isolated by branch."""
-        gen = MockInsightGenerator()
+        gen = MagicMock()
+        gen.should_trigger.return_value = True
+        gen.consolidate.return_value = [{"rule": "x"}]
+
         sched = InsightScheduler(gen, turn_threshold=2)
         try:
             memories = [MemoryEntry(content="test")]
@@ -55,5 +65,6 @@ class TestInsightScheduler:
             assert sched.on_turn_end("b2", memories) == []
             insights = sched.on_turn_end("b1", memories)
             assert len(insights) == 1
+            assert insights[0]["rule"] == "x"
         finally:
             sched.shutdown()
