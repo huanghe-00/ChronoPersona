@@ -7,6 +7,36 @@ from chronopersona.memory_system.insight.simple_engine import SimpleInsightEngin
 
 
 class TestSimpleInsightEngine:
+    """Tests for SimpleInsightEngine."""
+
+    def test_generate_recommendation_for_stress(self) -> None:
+        """T07: Stress keywords trigger recommendation insight."""
+        engine = SimpleInsightEngine()
+        memories = [
+            MemoryEntry(id="m1", content="最近工作压力很大"),
+            MemoryEntry(id="m2", content="每天都失眠"),
+        ]
+        insights = engine.generate("main", memories)
+        recs = [i for i in insights if i.insight_type == "recommendation"]
+        assert len(recs) == 1
+        assert "relaxation" in recs[0].content.lower() or "放松" in recs[0].content
+
+    def test_generate_returns_multiple_types(self) -> None:
+        """T08: Generate produces pattern, conflict, trend, recommendation together."""
+        engine = SimpleInsightEngine()
+        memories = [
+            MemoryEntry(id="m1", content="我喜欢川菜喜欢川菜"),
+            MemoryEntry(id="m2", content="我讨厌辣味"),
+            MemoryEntry(id="m3", content="压力大"),
+            MemoryEntry(id="m4", content="x"),
+            MemoryEntry(id="m5", content="y"),
+        ]
+        insights = engine.generate("main", memories)
+        types = {i.insight_type for i in insights}
+        assert "pattern" in types
+        assert "conflict" in types
+        assert "trend" in types
+        assert "recommendation" in types
     """Tests for lightweight insight generation."""
 
     def test_generate_empty_memories(self) -> None:

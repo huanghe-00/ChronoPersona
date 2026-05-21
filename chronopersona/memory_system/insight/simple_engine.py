@@ -89,6 +89,20 @@ class SimpleInsightEngine(IInsightGenerator):
                 )
             )
 
+        # Recommendation: simple rule-based suggestions
+        stress_keywords = {"压力", "焦虑", "紧张", "失眠", "累"}
+        if any(w in " ".join(contents) for w in stress_keywords):
+            insights.append(
+                Insight(
+                    id="insight-recommend-001",
+                    insight_type="recommendation",
+                    source_memory_ids=[m.id for m in recent_memories[:2]],
+                    content="User shows signs of stress. Consider suggesting relaxation exercises.",
+                    confidence=0.75,
+                    branch_id=branch_id,
+                )
+            )
+
         return insights
 
     def should_trigger(self, branch_id: str, turn_count_since_last: int) -> bool:
