@@ -28,6 +28,20 @@ class MVOSeedLoader:
 
         concepts = data.get("concepts", [])
         patterns = data.get("intent_patterns", [])
+        
+        # 实际写入 graph（修复：之前仅计数未写入）
+        if self._graph is not None:
+            from chronopersona.contracts.schemas.semantic import Concept
+            for c_data in concepts:
+                concept = Concept(
+                    id=c_data.get("id", ""),
+                    name=c_data.get("name", ""),
+                    concept_type=c_data.get("concept_type", "abstract"),
+                    parent_id=c_data.get("parent_id"),
+                    branch_id=branch_id,
+                )
+                self._graph.add_concept(concept)
+
         logger.info(
             "MVO seed loaded: domain={} branch={} concepts={} patterns={}",
             domain, branch_id, len(concepts), len(patterns)
