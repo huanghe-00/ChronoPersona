@@ -18,6 +18,8 @@ class SimpleCorrelationMiner(ICorrelationMiner):
         min_confidence: float = 0.6,
     ) -> List[str]:
         """Return correlated memory IDs using simple keyword overlap."""
+        if not branch_id:
+            raise ValueError("branch_id must not be empty")
         correlated: List[str] = []
         for i, mem_a in enumerate(memories):
             for j, mem_b in enumerate(memories):
@@ -25,9 +27,9 @@ class SimpleCorrelationMiner(ICorrelationMiner):
                     continue
                 score = self.get_correlation_score(mem_a, mem_b, branch_id)
                 if score >= min_confidence:
-                    if mem_a.id not in correlated:
+                    if mem_a.id and mem_a.id not in correlated:
                         correlated.append(mem_a.id)
-                    if mem_b.id not in correlated:
+                    if mem_b.id and mem_b.id not in correlated:
                         correlated.append(mem_b.id)
         return correlated
 
