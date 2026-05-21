@@ -50,7 +50,7 @@ frontend → agent_core → memory_system → model_router
 | 测试类型 | 文件对应 | 要求 |
 |---------|---------|------|
 | 单元测试 | `tests/test_xxx.py` ↔ `chronopersona/xxx.py` | 覆盖率 > 80% |
-| Mock 端到端 | `tests/test_mock_pipeline.py` | Week 1 必须跑通 28 例 |
+| Mock 端到端 | `tests/test_mock_pipeline.py` | Week 1 必须跑通 31 例 |
 | 评估测试 | `evaluation/scenarios.py` | Week 6 后纳入 `make eval` |
 
 ---

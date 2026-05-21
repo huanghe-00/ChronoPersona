@@ -33,7 +33,7 @@
 - 任何新模块必须先定义抽象接口（`contracts/interfaces/`），再写实现
 - 修改接口必须同步更新 Mock（`mocks/`）和单元测试（`tests/`）
 - 异常处理必须指定具体异常类型，**禁止裸 `except`**
-- Week 1 核心守卫 `tests/test_mock_pipeline.py` 不得破坏
+- Week 1 核心守卫 `tests/test_mock_pipeline.py` 不得破坏（当前 31 例，全量 316 passed）
 
 ## PLACEHOLDER 处理
 - 遇到 `[RL-PLACEHOLDER]`、`[VLA-PLACEHOLDER]` 等标记时，仅保留标记并添加 TODO 注释，实现空函数或 pass 行为

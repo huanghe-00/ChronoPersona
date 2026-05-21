@@ -43,6 +43,12 @@ mypy>=1.8.0
 # === Evaluation ===
 scikit-learn>=1.4.0
 
+# === Logging ===
+loguru>=0.7.0
+
+# === YAML ===
+pyyaml>=6.0
+
 # === Chinese NLP ===
 jieba==0.42.1
 
