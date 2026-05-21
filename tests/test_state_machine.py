@@ -104,3 +104,25 @@ class TestStateMachineAgentCore:
         assert w1.branch_id == "branch-a"
         assert w2.branch_id == "branch-b"
         assert w1 is not w2
+    def test_run_turn_with_action_planner(self) -> None:
+        """T09: ActionPlanner produces action_plan in AgentOutput."""
+        from chronopersona.agent_core.action_planner import ActionPlanner
+        
+        planner = ActionPlanner()
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+            action_planner=planner,
+        )
+        out = core.run_turn("慢慢靠近我", branch_id="main")
+        assert out.action_plan is not None
+        assert out.action_plan.action_token == "approach_gently"
+
+    def test_run_turn_without_action_planner(self) -> None:
+        """T10: Without planner, action_plan is None."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        out = core.run_turn("hello", branch_id="main")
+        assert out.action_plan is None

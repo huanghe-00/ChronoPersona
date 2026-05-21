@@ -46,6 +46,7 @@ class StateMachineAgentCore(AbstractAgentCore):
         self._model_router = model_router
         self._version_manager = version_manager
         self._persona_injector = persona_injector
+        self._action_planner = action_planner
         self._intent_node = IntentNode()
         self._memory_node = MemoryNode(memory_store, intent_graph=intent_graph)
         self._llm_node = LLMNode(model_router)
@@ -70,7 +71,22 @@ class StateMachineAgentCore(AbstractAgentCore):
         context = self._memory_node.retrieve(user_input, branch_id, intent=intent.value)
         prompt = self._build_prompt(user_input, context, branch_id)
         response = self._llm_node.generate(prompt, branch_id)
+
+        # W5: ActionPlanner parses action intent and applies emotion modulation
+        action_plan = None
+        if self._action_planner is not None:
+            try:
+                action_plan = self._action_planner.plan(
+                    response.content,
+                    emotion_state=self.get_emotion_state(),
+                    branch_id=branch_id,
+                )
+            except Exception:
+                logger.warning("ActionPlanner failed for branch {}", branch_id)
+
         output = self._output_node.assemble(response, context, branch_id)
+        if action_plan is not None:
+            output.action_plan = action_plan
 
         # Persist turn to L1 Working Memory
         window = self._get_or_create_window(branch_id)
