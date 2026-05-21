@@ -11,7 +11,8 @@ from loguru import logger
 class MVOSeedLoader:
     """Load MVO seeds from YAML configs idempotently."""
 
-    def __init__(self, config_dir: str = "configs/mvo_extensions") -> None:
+    def __init__(self, graph=None, *, config_dir: str = "configs/mvo_extensions") -> None:
+        self._graph = graph
         self._config_dir = config_dir
 
     def load(self, domain: str, branch_id: str) -> Dict[str, Any]:
