@@ -3,7 +3,7 @@
 **版本**: v1.5  
 **基线日期**: 2026-05-15 (周五)  
 **总工期**: 8 周（2026-05-11 ~ 2026-07-05）  
-**当前状态**: Week 1 已完成，Week 2 启动中（262 passed / 94% coverage / W1 MVA 闭合）
+**当前状态**: Week 2 已完成，Week 3 进行中（316 passed / 94% coverage / W2 交付达成）
 
 ---
 
@@ -12,8 +12,8 @@
 | 周次 | 日期范围 | 阶段主题 | 核心交付物 | 状态 |
 |------|---------|---------|-----------|------|
 | **W1** | 05-11 ~ 05-17 | 契约与孤岛 | 接口冻结(14个)、Mock全量(12个)、真实节点(5个)、测试262 passed 覆盖率94% | ✅ 已完成 |
-| **W2** | 05-18 ~ 05-24 | 评估基线与骨架预热 | Dreaming骨架、L2指数衰减GC、Eval基线、PersonaInjector | 🟡 进行中 |
-| **W3** | 05-25 ~ 05-31 | L3 + Intent Graph | PostgreSQL Schema、CTE 导航、MVO 种子、6 步检索 | ⚪ 未开始 |
+| **W2** | 05-18 ~ 05-24 | 评估基线与骨架预热 | 无冲突域契约、Dreaming骨架、L2GC、PersonaInjector、Eval基线、L3 Unlearning | ✅ 已完成 |
+| **W3** | 05-25 ~ 05-31 | L3 + Intent Graph 深化 | MVO Seed、EdgeBuilder、HybridRetriever、CTEs | 🟡 进行中 |
 | **W4** | 06-01 ~ 06-07 | Insight + 反思 | InsightGenerator、CAUSED Tier 2、A1/A2 召回测试 | ⚪ 未开始 |
 | **W5** | 06-08 ~ 06-14 | Agent 核心循环 | LangGraph 状态机、LSTM 脚本、RL/VLA Placeholder | ⚪ 未开始 |
 | **W6** | 06-15 ~ 06-21 | 评估框架 | A1-A11 对抗测试集、量化对比表、报告流水线 | ⚪ 未开始 |
