@@ -22,7 +22,9 @@ class TestSimpleCorrelationMiner:
             MemoryEntry(id="m2", content="压力 工作 加班"),
             MemoryEntry(id="m3", content="火锅 美食 开心"),
         ]
-        correlated = miner.mine_correlations(memories, branch_id="main")
+        correlated = miner.mine_correlations(
+            memories, branch_id="main", min_confidence=0.4
+        )
         assert "m1" in correlated
         assert "m2" in correlated
         assert "m3" not in correlated
