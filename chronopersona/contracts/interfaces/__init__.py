@@ -1,5 +1,8 @@
 """Public interface exports."""
 
+from chronopersona.contracts.interfaces.abstract_action_planner import (
+    AbstractActionPlanner,
+)
 from chronopersona.contracts.interfaces.abstract_agent_core import AbstractAgentCore
 from chronopersona.contracts.interfaces.abstract_cost_tracker import ICostTracker
 from chronopersona.contracts.interfaces.abstract_embedder import AbstractEmbedder
@@ -32,6 +35,7 @@ from chronopersona.contracts.interfaces.abstract_write_domain_lock import IWrite
 from chronopersona.contracts.interfaces.model_router import AbstractModelRouter
 
 __all__ = [
+    "AbstractActionPlanner",
     "AbstractAgentCore",
     "AbstractEmbedder",
     "AbstractEmbodiedAdapter",
