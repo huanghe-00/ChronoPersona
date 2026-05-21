@@ -5,13 +5,13 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status: W1 MVA Complete](https://img.shields.io/badge/status-W1%20MVA%20Complete-brightgreen.svg)]()
-[![Tests: 316 passed](https://img.shields.io/badge/tests-316%20passed-success.svg)]()
+[![Tests: 325 passed](https://img.shields.io/badge/tests-325%20passed-success.svg)]()
 [![Coverage: 94%](https://img.shields.io/badge/coverage-94%25-success.svg)]()
 
 **ChronoPersona** 是一个面向生产级 AI Agent 的长期记忆系统，核心差异化在于将**分布式一致性（CRDT）**与**版本化记忆（MVCC）**引入 Agent 记忆架构，解决多端同步冲突、角色人格漂移、记忆幻觉三大痛点。同时通过 **Token→Action Bridge** 实现人格与身体的解耦，使同一套"灵魂"可零样本迁移到任意机器人本体。
 
 **定位**：面试展示项目 | **周期**：8 周（MVA） | **核心语言**：Python / TypeScript  
-**当前状态**：W2 评估基线与骨架预热已完成 — **316 passed, 1 skipped, 94% coverage**
+**当前状态**：W3-W4 骨架与核心模块已完成 — **325 passed, 1 skipped, 94% coverage**
 
 ## 🚀 项目状态
 
@@ -84,9 +84,9 @@ pytest tests/test_intent_graph.py -v     # 意图图谱
 
 - **W1** ✅ 契约冻结 + Mock 全量 + 真实节点（258 passed / 94% coverage）
 - **W2** ✅ 无冲突域契约 + Dreaming骨架 + L2 GC + PersonaInjector + Eval基线 + L3 Unlearning（316 passed）
-- **W3** 🔄 MVO Seed Loader + EdgeBuilder Tier1 + HybridRetriever（骨架完成）
-- **W4** Insight 完整实现 + CAUSED Tier 2
-- **W5** Agent 核心循环 + 可训练情感模型
+- **W3** ✅ MVO Seed Loader + EdgeBuilder Tier1 + HybridRetriever（骨架完成）
+- **W4** ✅ Insight 完整实现 + CAUSED Tier 2
+- **W5** 🟡 Agent 核心循环 + 可训练情感模型
 - **W6** 评估框架 A1-A11 + 量化对比表
 - **W7** 2D Canvas 前端 + Demo 视频
 - **W8** 技术博客 + Slide Deck + 面试准备
