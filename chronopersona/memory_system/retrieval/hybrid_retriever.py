@@ -44,7 +44,7 @@ class HybridRetriever(IHybridRetriever):
                 for target_id, hop, weight in nav_results[:top_k]:
                     l3_memories.append(
                         MemoryEntry(
-                            id=f"nav_{target_id}",
+                            id=target_id,  # 使用原始 target_id 以支持跨源去重
                             content=f"[Graph] {target_id} (hop={hop}, w={weight:.2f})",
                             metadata={"source": "intent_graph", "hop": hop},
                         )
