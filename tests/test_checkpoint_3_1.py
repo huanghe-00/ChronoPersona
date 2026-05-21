@@ -17,7 +17,7 @@ class TestCheckpoint31:
         """Simulate 10 turns and verify memory layers remain consistent."""
         l2 = SimpleEpisodicStore()
         graph = IntentGraph()
-        MVOSeedLoader(graph).load("main")
+        MVOSeedLoader(graph).load("main", "main")
 
         core = StateMachineAgentCore(
             memory_store=l2,

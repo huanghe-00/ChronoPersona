@@ -13,7 +13,7 @@ class TestMVOSeedLoader:
         """Loading seeds populates default concepts."""
         graph = IntentGraph()
         loader = MVOSeedLoader(graph)
-        loader.load("main")
+        loader.load("main", "main")
         concepts = graph.get_concepts("main")
         assert len(concepts) > 0
         assert any(c.id == "c_food" for c in concepts)
@@ -22,7 +22,7 @@ class TestMVOSeedLoader:
         """Repeated loading does not duplicate concepts."""
         graph = IntentGraph()
         loader = MVOSeedLoader(graph)
-        loader.load("main")
+        loader.load("main", "main")
         first_count = len(graph.get_concepts("main"))
         loader.load("main")
         second_count = len(graph.get_concepts("main"))
@@ -32,6 +32,6 @@ class TestMVOSeedLoader:
         """Seeds are loaded into specified branch only."""
         graph = IntentGraph()
         loader = MVOSeedLoader(graph)
-        loader.load("b1")
+        loader.load("default", "b1")
         assert len(graph.get_concepts("b1")) > 0
         assert len(graph.get_concepts("b2")) == 0
