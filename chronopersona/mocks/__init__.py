@@ -18,6 +18,7 @@ from chronopersona.mocks.mock_version_manager import MockVersionManager
 from chronopersona.mocks.mock_consolidation_agent import MockConsolidationAgent
 from chronopersona.mocks.mock_edge_builder import MockEdgeBuilder
 from chronopersona.mocks.mock_write_domain_lock import MockWriteDomainLock
+from chronopersona.mocks.mock_correlation_miner import MockCorrelationMiner
 
 __all__ = [
     "MockActionPlanner",
@@ -38,4 +39,5 @@ __all__ = [
     "MockConsolidationAgent",
     "MockEdgeBuilder",
     "MockWriteDomainLock",
+    "MockCorrelationMiner",
 ]

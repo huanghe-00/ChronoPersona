@@ -32,6 +32,7 @@ from chronopersona.contracts.interfaces.abstract_consolidation_agent import (
 )
 from chronopersona.contracts.interfaces.abstract_edge_builder import IEdgeBuilder
 from chronopersona.contracts.interfaces.abstract_write_domain_lock import IWriteDomainLock
+from chronopersona.contracts.interfaces.abstract_correlation_miner import ICorrelationMiner
 from chronopersona.contracts.interfaces.model_router import AbstractModelRouter
 
 __all__ = [
@@ -56,4 +57,5 @@ __all__ = [
     "IConsolidationAgent",
     "IEdgeBuilder",
     "IWriteDomainLock",
+    "ICorrelationMiner",
 ]
