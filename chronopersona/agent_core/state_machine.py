@@ -51,6 +51,8 @@ class StateMachineAgentCore(AbstractAgentCore):
         self._persona_id: str = "default"
         self._emotion_state: EmotionState = EmotionState()
         self._working_windows: dict[str, WorkingMemoryWindow] = {}
+        self._insight_scheduler: Any | None = None
+        self._turn_count: dict[str, int] = {}
 
     def run_turn(
         self,
@@ -71,6 +73,18 @@ class StateMachineAgentCore(AbstractAgentCore):
         # Persist turn to L1 Working Memory
         window = self._get_or_create_window(branch_id)
         window.add_turn(user_input, output.reply_text)
+
+        # W4: Trigger InsightScheduler every N turns
+        if self._insight_scheduler is not None:
+            self._turn_count[branch_id] = self._turn_count.get(branch_id, 0) + 1
+            try:
+                self._insight_scheduler.maybe_trigger(
+                    branch_id, self._turn_count[branch_id]
+                )
+            except Exception:
+                logger.warning(
+                    "InsightScheduler trigger failed for branch {}", branch_id
+                )
 
         return output
 
@@ -132,6 +146,10 @@ class StateMachineAgentCore(AbstractAgentCore):
     def get_emotion_state(self) -> EmotionState:
         """Return current emotion state."""
         return self._emotion_state
+
+    def set_insight_scheduler(self, scheduler: Any) -> None:
+        """Attach InsightScheduler for periodic consolidation."""
+        self._insight_scheduler = scheduler
 
     def get_memory_summary(self, branch_id: str) -> str:
         """Return a summary of memory state."""
