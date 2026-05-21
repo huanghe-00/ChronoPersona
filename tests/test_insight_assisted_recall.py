@@ -5,8 +5,10 @@ from typing import List
 import pytest
 
 from chronopersona.contracts.schemas import Insight, MemoryEntry, RetrievedContext
+from chronopersona.contracts.schemas.semantic import Concept
 from chronopersona.memory_system.l3_semantic.intent_graph import IntentGraph
 from chronopersona.memory_system.retrieval.hybrid_retriever import HybridRetriever
+from evaluation.baseline import VectorRAGBaseline
 
 
 class TestInsightAssistedRecall:
