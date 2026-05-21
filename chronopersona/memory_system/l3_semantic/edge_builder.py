@@ -102,6 +102,18 @@ class SimpleEdgeBuilder(IEdgeBuilder):
                         weight=0.85,
                     )
                 )
+        # Tier 2 降级：模板不匹配时，若内容较长，降级为 CORRELATED 弱相关
+        if not edges and len(content) > 10:
+            edges.append(
+                SemanticEdge(
+                    id=f"{turn_id}_correlated",
+                    source_id=turn_id,
+                    target_id="weak_correlation",
+                    edge_type="CORRELATED",
+                    branch_id=branch_id,
+                    weight=0.6,
+                )
+            )
         return edges
 
     def _extract_contradicts(
