@@ -24,6 +24,7 @@ from chronopersona.contracts.interfaces.abstract_sync_manager import AbstractSyn
 from chronopersona.contracts.interfaces.abstract_consolidation_agent import (
     IConsolidationAgent,
 )
+from chronopersona.contracts.interfaces.abstract_edge_builder import IEdgeBuilder
 from chronopersona.contracts.interfaces.abstract_write_domain_lock import IWriteDomainLock
 from chronopersona.contracts.interfaces.model_router import AbstractModelRouter
 
@@ -45,5 +46,6 @@ __all__ = [
     "ISkill",
     "ISkillRegistry",
     "IConsolidationAgent",
+    "IEdgeBuilder",
     "IWriteDomainLock",
 ]
