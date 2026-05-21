@@ -65,7 +65,7 @@ class TestSimpleEdgeBuilder:
         )
         caused = [e for e in edges if e.edge_type == "CAUSED"]
         assert len(caused) >= 1
-        assert caused[0].metadata.get("mva_only") is True
+        assert caused[0].weight == 0.85
 
     def test_build_contradicts_from_antonyms(self) -> None:
         """T05: Antonym pairs in content produce CONTRADICTS edge."""

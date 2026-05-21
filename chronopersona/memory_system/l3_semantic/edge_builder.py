@@ -100,7 +100,6 @@ class SimpleEdgeBuilder(IEdgeBuilder):
                         edge_type="CAUSED",
                         branch_id=branch_id,
                         weight=0.85,
-                        metadata={"mva_only": True, "template": pattern},
                     )
                 )
         return edges
