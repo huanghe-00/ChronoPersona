@@ -3,6 +3,7 @@
 from chronopersona.mocks.mock_agent_core import MockAgentCore
 from chronopersona.mocks.mock_cost_tracker import MockCostTracker
 from chronopersona.mocks.mock_embodied_adapter import MockEmbodiedAdapter
+from chronopersona.mocks.mock_hybrid_retriever import MockHybridRetriever
 from chronopersona.mocks.mock_insight_generator import MockInsightGenerator
 from chronopersona.mocks.mock_l0_sync import MockL0SyncLayer
 from chronopersona.mocks.mock_memory_migration import MockMemoryMigrationService
@@ -21,6 +22,7 @@ __all__ = [
     "MockAgentCore",
     "MockCostTracker",
     "MockEmbodiedAdapter",
+    "MockHybridRetriever",
     "MockInsightGenerator",
     "MockL0SyncLayer",
     "MockMemoryMigrationService",
