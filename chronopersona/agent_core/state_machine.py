@@ -41,6 +41,7 @@ class StateMachineAgentCore(AbstractAgentCore):
         version_manager: AbstractVersionManager | None = None,
         intent_graph: IntentGraph | None = None,
         persona_injector: IPersonaInjector | None = None,
+        action_planner: Any | None = None,
     ) -> None:
         self._memory_store = memory_store
         self._model_router = model_router
