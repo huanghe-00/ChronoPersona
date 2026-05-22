@@ -24,9 +24,9 @@ class TestWorkingMemoryWindow:
     def test_add_turn_and_get_context_order(self) -> None:
         """T39: Context returns newest-first order."""
         l1 = WorkingMemoryWindow(branch_id="main", session_id="s1", max_turns=100)
-        l1.add_turn("hello", "hi")
-        l1.add_turn("how are you", "fine")
-        ctx = l1.get_context()
+        l1.add_turn("hello", "hi", branch_id="main")
+        l1.add_turn("how are you", "fine", branch_id="main")
+        ctx = l1.get_context(branch_id="main")
         assert len(ctx) == 2
         assert isinstance(ctx[0], TurnEntry)
         assert ctx[0].turn_id == 2
@@ -36,7 +36,7 @@ class TestWorkingMemoryWindow:
         """T40: Exceeding max_turns triggers compression."""
         l1 = WorkingMemoryWindow(branch_id="main", session_id="s1", max_turns=3)
         for i in range(5):
-            l1.add_turn(f"msg{i}", f"reply{i}")
+            l1.add_turn(f"msg{i}", f"reply{i}", branch_id="main")
         assert len(l1._turns) <= 3
         assert len(l1._compressed_summaries) > 0
         turn_ids = {t.turn_id for t in l1._turns}
@@ -52,8 +52,8 @@ class TestWorkingMemoryWindow:
             max_turns=100,
             token_threshold=500,
         )
-        l1.add_turn(big_text, "reply1")
-        l1.add_turn(big_text, "reply2")
+        l1.add_turn(big_text, "reply1", branch_id="main")
+        l1.add_turn(big_text, "reply2", branch_id="main")
         assert l1.total_tokens <= l1.token_threshold
         assert len(l1._compressed_summaries) > 0
 
@@ -71,8 +71,8 @@ class TestWorkingMemoryWindow:
             max_turns=2,
             compressor=mock_compressor,
         )
-        l1.add_turn("a", "b")
-        l1.add_turn("c", "d")
-        l1.add_turn("e", "f")
+        l1.add_turn("a", "b", branch_id="main")
+        l1.add_turn("c", "d", branch_id="main")
+        l1.add_turn("e", "f", branch_id="main")
         assert len(calls) > 0
         assert any("MockSummary" in s.content for s in l1._compressed_summaries)

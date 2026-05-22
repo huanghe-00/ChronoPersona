@@ -73,6 +73,21 @@ class AbstractAgentCore(ABC):
         """Return a human-readable summary of the memory state for a branch.
 
         Args:
+            branch_id: The branch to summarise. Must not be empty.
+
+        Returns:
+            A string summary of the memory contents.
+
+        Raises:
+            ValueError: If branch_id is empty.
+        """
+        ...
+
+    @abstractmethod
+    def get_memory_summary(self, branch_id: str) -> str:
+        """Return a human-readable summary of the memory state for a branch.
+
+        Args:
             branch_id: The branch to summarise.
 
         Returns:

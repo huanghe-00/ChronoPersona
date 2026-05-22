@@ -6,7 +6,7 @@ import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, UTC
-from typing import List, Optional, Protocol
+from typing import Any, Dict, List, Optional, Union, Protocol
 
 from loguru import logger
 
@@ -50,14 +50,14 @@ class CompressedSummary:
 class Compressor(Protocol):
     """Protocol for turn compression strategy (e.g., LLM summarizer)."""
 
-    def __call__(self, turns: list[TurnEntry]) -> str:
+    def __call__(self, turns: List[TurnEntry]) -> str:
         """Compress a batch of turns into a single summary string."""
 
 
 class _NaiveCompressor:
     """Fallback compressor when no LLM is available."""
 
-    def __call__(self, turns: list[TurnEntry]) -> str:
+    def __call__(self, turns: List[TurnEntry]) -> str:
         snippets = [t.to_text() for t in turns]
         joined = " | ".join(snippets)
         return "[Compressed] " + joined[:200] + "..."
@@ -72,7 +72,7 @@ class WorkingMemoryWindow:
         session_id: str,
         max_turns: int = 10,
         token_threshold: int = 4096,
-        compressor: Compressor | None = None,
+        compressor: Optional[Compressor] = None,
     ) -> None:
         if not branch_id:
             raise ValueError("branch_id must not be empty")
@@ -84,12 +84,14 @@ class WorkingMemoryWindow:
         self.max_turns: int = max_turns
         self.token_threshold: int = token_threshold
         self._compressor: Compressor = compressor or _NaiveCompressor()
-        self._turns: list[TurnEntry] = []
-        self._compressed_summaries: list[CompressedSummary] = []
+        self._turns: List[TurnEntry] = []
+        self._compressed_summaries: List[CompressedSummary] = []
         self._next_turn_id: int = 1
 
-    def add_turn(self, user_text: str, agent_text: str) -> None:
+    def add_turn(self, user_text: str, agent_text: str, branch_id: str) -> None:
         """Add a new dialogue turn and trigger compression if thresholds exceeded."""
+        if branch_id != self.branch_id:
+            raise ValueError("branch_id mismatch")
         turn = TurnEntry(
             turn_id=self._next_turn_id,
             user_text=user_text,
@@ -161,9 +163,15 @@ class WorkingMemoryWindow:
             self.branch_id,
         )
 
-    def get_context(self, token_limit: int | None = None) -> list[TurnEntry | CompressedSummary]:
+    def get_context(
+        self,
+        branch_id: str,
+        token_limit: Optional[int] = None,
+    ) -> List[Union[TurnEntry, CompressedSummary]]:
         """Return context items in reverse chronological order (newest first)."""
-        items: list[TurnEntry | CompressedSummary] = []
+        if branch_id != self.branch_id:
+            raise ValueError("branch_id mismatch")
+        items: List[Union[TurnEntry, CompressedSummary]] = []
 
         for turn in reversed(self._turns):
             items.append(turn)
@@ -174,7 +182,7 @@ class WorkingMemoryWindow:
         if token_limit is None:
             return items
 
-        result: list[TurnEntry | CompressedSummary] = []
+        result: List[Union[TurnEntry, CompressedSummary]] = []
         current_tokens = 0
         for item in items:
             cost = item.token_count
@@ -185,12 +193,16 @@ class WorkingMemoryWindow:
 
         return result
 
-    def should_compress(self) -> bool:
+    def should_compress(self, branch_id: str) -> bool:
         """Return True if compression thresholds are currently exceeded."""
+        if branch_id != self.branch_id:
+            raise ValueError("branch_id mismatch")
         return len(self._turns) > self.max_turns or self.total_tokens > self.token_threshold
 
-    def snapshot(self) -> dict:
+    def snapshot(self, branch_id: str) -> Dict[str, Any]:
         """Return a serializable snapshot for debugging/tests."""
+        if branch_id != self.branch_id:
+            raise ValueError("branch_id mismatch")
         return {
             "branch_id": self.branch_id,
             "session_id": self.session_id,

@@ -91,7 +91,7 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         # Persist turn to L1 Working Memory
         window = self._get_or_create_window(branch_id)
-        window.add_turn(user_input, output.reply_text)
+        window.add_turn(user_input, output.reply_text, branch_id)
 
         # W4: Trigger InsightScheduler every N turns
         if self._insight_scheduler is not None:
@@ -110,7 +110,7 @@ class StateMachineAgentCore(AbstractAgentCore):
     def _build_prompt(self, user_input: str, context: RetrievedContext, branch_id: str) -> str:
         """Build LLM prompt with L1 working memory and L2/L3 retrieved context."""
         window = self._get_or_create_window(branch_id)
-        l1_items = window.get_context(token_limit=2048)
+        l1_items = window.get_context(branch_id=branch_id, token_limit=2048)
 
         l1_parts: list[str] = []
         for item in l1_items:

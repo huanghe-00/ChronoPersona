@@ -17,9 +17,11 @@ class IntentGraph:
         self._edges: Dict[str, List[SemanticEdge]] = {}
         self._deprecated_edges: Dict[str, Set[str]] = {}  # branch_id -> set(edge_id)
 
-    def add_concept(self, concept: Concept) -> None:
-        if not concept.branch_id:
+    def add_concept(self, concept: Concept, branch_id: str) -> None:
+        if not branch_id:
             raise ValueError("branch_id must not be empty")
+        if concept.branch_id != branch_id:
+            raise ValueError("concept.branch_id does not match provided branch_id")
         self._concepts.setdefault(concept.branch_id, {})[concept.id] = concept
 
     def add_memory_node(self, memory_id: str, branch_id: str) -> None:
@@ -27,9 +29,11 @@ class IntentGraph:
             raise ValueError("branch_id must not be empty")
         self._memory_nodes.setdefault(branch_id, {})[memory_id] = memory_id
 
-    def add_edge(self, edge: SemanticEdge) -> None:
-        if not edge.branch_id:
+    def add_edge(self, edge: SemanticEdge, branch_id: str) -> None:
+        if not branch_id:
             raise ValueError("branch_id must not be empty")
+        if edge.branch_id != branch_id:
+            raise ValueError("edge.branch_id does not match provided branch_id")
         if edge.edge_type not in {
             "IS_A", "MENTIONS", "TEMPORAL_NEXT", "CAUSED",
             "CONTRADICTS", "BELONGS_TO", "SIMILAR_TO", "TRIGGERED_BY",
