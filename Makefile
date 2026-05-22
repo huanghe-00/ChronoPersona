@@ -53,7 +53,7 @@ test-w7:
 	$(PYTHON) -m pytest tests/test_grid_world.py tests/test_embodied_adapter.py tests/test_intent_graph.py tests/test_intent_navigator.py -v --tb=short
 
 eval-full:
-	$(PYTHON) -m evaluation.runner --all
+	$(PYTHON) -m evaluation.runner
 
 # === Cleanup ===
 clean:

@@ -146,6 +146,11 @@ class StateMachineAgentCore(AbstractAgentCore):
                 f"[Embodied State] Agent at ({embodied_state.x}, {embodied_state.y}), "
                 f"facing {embodied_state.theta:.2f} rad. FOV: {fov}"
             )
+        if self._emotion_state is not None and self._emotion_state.current_state != EmotionLabel.NEUTRAL:
+            parts.append(
+                f"[Emotion State] {self._emotion_state.current_state.value} "
+                f"(intensity={self._emotion_state.intensity:.1f})"
+            )
         if l1_text:
             parts.append(f"[Recent Conversation]\n{l1_text}")
         if l2_text:

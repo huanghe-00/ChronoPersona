@@ -194,3 +194,21 @@ class TestStateMachineAgentCore:
         assert out.emotion_state.current_state.value == "CONCERNED"
         # The reply text should reflect the updated emotion (MockModelRouter returns deterministic text)
         assert out.reply_text
+
+    def test_build_prompt_includes_emotion_state(self) -> None:
+        """T17: _build_prompt embeds current emotion state for LLM modulation."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        from chronopersona.contracts.schemas import EmotionLabel, EmotionState, RetrievedContext
+        core._emotion_state = EmotionState(
+            current_state=EmotionLabel.CONCERNED,
+            intensity=0.7,
+            trigger_reason="User expressed anxiety",
+        )
+        ctx = RetrievedContext(episodic_memories=[], total_tokens=0)
+        prompt = core._build_prompt("hi", ctx, "main")
+        assert "[Emotion State]" in prompt
+        assert "CONCERNED" in prompt
+        assert "0.7" in prompt
