@@ -82,8 +82,8 @@ class StateMachineAgentCore(AbstractAgentCore):
                     emotion_state=self.get_emotion_state(),
                     branch_id=branch_id,
                 )
-            except Exception:
-                logger.warning("ActionPlanner failed for branch {}", branch_id)
+            except (ValueError, RuntimeError) as e:
+                logger.warning("ActionPlanner failed for branch {}: {}", branch_id, e)
 
         output = self._output_node.assemble(response, context, branch_id)
         if action_plan is not None:
@@ -100,9 +100,9 @@ class StateMachineAgentCore(AbstractAgentCore):
                 self._insight_scheduler.maybe_trigger(
                     branch_id, self._turn_count[branch_id]
                 )
-            except Exception:
+            except (ValueError, RuntimeError) as e:
                 logger.warning(
-                    "InsightScheduler trigger failed for branch {}", branch_id
+                    "InsightScheduler trigger failed for branch {}: {}", branch_id, e
                 )
 
         return output

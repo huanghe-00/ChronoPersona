@@ -1,5 +1,7 @@
 """Unit tests for L1 Working Memory sliding window."""
 
+from typing import Union
+
 import pytest
 
 from chronopersona.memory_system.l1_working.sliding_window import (
@@ -48,7 +50,7 @@ class TestWorkingMemoryWindow:
         )
         wm.add_turn("first", "first reply", branch_id="main")
         wm.add_turn("second", "second reply", branch_id="main")
-        ctx: list[TurnEntry | CompressedSummary] = wm.get_context(branch_id="main")
+        ctx: List[Union[TurnEntry, CompressedSummary]] = wm.get_context(branch_id="main")
         assert isinstance(ctx[0], TurnEntry)
         assert ctx[0].user_text == "second"
 
@@ -60,7 +62,7 @@ class TestWorkingMemoryWindow:
         wm.add_turn("a", "b", branch_id="main")
         wm.add_turn("c", "d", branch_id="main")
         # token_limit=0 should yield empty list
-        limited: list[TurnEntry | CompressedSummary] = wm.get_context(branch_id="main", token_limit=0)
+        limited: List[Union[TurnEntry, CompressedSummary]] = wm.get_context(branch_id="main", token_limit=0)
         assert limited == []
 
     def test_should_compress_reflects_state(self) -> None:

@@ -65,7 +65,7 @@ class IntentGraph:
                 continue
 
             for edge in edges:
-                candidates: list[str] = []
+                candidates: List[str] = []
                 if edge.source_id == node_id and edge.edge_type in entry_edge_types:
                     candidates.append(edge.target_id)
                 if edge.target_id == node_id and edge.edge_type in entry_edge_types:
