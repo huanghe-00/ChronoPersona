@@ -64,5 +64,10 @@ class ActionPlanner(AbstractActionPlanner):
             emotion_state.current_state.value,
             self.EMOTION_MODULATION["NEUTRAL"],
         )
+        # NEUTRAL is the baseline state; modulation factors are not scaled by intensity
+        if emotion_state.current_state.value == "NEUTRAL":
+            return dict(base)
+        
+        # Non-NEUTRAL states scale by intensity (higher intensity = more pronounced modulation)
         intensity = max(0.1, min(1.0, emotion_state.intensity))
         return {k: v * intensity for k, v in base.items()}
