@@ -29,7 +29,7 @@ class MVOSeedLoader:
         concepts = data.get("concepts", [])
         patterns = data.get("intent_patterns", [])
         
-        # 实际写入 graph（修复：之前仅计数未写入）
+        # Persist concepts into the graph (previously only counted, not written)
         if self._graph is not None:
             from chronopersona.contracts.schemas.semantic import Concept
             for c_data in concepts:

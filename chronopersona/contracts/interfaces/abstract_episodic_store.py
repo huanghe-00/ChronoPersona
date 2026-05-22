@@ -15,10 +15,13 @@ class AbstractEpisodicStore(ABC):
 
         Args:
             entry: Memory entry to store.
-            branch_id: Branch identifier.
+            branch_id: Branch identifier. Must not be empty.
 
         Returns:
             Unique memory ID.
+
+        Raises:
+            ValueError: If branch_id is empty.
         """
         ...
 
@@ -34,12 +37,15 @@ class AbstractEpisodicStore(ABC):
 
         Args:
             query: Search query text.
-            branch_id: Branch identifier.
+            branch_id: Branch identifier. Must not be empty.
             top_k: Maximum number of results.
             intent: Optional intent type for filtering.
 
         Returns:
             RetrievedContext with episodic memories.
+
+        Raises:
+            ValueError: If branch_id is empty.
         """
         ...
 
@@ -49,9 +55,12 @@ class AbstractEpisodicStore(ABC):
 
         Args:
             memory_id: ID of the memory to delete.
-            branch_id: Branch identifier.
+            branch_id: Branch identifier. Must not be empty.
 
         Returns:
             True if deletion succeeded.
+
+        Raises:
+            ValueError: If branch_id is empty.
         """
         ...
