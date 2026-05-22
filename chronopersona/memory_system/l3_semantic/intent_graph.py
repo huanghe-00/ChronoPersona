@@ -45,8 +45,8 @@ class IntentGraph:
         self,
         start_node_id: str,
         entry_edge_types: List[str],
-        max_hops: int = 3,
         branch_id: str,
+        max_hops: int = 3,
     ) -> List[Tuple[str, int, float]]:
         """BFS navigation from start node along specified edge types.
 
