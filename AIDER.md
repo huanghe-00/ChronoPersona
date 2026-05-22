@@ -35,6 +35,7 @@
 - 修改接口必须同步更新所有实现类、Mock 类以及相关的测试。
 - Week 1 核心守卫是 `tests/test_mock_pipeline.py`，任何改动都不得破坏其通过性。
 
+
 ## 6. Git 工作流
 - 每个独立任务完成后自动提交，提交信息格式：`[模块] 类型: 简短描述`（如 `[memory] feat: add CRDT sync module`）。
 - 若连续 3 次自动修复测试失败，应回退到上次稳定提交（`git reset --soft HEAD~1`），并缩小任务范围。
