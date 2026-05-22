@@ -38,7 +38,7 @@ class StateMachineAgentCore(AbstractAgentCore):
         self,
         memory_store: AbstractMemoryStore,
         model_router: AbstractModelRouter,
-        version_manager: AbstractVersionManager | None = None,
+        version_manager: Optional[AbstractVersionManager] = None,
         intent_graph: Optional[IntentGraph] = None,
         persona_injector: Optional[IPersonaInjector] = None,
         action_planner: Optional[Any] = None,
@@ -56,7 +56,7 @@ class StateMachineAgentCore(AbstractAgentCore):
         self._emotion_state: EmotionState = EmotionState()
         self._working_windows: Dict[str, WorkingMemoryWindow] = {}
         self._insight_scheduler: Optional[Any] = None
-        self._turn_count: dict[str, int] = {}
+        self._turn_count: Dict[str, int] = {}
 
     def run_turn(
         self,

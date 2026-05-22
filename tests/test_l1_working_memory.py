@@ -1,5 +1,7 @@
 """Unit tests for L1 Working Memory sliding window (Week 2 Day 2)."""
 
+from typing import List
+
 import pytest
 
 from chronopersona.memory_system.l1_working import (
@@ -59,9 +61,9 @@ class TestWorkingMemoryWindow:
 
     def test_custom_compressor(self) -> None:
         """T42: Custom compressor is invoked and its output retained."""
-        calls: list[list[int]] = []
+        calls: List[List[int]] = []
 
-        def mock_compressor(turns: list[TurnEntry]) -> str:
+        def mock_compressor(turns: List[TurnEntry]) -> str:
             calls.append([t.turn_id for t in turns])
             return f"MockSummary:{len(turns)}"
 

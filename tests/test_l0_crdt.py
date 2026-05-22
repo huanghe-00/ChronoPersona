@@ -37,7 +37,7 @@ class TestL0SyncLayerReal:
         sync: AbstractL0SyncLayer = L0SyncLayer(device_id="test-device")
         sync.set("k1", "v1", branch_id="main", device_id="dev-a")
         sync.set("k2", "v2", branch_id="main", device_id="dev-a")
-        keys: list[str] = sync.checkpoint("main")
+        keys: List[str] = sync.checkpoint("main")
         assert "k1" in keys
         assert "k2" in keys
 
