@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union, Protocol
 
 from loguru import logger
@@ -18,7 +18,7 @@ class TurnEntry:
     turn_id: int
     user_text: str
     agent_text: str
-    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     token_count: int = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -147,7 +147,7 @@ class WorkingMemoryWindow:
             summary_id=f"sum-{uuid.uuid4().hex[:8]}",
             source_turn_ids=[t.turn_id for t in turns_to_compress],
             content=content,
-            created_at=datetime.now(UTC),
+            created_at=datetime.now(timezone.utc),
             token_count=len(content),
         )
         self._compressed_summaries.append(summary)
