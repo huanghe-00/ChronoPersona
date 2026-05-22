@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import deque
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Deque, Dict, List, Optional, Set, Tuple
 
 from chronopersona.contracts.schemas.semantic import Concept, SemanticEdge
 
@@ -56,7 +56,7 @@ class IntentGraph:
             raise ValueError("branch_id must not be empty")
         edges = self._edges.get(branch_id, [])
         visited: Set[str] = {start_node_id}
-        queue: deque[Tuple[str, int, float]] = deque([(start_node_id, 0, 1.0)])
+        queue: Deque[Tuple[str, int, float]] = deque([(start_node_id, 0, 1.0)])
         results: List[Tuple[str, int, float]] = []
 
         while queue:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional, Set
 
 import faiss
 import numpy as np
@@ -21,12 +21,12 @@ class FaissEpisodicStore(AbstractEpisodicStore):
     FAISS index for strict isolation.
     """
 
-    def __init__(self, embedder: MockBGEEmbedder | None = None, dim: int = 128) -> None:
+    def __init__(self, embedder: Optional[MockBGEEmbedder] = None, dim: int = 128) -> None:
         self._embedder = embedder or MockBGEEmbedder()
         self._dim = dim
         self._indices: Dict[str, faiss.IndexFlatIP] = {}
         self._entries: Dict[str, List[MemoryEntry]] = {}
-        self._deleted_indices: Dict[str, set] = {}
+        self._deleted_indices: Dict[str, Set[int]] = {}
 
     def _get_index(self, branch_id: str) -> faiss.IndexFlatIP:
         if branch_id not in self._indices:
@@ -55,7 +55,7 @@ class FaissEpisodicStore(AbstractEpisodicStore):
         query: str,
         branch_id: str,
         top_k: int = 5,
-        intent: str | None = None,
+        intent: Optional[str] = None,
     ) -> RetrievedContext:
         """Retrieve top-k memories using FAISS cosine similarity."""
         if not branch_id:
