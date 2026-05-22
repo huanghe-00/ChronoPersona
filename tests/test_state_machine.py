@@ -160,3 +160,25 @@ class TestStateMachineAgentCore:
         prompt = core._build_prompt("hi", ctx, "main", embodied_state=es)
         assert "[Embodied State]" in prompt
         assert "sofa" in prompt
+
+    def test_output_contains_updated_emotion_state(self) -> None:
+        """T14: AgentOutput reflects updated emotion state after turn."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        out = core.run_turn("我好难过", branch_id="main")
+        assert out.emotion_state.current_state.value == "CONCERNED"
+        assert out.emotion_state.intensity == 0.7
+
+    def test_output_contains_emotion_modulation_with_planner(self) -> None:
+        """T15: AgentOutput contains emotion_modulation when ActionPlanner active."""
+        from chronopersona.agent_core.action_planner import ActionPlanner
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+            action_planner=ActionPlanner(),
+        )
+        out = core.run_turn("慢慢靠近", branch_id="main")
+        assert out.emotion_modulation is not None
+        assert "speed_mult" in out.emotion_modulation

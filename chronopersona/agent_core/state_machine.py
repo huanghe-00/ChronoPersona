@@ -93,6 +93,10 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         # Dynamic emotion state update (T0 rule-based layer)
         self._emotion_state = self._update_emotion(user_input)
+        output.emotion_state = self._emotion_state
+        if action_plan is not None:
+            output.action_plan = action_plan
+            output.emotion_modulation = action_plan.action_params
 
         # Persist turn to L1 Working Memory
         window = self._get_or_create_window(branch_id)
