@@ -147,3 +147,16 @@ class TestStateMachineAgentCore:
         core.run_turn("今天真开心", branch_id="main")
         es = core.get_emotion_state()
         assert es.current_state.value == "EMPATHETIC"
+
+    def test_build_prompt_includes_embodied_state(self) -> None:
+        """T13: _build_prompt embeds embodied state description."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        from chronopersona.contracts.schemas import EmbodiedState, RetrievedContext
+        ctx = RetrievedContext(episodic_memories=[], total_tokens=0)
+        es = EmbodiedState(x=3.0, y=4.0, theta=0.0, fov_objects=["sofa", "table"])
+        prompt = core._build_prompt("hi", ctx, "main", embodied_state=es)
+        assert "[Embodied State]" in prompt
+        assert "sofa" in prompt

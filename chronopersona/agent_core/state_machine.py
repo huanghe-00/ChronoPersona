@@ -72,7 +72,7 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         intent = self._intent_node.classify(user_input)
         context = self._memory_node.retrieve(user_input, branch_id, intent=intent.value)
-        prompt = self._build_prompt(user_input, context, branch_id)
+        prompt = self._build_prompt(user_input, context, branch_id, embodied_state)
         response = self._llm_node.generate(prompt, branch_id)
 
         # W5: ActionPlanner parses action intent and applies emotion modulation
@@ -112,7 +112,13 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         return output
 
-    def _build_prompt(self, user_input: str, context: RetrievedContext, branch_id: str) -> str:
+    def _build_prompt(
+        self,
+        user_input: str,
+        context: RetrievedContext,
+        branch_id: str,
+        embodied_state: Optional[EmbodiedState] = None,
+    ) -> str:
         """Build LLM prompt with L1 working memory and L2/L3 retrieved context."""
         window = self._get_or_create_window(branch_id)
         l1_items = window.get_context(branch_id=branch_id, token_limit=2048)
@@ -128,6 +134,12 @@ class StateMachineAgentCore(AbstractAgentCore):
         l2_text = "\n".join(f"- {m.content}" for m in context.episodic_memories[:3])
 
         parts: List[str] = []
+        if embodied_state is not None:
+            fov = ", ".join(embodied_state.fov_objects) if embodied_state.fov_objects else "none"
+            parts.append(
+                f"[Embodied State] Agent at ({embodied_state.x}, {embodied_state.y}), "
+                f"facing {embodied_state.theta:.2f} rad. FOV: {fov}"
+            )
         if l1_text:
             parts.append(f"[Recent Conversation]\n{l1_text}")
         if l2_text:
