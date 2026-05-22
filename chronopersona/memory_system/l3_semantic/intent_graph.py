@@ -93,9 +93,13 @@ class IntentGraph:
         self._deprecated_edges.setdefault(branch_id, set()).discard(edge_id)
 
     def get_concepts(self, branch_id: str) -> List[Concept]:
+        if not branch_id:
+            raise ValueError("branch_id must not be empty")
         return list(self._concepts.get(branch_id, {}).values())
 
     def get_edges(self, branch_id: str, edge_type: Optional[str] = None) -> List[SemanticEdge]:
+        if not branch_id:
+            raise ValueError("branch_id must not be empty")
         edges = self._edges.get(branch_id, [])
         deprecated = self._deprecated_edges.get(branch_id, set())
         edges = [e for e in edges if e.id not in deprecated]
