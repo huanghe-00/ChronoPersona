@@ -110,3 +110,39 @@ class TestGridWorldAdapter:
             adapter.translate_action_token(
                 "approach_gently", {}, "unsupported_type"
             )
+
+    def test_retreat_slowly_grid_2d(self) -> None:
+        """T13: retreat_slowly moves backward with scaled speed."""
+        adapter = GridWorldAdapter()
+        cmd = adapter.translate_action_token(
+            "retreat_slowly", {"speed": 1.0, "speed_mult": 0.5}, "grid_2d"
+        )
+        assert cmd.command == "move_backward"
+        assert cmd.params["speed"] == 0.5
+
+    def test_turn_to_user_ros2(self) -> None:
+        """T14: turn_to_user navigates to target coordinates."""
+        adapter = GridWorldAdapter()
+        cmd = adapter.translate_action_token(
+            "turn_to_user", {"target_x": 3.0, "target_y": 4.0}, "ros2_mobile"
+        )
+        assert cmd.command == "navigate_to"
+        assert cmd.params["target_x"] == 3.0
+
+    def test_interact_grid_2d(self) -> None:
+        """T15: interact targets specific object."""
+        adapter = GridWorldAdapter()
+        cmd = adapter.translate_action_token(
+            "interact", {"object_id": "fridge"}, "grid_2d"
+        )
+        assert cmd.command == "interact_with"
+        assert cmd.params["object_id"] == "fridge"
+
+    def test_look_around_grid_2d(self) -> None:
+        """T16: look_around scans field of view."""
+        adapter = GridWorldAdapter()
+        cmd = adapter.translate_action_token(
+            "look_around", {"range": 10.0}, "grid_2d"
+        )
+        assert cmd.command == "scan_fov"
+        assert cmd.params["range"] == 10.0

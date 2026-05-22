@@ -133,6 +133,14 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
             )
         if action_token == "approach_gently":
             return self._handle_approach_gently(action_token, params, robot_type)
+        if action_token == "retreat_slowly":
+            return self._handle_retreat_slowly(action_token, params, robot_type)
+        if action_token == "turn_to_user":
+            return self._handle_turn_to_user(action_token, params, robot_type)
+        if action_token == "interact":
+            return self._handle_interact(action_token, params, robot_type)
+        if action_token == "look_around":
+            return self._handle_look_around(action_token, params, robot_type)
         return LowLevelCommand(
             robot_type=robot_type,
             command=f"mock_{action_token}",
@@ -155,6 +163,82 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
                 robot_type="ros2_mobile",
                 command="cmd_vel",
                 params={"linear": linear, "angular": 0.0},
+            )
+        raise ValueError(f"Unsupported robot_type: {robot_type}")
+
+    def _handle_retreat_slowly(
+        self, action_token: str, params: Dict[str, Any], robot_type: str
+    ) -> LowLevelCommand:
+        if robot_type == "grid_2d":
+            speed = params.get("speed", 0.5) * params.get("speed_mult", 1.0)
+            return LowLevelCommand(
+                robot_type="grid_2d",
+                command="move_backward",
+                params={"distance": params.get("distance", 1.0), "speed": speed},
+            )
+        if robot_type == "ros2_mobile":
+            linear = -(params.get("speed", 0.5) * params.get("speed_mult", 1.0))
+            return LowLevelCommand(
+                robot_type="ros2_mobile",
+                command="cmd_vel",
+                params={"linear": linear, "angular": 0.0},
+            )
+        raise ValueError(f"Unsupported robot_type: {robot_type}")
+
+    def _handle_turn_to_user(
+        self, action_token: str, params: Dict[str, Any], robot_type: str
+    ) -> LowLevelCommand:
+        if robot_type == "grid_2d":
+            return LowLevelCommand(
+                robot_type="grid_2d",
+                command="turn_toward",
+                params={
+                    "target_x": params.get("target_x", 0.0),
+                    "target_y": params.get("target_y", 0.0),
+                },
+            )
+        if robot_type == "ros2_mobile":
+            return LowLevelCommand(
+                robot_type="ros2_mobile",
+                command="navigate_to",
+                params={
+                    "target_x": params.get("target_x", 0.0),
+                    "target_y": params.get("target_y", 0.0),
+                },
+            )
+        raise ValueError(f"Unsupported robot_type: {robot_type}")
+
+    def _handle_interact(
+        self, action_token: str, params: Dict[str, Any], robot_type: str
+    ) -> LowLevelCommand:
+        if robot_type == "grid_2d":
+            return LowLevelCommand(
+                robot_type="grid_2d",
+                command="interact_with",
+                params={"object_id": params.get("object_id", "")},
+            )
+        if robot_type == "ros2_mobile":
+            return LowLevelCommand(
+                robot_type="ros2_mobile",
+                command="interact_with",
+                params={"object_id": params.get("object_id", "")},
+            )
+        raise ValueError(f"Unsupported robot_type: {robot_type}")
+
+    def _handle_look_around(
+        self, action_token: str, params: Dict[str, Any], robot_type: str
+    ) -> LowLevelCommand:
+        if robot_type == "grid_2d":
+            return LowLevelCommand(
+                robot_type="grid_2d",
+                command="scan_fov",
+                params={"range": params.get("range", 5.0)},
+            )
+        if robot_type == "ros2_mobile":
+            return LowLevelCommand(
+                robot_type="ros2_mobile",
+                command="scan_fov",
+                params={"range": params.get("range", 5.0)},
             )
         raise ValueError(f"Unsupported robot_type: {robot_type}")
 
