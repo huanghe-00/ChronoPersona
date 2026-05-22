@@ -1,6 +1,6 @@
 """Unit tests for L0 LWW-CRDT sync layer."""
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
 
