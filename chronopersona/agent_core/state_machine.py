@@ -72,6 +72,10 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         intent = self._intent_node.classify(user_input)
         context = self._memory_node.retrieve(user_input, branch_id, intent=intent.value)
+
+        # H1: Update emotion state BEFORE building prompt so LLM sees latest emotion
+        self._emotion_state = self._update_emotion(user_input, branch_id)
+
         prompt = self._build_prompt(user_input, context, branch_id, embodied_state)
         response = self._llm_node.generate(prompt, branch_id)
 
@@ -91,8 +95,6 @@ class StateMachineAgentCore(AbstractAgentCore):
         if action_plan is not None:
             output.action_plan = action_plan
 
-        # Dynamic emotion state update (T0 rule-based layer)
-        self._emotion_state = self._update_emotion(user_input)
         output.emotion_state = self._emotion_state
         if action_plan is not None:
             output.action_plan = action_plan
@@ -191,8 +193,16 @@ class StateMachineAgentCore(AbstractAgentCore):
         """Attach InsightScheduler for periodic consolidation."""
         self._insight_scheduler = scheduler
 
-    def _update_emotion(self, user_input: str) -> EmotionState:
-        """T0 rule-based emotion classification."""
+    def _update_emotion(self, user_input: str, branch_id: str) -> EmotionState:
+        """T0 rule-based emotion classification.
+
+        Args:
+            user_input: The user's input text.
+            branch_id: Explicit branch identifier (reserved for future per-branch isolation).
+
+        Returns:
+            Updated EmotionState.
+        """
         text = user_input.lower()
         negative_words = ["难过", "伤心", "痛苦", "焦虑", "担心", "害怕"]
         positive_words = ["开心", "高兴", "兴奋", "喜欢", "谢谢", "好"]

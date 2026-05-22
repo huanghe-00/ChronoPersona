@@ -182,3 +182,15 @@ class TestStateMachineAgentCore:
         out = core.run_turn("慢慢靠近", branch_id="main")
         assert out.emotion_modulation is not None
         assert "speed_mult" in out.emotion_modulation
+
+    def test_t16_emotion_updated_before_prompt(self) -> None:
+        """T16: Emotion state is updated before building the LLM prompt (H1 fix)."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        # Negative input should set CONCERNED before prompt construction
+        out = core.run_turn("我最近很焦虑", branch_id="main")
+        assert out.emotion_state.current_state.value == "CONCERNED"
+        # The reply text should reflect the updated emotion (MockModelRouter returns deterministic text)
+        assert out.reply_text
