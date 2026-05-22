@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from chronopersona.contracts.interfaces import AbstractEmbodiedAdapter
 from chronopersona.contracts.schemas import (
@@ -40,7 +40,7 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
         self._fov_angle_rad = math.radians(fov_angle_deg)
         self._fov_range = fov_range
         # agent_id -> (x, y, theta)
-        self._agents: Dict[str, tuple[float, float, float]] = {}
+        self._agents: Dict[str, Tuple[float, float, float]] = {}
         # agent_id -> list of SpatialRecord
         self._spatial_memory: Dict[str, List[SpatialRecord]] = {}
 
