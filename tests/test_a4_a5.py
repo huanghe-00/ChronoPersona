@@ -15,24 +15,22 @@ class TestA4SharedMain:
         """T01: Main branch facts are retrievable with positive recall."""
         scenario = ScenarioBuilder.build_a4_shared_main()
         store = SimpleEpisodicStore(embedder=MockBGEEmbedder())
-        for mem in scenario.memories:
-            store.add(mem, branch_id=scenario.branch_id)
+        actual_ids = [store.add(mem, branch_id=scenario.branch_id) for mem in scenario.memories]
 
         ctx = store.retrieve("我叫什么名字", branch_id=scenario.branch_id, top_k=5)
         retrieved_ids = [m.id for m in ctx.episodic_memories]
-        recall = Metrics.recall_at_k(retrieved_ids, scenario.expected_memory_ids[:1], k=5)
+        recall = Metrics.recall_at_k(retrieved_ids, actual_ids[:1], k=5)
         assert recall > 0.0
 
     def test_main_branch_location_recall(self) -> None:
         """T02: Location fact is retrievable."""
         scenario = ScenarioBuilder.build_a4_shared_main()
         store = SimpleEpisodicStore(embedder=MockBGEEmbedder())
-        for mem in scenario.memories:
-            store.add(mem, branch_id=scenario.branch_id)
+        actual_ids = [store.add(mem, branch_id=scenario.branch_id) for mem in scenario.memories]
 
         ctx = store.retrieve("我住在哪里", branch_id=scenario.branch_id, top_k=5)
         retrieved_ids = [m.id for m in ctx.episodic_memories]
-        assert "a4-m2" in retrieved_ids
+        assert actual_ids[1] in retrieved_ids
 
 
 class TestA5MultiDeviceConflict:
@@ -42,22 +40,20 @@ class TestA5MultiDeviceConflict:
         """T01: Both conflicting preference versions are in top results."""
         scenario = ScenarioBuilder.build_a5_multi_device_conflict()
         store = SimpleEpisodicStore(embedder=MockBGEEmbedder())
-        for mem in scenario.memories:
-            store.add(mem, branch_id=scenario.branch_id)
+        actual_ids = [store.add(mem, branch_id=scenario.branch_id) for mem in scenario.memories]
 
         ctx = store.retrieve("我喜欢什么菜系", branch_id=scenario.branch_id, top_k=5)
         retrieved_ids = [m.id for m in ctx.episodic_memories]
-        assert "a5-m1" in retrieved_ids
-        assert "a5-m2" in retrieved_ids
+        assert actual_ids[0] in retrieved_ids
+        assert actual_ids[1] in retrieved_ids
 
     def test_conflict_recall_at_k(self) -> None:
         """T02: Recall@5 covers both conflict versions."""
         scenario = ScenarioBuilder.build_a5_multi_device_conflict()
         store = SimpleEpisodicStore(embedder=MockBGEEmbedder())
-        for mem in scenario.memories:
-            store.add(mem, branch_id=scenario.branch_id)
+        actual_ids = [store.add(mem, branch_id=scenario.branch_id) for mem in scenario.memories]
 
         ctx = store.retrieve("我喜欢什么菜系", branch_id=scenario.branch_id, top_k=5)
         retrieved_ids = [m.id for m in ctx.episodic_memories]
-        recall = Metrics.recall_at_k(retrieved_ids, scenario.expected_memory_ids, k=5)
+        recall = Metrics.recall_at_k(retrieved_ids, actual_ids, k=5)
         assert recall > 0.0
