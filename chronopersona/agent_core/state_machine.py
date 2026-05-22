@@ -92,8 +92,6 @@ class StateMachineAgentCore(AbstractAgentCore):
                 logger.warning("ActionPlanner failed for branch {}: {}", branch_id, e)
 
         output = self._output_node.assemble(response, context, branch_id)
-        if action_plan is not None:
-            output.action_plan = action_plan
 
         output.emotion_state = self._emotion_state
         if action_plan is not None:

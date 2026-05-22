@@ -82,3 +82,31 @@ class TestGridWorldAdapter:
         assert len(records) == 1
         assert isinstance(records[0], SpatialRecord)
         assert records[0].object_id == "rock"
+
+    def test_approach_gently_grid_2d_params(self) -> None:
+        """T10: approach_gently grid_2d includes scaled speed."""
+        adapter = GridWorldAdapter()
+        cmd = adapter.translate_action_token(
+            "approach_gently", {"speed": 1.0, "speed_mult": 0.5, "distance": 2.0}, "grid_2d"
+        )
+        assert cmd.command == "move_forward"
+        assert cmd.params["speed"] == 0.5
+        assert cmd.params["distance"] == 2.0
+
+    def test_approach_gently_ros2_params(self) -> None:
+        """T11: approach_gently ros2_mobile includes scaled linear velocity."""
+        adapter = GridWorldAdapter()
+        cmd = adapter.translate_action_token(
+            "approach_gently", {"speed": 0.5, "speed_mult": 0.5}, "ros2_mobile"
+        )
+        assert cmd.command == "cmd_vel"
+        assert cmd.params["linear"] == 0.25
+        assert cmd.params["angular"] == 0.0
+
+    def test_unsupported_robot_type_raises(self) -> None:
+        """T12: Unsupported robot_type raises ValueError."""
+        adapter = GridWorldAdapter()
+        with pytest.raises(ValueError):
+            adapter.translate_action_token(
+                "approach_gently", {}, "unsupported_type"
+            )
