@@ -1,6 +1,6 @@
 """Mock implementation of AbstractMemoryStore."""
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from chronopersona.contracts.interfaces import AbstractMemoryStore
 from chronopersona.contracts.schemas import Fact, MemoryEntry, RetrievedContext, Snapshot, Version
@@ -10,9 +10,9 @@ class MockMemoryStore(AbstractMemoryStore):
     """In-memory mock memory store for testing and MVA development."""
 
     def __init__(self) -> None:
-        self._memories: dict[str, list[MemoryEntry]] = {}
-        self._facts: dict[str, list[Fact]] = {}
-        self._versions: dict[str, list[Version]] = {}
+        self._memories: Dict[str, List[MemoryEntry]] = {}
+        self._facts: Dict[str, List[Fact]] = {}
+        self._versions: Dict[str, List[Version]] = {}
         self._counter = 0
 
     def _next_id(self) -> str:

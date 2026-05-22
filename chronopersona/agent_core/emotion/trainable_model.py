@@ -3,7 +3,7 @@
 Layer 2 of Emotion Engine. W5: Skeleton only. W8+ full implementation.
 """
 
-from typing import List
+from typing import List, Optional, Tuple
 
 from loguru import logger
 
@@ -17,7 +17,7 @@ class TrainableEmotionModel:
     def __init__(self, input_dim: int = 768, hidden_dim: int = 128) -> None:
         self._input_dim = input_dim
         self._hidden_dim = hidden_dim
-        self._model: object | None = None  # TODO(W8): Load LSTM weights
+        self._model: Optional[object] = None  # TODO(W8): Load LSTM weights
 
     def predict(self, context_texts: List[str]) -> float:
         """Predict emotion intensity from last 5 turns.
@@ -41,7 +41,7 @@ class TrainableEmotionModel:
             return 0.7
         return 0.0
 
-    def train_step(self, batch: List[tuple[str, float]]) -> None:
+    def train_step(self, batch: List[Tuple[str, float]]) -> None:
         """Single training step.
 
         [RL-PLACEHOLDER]: Skeleton for future RLHF/PPO loop.

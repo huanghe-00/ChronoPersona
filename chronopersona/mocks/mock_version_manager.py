@@ -1,6 +1,6 @@
 """Mock implementation of AbstractVersionManager."""
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from chronopersona.contracts.interfaces import AbstractVersionManager
 from chronopersona.contracts.schemas import ChangeSet, MergeResult, Snapshot, Version
@@ -10,13 +10,13 @@ class MockVersionManager(AbstractVersionManager):
     """Mock version manager for testing."""
 
     def __init__(self) -> None:
-        self._versions: dict[str, list[Version]] = {}
+        self._versions: Dict[str, List[Version]] = {}
         self._counter = 0
 
     @property
-    def versions(self) -> list[Version]:
+    def versions(self) -> List[Version]:
         """Return a flat list of all committed versions across branches."""
-        result: list[Version] = []
+        result: List[Version] = []
         for branch_list in self._versions.values():
             result.extend(branch_list)
         return result

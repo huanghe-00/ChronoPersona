@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import deque
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from chronopersona.contracts.schemas.semantic import Concept, SemanticEdge
 
@@ -44,10 +44,10 @@ class IntentGraph:
     def navigate(
         self,
         start_node_id: str,
-        entry_edge_types: list[str],
+        entry_edge_types: List[str],
         max_hops: int = 3,
-        branch_id: str = "main",
-    ) -> list[Tuple[str, int, float]]:
+        branch_id: str,
+    ) -> List[Tuple[str, int, float]]:
         """BFS navigation from start node along specified edge types.
 
         Supports bidirectional traversal for causal and associative edges.
@@ -92,10 +92,10 @@ class IntentGraph:
             raise ValueError("branch_id must not be empty")
         self._deprecated_edges.setdefault(branch_id, set()).discard(edge_id)
 
-    def get_concepts(self, branch_id: str) -> list[Concept]:
+    def get_concepts(self, branch_id: str) -> List[Concept]:
         return list(self._concepts.get(branch_id, {}).values())
 
-    def get_edges(self, branch_id: str, edge_type: str | None = None) -> list[SemanticEdge]:
+    def get_edges(self, branch_id: str, edge_type: Optional[str] = None) -> List[SemanticEdge]:
         edges = self._edges.get(branch_id, [])
         deprecated = self._deprecated_edges.get(branch_id, set())
         edges = [e for e in edges if e.id not in deprecated]

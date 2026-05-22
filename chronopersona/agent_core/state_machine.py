@@ -1,6 +1,6 @@
 """State machine orchestration for Agent Core."""
 
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -39,9 +39,9 @@ class StateMachineAgentCore(AbstractAgentCore):
         memory_store: AbstractMemoryStore,
         model_router: AbstractModelRouter,
         version_manager: AbstractVersionManager | None = None,
-        intent_graph: IntentGraph | None = None,
-        persona_injector: IPersonaInjector | None = None,
-        action_planner: Any | None = None,
+        intent_graph: Optional[IntentGraph] = None,
+        persona_injector: Optional[IPersonaInjector] = None,
+        action_planner: Optional[Any] = None,
     ) -> None:
         self._memory_store = memory_store
         self._model_router = model_router
@@ -54,8 +54,8 @@ class StateMachineAgentCore(AbstractAgentCore):
         self._output_node = OutputNode()
         self._persona_id: str = "default"
         self._emotion_state: EmotionState = EmotionState()
-        self._working_windows: dict[str, WorkingMemoryWindow] = {}
-        self._insight_scheduler: Any | None = None
+        self._working_windows: Dict[str, WorkingMemoryWindow] = {}
+        self._insight_scheduler: Optional[Any] = None
         self._turn_count: dict[str, int] = {}
 
     def run_turn(
@@ -112,7 +112,7 @@ class StateMachineAgentCore(AbstractAgentCore):
         window = self._get_or_create_window(branch_id)
         l1_items = window.get_context(branch_id=branch_id, token_limit=2048)
 
-        l1_parts: list[str] = []
+        l1_parts: List[str] = []
         for item in l1_items:
             if isinstance(item, TurnEntry):
                 l1_parts.append(item.to_text())
@@ -122,7 +122,7 @@ class StateMachineAgentCore(AbstractAgentCore):
         l1_text = "\n".join(l1_parts)
         l2_text = "\n".join(f"- {m.content}" for m in context.episodic_memories[:3])
 
-        parts: list[str] = []
+        parts: List[str] = []
         if l1_text:
             parts.append(f"[Recent Conversation]\n{l1_text}")
         if l2_text:

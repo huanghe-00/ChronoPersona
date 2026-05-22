@@ -41,7 +41,7 @@ class CompressedSummary:
     """Summary of compressed turns, kept in L1 only (not vector store)."""
 
     summary_id: str
-    source_turn_ids: list[int]
+    source_turn_ids: List[int]
     content: str
     created_at: datetime
     token_count: int
@@ -137,7 +137,7 @@ class WorkingMemoryWindow:
         batch_size = max(1, overflow)
         self._compress_batch(self._turns[:batch_size])
 
-    def _compress_batch(self, turns_to_compress: list[TurnEntry]) -> None:
+    def _compress_batch(self, turns_to_compress: List[TurnEntry]) -> None:
         """Compress a list of turns into a single CompressedSummary."""
         if not turns_to_compress:
             return
