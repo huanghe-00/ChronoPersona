@@ -32,7 +32,7 @@ class TestA10ActionAuditable:
         )
         plan_neutral = planner.plan(
             "让我靠近",
-            EmotionState(current_state=EmotionLabel.NEUTRAL, intensity=0.5),
+            EmotionState(current_state=EmotionLabel.NEUTRAL, intensity=1.0),
             "main",
         )
         assert plan_concerned.action_params["speed_mult"] < plan_neutral.action_params["speed_mult"]
