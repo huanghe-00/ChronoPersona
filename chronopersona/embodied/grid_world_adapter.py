@@ -131,11 +131,32 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
                 command="move_toward",
                 params={"target": params.get("target", ""), "speed": 1.0},
             )
+        if action_token == "approach_gently":
+            return self._handle_approach_gently(action_token, params, robot_type)
         return LowLevelCommand(
             robot_type=robot_type,
             command=f"mock_{action_token}",
             params=params,
         )
+
+    def _handle_approach_gently(
+        self, action_token: str, params: Dict[str, Any], robot_type: str
+    ) -> LowLevelCommand:
+        if robot_type == "grid_2d":
+            speed = params.get("speed", 1.0) * params.get("speed_mult", 1.0)
+            return LowLevelCommand(
+                robot_type="grid_2d",
+                command="move_forward",
+                params={"distance": params.get("distance", 1.0), "speed": speed},
+            )
+        if robot_type == "ros2_mobile":
+            linear = params.get("speed", 0.5) * params.get("speed_mult", 1.0)
+            return LowLevelCommand(
+                robot_type="ros2_mobile",
+                command="cmd_vel",
+                params={"linear": linear, "angular": 0.0},
+            )
+        raise ValueError(f"Unsupported robot_type: {robot_type}")
 
     def add_object(self, agent_id: str, object_id: str, x: float, y: float) -> None:
         """Add an object to the agent's spatial memory."""
