@@ -1,6 +1,6 @@
 """Unit tests for L1 Working Memory sliding window."""
 
-from typing import Union
+from typing import List, Union
 
 import pytest
 
