@@ -69,7 +69,7 @@ class TestCheckpoint31:
                         target_id=mem_id,
                         edge_type="MENTIONS",
                         branch_id="main",
-                    ))
+                    ), branch_id="main")
 
         # Verify L2 has memories
         ctx = l2.retrieve("川菜", branch_id="main")

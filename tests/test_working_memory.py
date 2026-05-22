@@ -17,7 +17,7 @@ class TestWorkingMemoryWindow:
         wm: WorkingMemoryWindow = WorkingMemoryWindow(
             branch_id="main", session_id="s1", max_turns=10
         )
-        wm.add_turn("hello", "hi")
+        wm.add_turn("hello", "hi", branch_id="main")
         assert len(wm._turns) == 1
         assert wm._turns[0].user_text == "hello"
 
@@ -26,9 +26,9 @@ class TestWorkingMemoryWindow:
         wm: WorkingMemoryWindow = WorkingMemoryWindow(
             branch_id="main", session_id="s1", max_turns=2
         )
-        wm.add_turn("1", "a")
-        wm.add_turn("2", "b")
-        wm.add_turn("3", "c")
+        wm.add_turn("1", "a", branch_id="main")
+        wm.add_turn("2", "b", branch_id="main")
+        wm.add_turn("3", "c", branch_id="main")
         assert len(wm._turns) <= 2
         assert len(wm._compressed_summaries) >= 1
 
@@ -37,7 +37,7 @@ class TestWorkingMemoryWindow:
         wm: WorkingMemoryWindow = WorkingMemoryWindow(
             branch_id="main", session_id="s1", max_turns=100, token_threshold=1
         )
-        wm.add_turn("user says something", "agent replies here")
+        wm.add_turn("user says something", "agent replies here", branch_id="main")
         # Compression must have occurred to relieve token pressure
         assert len(wm._compressed_summaries) >= 1 or len(wm._turns) == 0
 
@@ -46,9 +46,9 @@ class TestWorkingMemoryWindow:
         wm: WorkingMemoryWindow = WorkingMemoryWindow(
             branch_id="main", session_id="s1", max_turns=10
         )
-        wm.add_turn("first", "first reply")
-        wm.add_turn("second", "second reply")
-        ctx: list[TurnEntry | CompressedSummary] = wm.get_context()
+        wm.add_turn("first", "first reply", branch_id="main")
+        wm.add_turn("second", "second reply", branch_id="main")
+        ctx: list[TurnEntry | CompressedSummary] = wm.get_context(branch_id="main")
         assert isinstance(ctx[0], TurnEntry)
         assert ctx[0].user_text == "second"
 
@@ -57,10 +57,10 @@ class TestWorkingMemoryWindow:
         wm: WorkingMemoryWindow = WorkingMemoryWindow(
             branch_id="main", session_id="s1", max_turns=10
         )
-        wm.add_turn("a", "b")
-        wm.add_turn("c", "d")
+        wm.add_turn("a", "b", branch_id="main")
+        wm.add_turn("c", "d", branch_id="main")
         # token_limit=0 should yield empty list
-        limited: list[TurnEntry | CompressedSummary] = wm.get_context(token_limit=0)
+        limited: list[TurnEntry | CompressedSummary] = wm.get_context(branch_id="main", token_limit=0)
         assert limited == []
 
     def test_should_compress_reflects_state(self) -> None:
@@ -68,8 +68,8 @@ class TestWorkingMemoryWindow:
         wm: WorkingMemoryWindow = WorkingMemoryWindow(
             branch_id="main", session_id="s1", max_turns=1, token_threshold=100000
         )
-        assert wm.should_compress() is False
-        wm.add_turn("a", "b")
-        wm.add_turn("c", "d")  # exceeds max_turns=1, compression happens
+        assert wm.should_compress(branch_id="main") is False
+        wm.add_turn("a", "b", branch_id="main")
+        wm.add_turn("c", "d", branch_id="main")  # exceeds max_turns=1, compression happens
         # After internal compression, state should be back within limits
-        assert wm.should_compress() is False
+        assert wm.should_compress(branch_id="main") is False

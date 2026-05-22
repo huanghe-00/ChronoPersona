@@ -40,7 +40,7 @@ class MVOSeedLoader:
                     parent_id=c_data.get("parent_id"),
                     branch_id=branch_id,
                 )
-                self._graph.add_concept(concept)
+                self._graph.add_concept(concept, branch_id=branch_id)
 
         logger.info(
             "MVO seed loaded: domain={} branch={} concepts={} patterns={}",

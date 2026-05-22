@@ -12,13 +12,13 @@ class TestL3Unlearning:
     def test_deprecate_edge_hides_from_get_edges(self) -> None:
         """T01: deprecated edge is excluded from get_edges."""
         graph = IntentGraph()
-        graph.add_concept(Concept("c1", "A", "abstract", branch_id="main"))
-        graph.add_concept(Concept("c2", "B", "abstract", branch_id="main"))
+        graph.add_concept(Concept("c1", "A", "abstract", branch_id="main"), branch_id="main")
+        graph.add_concept(Concept("c2", "B", "abstract", branch_id="main"), branch_id="main")
         graph.add_edge(
             SemanticEdge(
                 id="e1", source_id="c1", target_id="c2",
                 edge_type="MENTIONS", branch_id="main",
-            )
+            ), branch_id="main"
         )
         assert len(graph.get_edges("main")) == 1
         graph.deprecate_edge("e1", "main")
@@ -27,13 +27,13 @@ class TestL3Unlearning:
     def test_reactivate_edge_restores_visibility(self) -> None:
         """T02: reactivated edge reappears in get_edges."""
         graph = IntentGraph()
-        graph.add_concept(Concept("c1", "A", "abstract", branch_id="main"))
-        graph.add_concept(Concept("c2", "B", "abstract", branch_id="main"))
+        graph.add_concept(Concept("c1", "A", "abstract", branch_id="main"), branch_id="main")
+        graph.add_concept(Concept("c2", "B", "abstract", branch_id="main"), branch_id="main")
         graph.add_edge(
             SemanticEdge(
                 id="e1", source_id="c1", target_id="c2",
                 edge_type="MENTIONS", branch_id="main",
-            )
+            ), branch_id="main"
         )
         graph.deprecate_edge("e1", "main")
         graph.reactivate_edge("e1", "main")
@@ -54,13 +54,13 @@ class TestL3Unlearning:
     def test_branch_isolation_for_deprecated(self) -> None:
         """T05: deprecation in one branch does not affect another."""
         graph = IntentGraph()
-        graph.add_concept(Concept("c1", "A", "abstract", branch_id="a"))
-        graph.add_concept(Concept("c2", "B", "abstract", branch_id="a"))
+        graph.add_concept(Concept("c1", "A", "abstract", branch_id="a"), branch_id="a")
+        graph.add_concept(Concept("c2", "B", "abstract", branch_id="a"), branch_id="a")
         graph.add_edge(
             SemanticEdge(
                 id="e1", source_id="c1", target_id="c2",
                 edge_type="MENTIONS", branch_id="a",
-            )
+            ), branch_id="a"
         )
         graph.deprecate_edge("e1", "a")
         assert len(graph.get_edges("b")) == 0

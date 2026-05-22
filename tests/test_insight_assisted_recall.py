@@ -26,7 +26,7 @@ class TestInsightAssistedRecall:
 
         # L3: pre-existing insight about stress pattern
         graph = IntentGraph()
-        graph.add_concept(Concept("c_stress", "压力", "emotion", branch_id="main"))
+        graph.add_concept(Concept("c_stress", "压力", "emotion", branch_id="main"), branch_id="main")
         # Inject insight as a memory node in graph
         graph.add_memory_node("insight_stress", "main")
 
