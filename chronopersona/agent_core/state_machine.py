@@ -137,6 +137,13 @@ class StateMachineAgentCore(AbstractAgentCore):
         l1_text = "\n".join(l1_parts)
         l2_text = "\n".join(f"- {m.content}" for m in context.episodic_memories[:3])
 
+        l3_facts = "\n".join(
+            f"- {f.attribute}: {f.value}" for f in context.semantic_facts[:3]
+        )
+        l3_insights = "\n".join(
+            f"- {i}" for i in context.insights[:2]
+        )
+
         parts: List[str] = []
         if embodied_state is not None:
             fov = ", ".join(embodied_state.fov_objects) if embodied_state.fov_objects else "none"
@@ -153,6 +160,10 @@ class StateMachineAgentCore(AbstractAgentCore):
             parts.append(f"[Recent Conversation]\n{l1_text}")
         if l2_text:
             parts.append(f"[Retrieved Memories]\n{l2_text}")
+        if l3_facts:
+            parts.append(f"[Semantic Facts]\n{l3_facts}")
+        if l3_insights:
+            parts.append(f"[Insights]\n{l3_insights}")
 
         context_text = "\n\n".join(parts)
         if context_text:

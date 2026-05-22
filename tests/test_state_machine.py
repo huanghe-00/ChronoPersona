@@ -212,3 +212,22 @@ class TestStateMachineAgentCore:
         assert "[Emotion State]" in prompt
         assert "CONCERNED" in prompt
         assert "0.7" in prompt
+
+    def test_build_prompt_includes_l3_context(self) -> None:
+        """T18: _build_prompt embeds semantic facts and insights from L3."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        from chronopersona.contracts.schemas import RetrievedContext, Fact
+        ctx = RetrievedContext(
+            episodic_memories=[],
+            semantic_facts=[Fact(attribute="Preference", value="Sichuan cuisine")],
+            insights=["Anxiety level rising over past sessions"],
+            total_tokens=0,
+        )
+        prompt = core._build_prompt("hi", ctx, "main")
+        assert "[Semantic Facts]" in prompt
+        assert "Sichuan cuisine" in prompt
+        assert "[Insights]" in prompt
+        assert "Anxiety level" in prompt

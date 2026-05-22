@@ -47,7 +47,7 @@ test-w5:
 	$(PYTHON) -m pytest tests/test_agent_core.py tests/test_state_machine.py tests/test_agent_core_state_machine.py -v --tb=short
 
 test-w6:
-	$(PYTHON) -m pytest tests/test_a1_a2_a3.py tests/test_a6_intent_graph.py tests/test_eval_pipeline.py tests/test_model_router.py tests/test_version_manager.py -v --tb=short
+	$(PYTHON) -m pytest tests/test_a1_a2_a3.py tests/test_a6_eval.py tests/test_a6_intent_graph.py tests/test_eval_pipeline.py tests/test_model_router.py tests/test_version_manager.py -v --tb=short
 
 test-w7:
 	$(PYTHON) -m pytest tests/test_grid_world.py tests/test_embodied_adapter.py tests/test_intent_graph.py tests/test_intent_navigator.py -v --tb=short

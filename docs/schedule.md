@@ -15,9 +15,9 @@
 | **W2** | 05-18 ~ 05-24 | 评估基线与骨架预热 | 无冲突域契约、Dreaming骨架、L2GC、PersonaInjector、Eval基线、L3 Unlearning | ✅ 已完成 |
 | **W3** | 05-25 ~ 05-31 | L3 + Intent Graph 深化 | MVO Seed、EdgeBuilder、HybridRetriever、CTEs | ✅ 已完成 |
 | **W4** | 06-01 ~ 06-07 | Insight + 反思 | InsightGenerator、CAUSED Tier 2、A1/A2 召回测试 | ✅ 已完成 |
-| **W5** | 06-08 ~ 06-14 | Agent 核心循环 | LangGraph 状态机、LSTM 脚本、RL/VLA Placeholder | 🟡 进行中 |
-| **W6** | 06-15 ~ 06-21 | 评估框架 | A1-A11 对抗测试集、量化对比表、报告流水线 | ⚪ 未开始 |
-| **W7** | 06-22 ~ 06-28 | 2D 世界 + 前端 | GridWorld、Action Bridge、极简 Canvas 前端 | ⚪ 未开始 |
+| **W5** | 06-08 ~ 06-14 | Agent 核心循环 | LangGraph 状态机、LSTM 脚本、RL/VLA Placeholder | ✅ 已完成 |
+| **W6** | 06-15 ~ 06-21 | 评估框架 | A1-A11 对抗测试集、量化对比表 | ✅ 已完成 |
+| **W7** | 06-22 ~ 06-28 | 2D 世界 + 前端 | GridWorld 真实映射、WebSocket Stub、Canvas 骨架 | 🟡 进行中 |
 | **W8** | 06-29 ~ 07-05 | 文档与面试 | README、技术博客、Slide Deck、Demo 脚本 | ⚪ 未开始 |
 
 ---
