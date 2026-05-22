@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 from loguru import logger
 
 from chronopersona.contracts.interfaces import (
+    AbstractActionPlanner,
     AbstractAgentCore,
     AbstractMemoryStore,
     AbstractModelRouter,
@@ -15,6 +16,7 @@ from chronopersona.contracts.schemas import (
     AgentOutput,
     ChangeSet,
     EmbodiedState,
+    EmotionLabel,
     EmotionState,
     RetrievedContext,
     Version,
@@ -41,7 +43,7 @@ class StateMachineAgentCore(AbstractAgentCore):
         version_manager: Optional[AbstractVersionManager] = None,
         intent_graph: Optional[IntentGraph] = None,
         persona_injector: Optional[IPersonaInjector] = None,
-        action_planner: Optional[Any] = None,
+        action_planner: Optional[AbstractActionPlanner] = None,
     ) -> None:
         self._memory_store = memory_store
         self._model_router = model_router
@@ -88,6 +90,9 @@ class StateMachineAgentCore(AbstractAgentCore):
         output = self._output_node.assemble(response, context, branch_id)
         if action_plan is not None:
             output.action_plan = action_plan
+
+        # Dynamic emotion state update (T0 rule-based layer)
+        self._emotion_state = self._update_emotion(user_input)
 
         # Persist turn to L1 Working Memory
         window = self._get_or_create_window(branch_id)
@@ -169,6 +174,25 @@ class StateMachineAgentCore(AbstractAgentCore):
     def set_insight_scheduler(self, scheduler: Any) -> None:
         """Attach InsightScheduler for periodic consolidation."""
         self._insight_scheduler = scheduler
+
+    def _update_emotion(self, user_input: str) -> EmotionState:
+        """T0 rule-based emotion classification."""
+        text = user_input.lower()
+        negative_words = ["难过", "伤心", "痛苦", "焦虑", "担心", "害怕"]
+        positive_words = ["开心", "高兴", "兴奋", "喜欢", "谢谢", "好"]
+        if any(w in text for w in negative_words):
+            return EmotionState(
+                current_state=EmotionLabel.CONCERNED,
+                intensity=0.7,
+                trigger_reason="User expressed negative emotion",
+            )
+        if any(w in text for w in positive_words):
+            return EmotionState(
+                current_state=EmotionLabel.EMPATHETIC,
+                intensity=0.5,
+                trigger_reason="User expressed positive emotion",
+            )
+        return EmotionState(current_state=EmotionLabel.NEUTRAL, intensity=0.0)
 
     def get_memory_summary(self, branch_id: str) -> str:
         """Return a summary of memory state."""

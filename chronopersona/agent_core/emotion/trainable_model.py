@@ -63,3 +63,44 @@ class TrainableEmotionModel:
         TODO(W8): self._model.load_state_dict(torch.load(path)).
         """
         logger.info("TrainableEmotionModel.load_checkpoint: {} (NO-OP)", path)
+
+    def prepare_training_data(
+        self,
+        context_texts: List[str],
+        labels: List[float],
+    ) -> List[Tuple[str, float]]:
+        """Pair texts with labels for supervised regression.
+
+        Args:
+            context_texts: Dialogue turn texts.
+            labels: Ground-truth emotion intensities [-1.0, 1.0].
+
+        Returns:
+            List of (text, label) tuples.
+
+        Raises:
+            ValueError: If lengths mismatch.
+        """
+        if len(context_texts) != len(labels):
+            raise ValueError("context_texts and labels must have same length")
+        return list(zip(context_texts, labels))
+
+    def fit(self, data: List[Tuple[str, float]], epochs: int = 1) -> None:
+        """Supervised regression training loop (skeleton).
+
+        MVA: No-op with data validation. W8+: BERT+LSTM backprop.
+        """
+        if not data:
+            raise ValueError("training data must not be empty")
+        for epoch in range(epochs):
+            total_loss = 0.0
+            for text, label in data:
+                pred = self.predict([text])
+                loss = (pred - label) ** 2
+                total_loss += loss
+            logger.info(
+                "TrainableEmotionModel.fit epoch={}/{} loss={:.4f} (NO-OP)",
+                epoch + 1,
+                epochs,
+                total_loss / len(data),
+            )

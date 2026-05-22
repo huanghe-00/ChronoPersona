@@ -126,3 +126,24 @@ class TestStateMachineAgentCore:
         )
         out = core.run_turn("hello", branch_id="main")
         assert out.action_plan is None
+
+    def test_run_turn_updates_emotion_state(self) -> None:
+        """T11: Negative input updates emotion to CONCERNED."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        core.run_turn("我最近很焦虑", branch_id="main")
+        es = core.get_emotion_state()
+        assert es.current_state.value == "CONCERNED"
+        assert es.intensity > 0.0
+
+    def test_run_turn_positive_input_empathetic(self) -> None:
+        """T12: Positive input updates emotion to EMPATHETIC."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        core.run_turn("今天真开心", branch_id="main")
+        es = core.get_emotion_state()
+        assert es.current_state.value == "EMPATHETIC"
