@@ -199,13 +199,13 @@
 ## 6. 本周行动项（Action Items）
 
 **负责人**: 全体  
-**截止日期**: 2026-05-22 20:00
+**截止日期**: 2026-05-29 (W7 末审视)
 
-1. 实现 `consolidation_agent.py`（Dreaming 骨架 + L2 指数衰减 GC）。
-2. 搭建 `evaluation/baseline.py` 并编写 `tests/test_eval_end_to_end.py`。
-3. 实现 `persona/injector.py`（PersonaInjector 注入/弹出契约）。
-4. 实现 `l3_semantic/unlearning.py`（过时知识标记，不物理删除）。
-5. 全量回归 `make test` 保持 262+ passed。
+1. 全量回归 `make test` 保持 400+ passed，`make eval` 保持 6/6 PASS。
+2. 确认 `IntentGraph` 的 `get_edges()` / `navigate()` deprecated 过滤与 `status` 字段同步已闭环（代码 + 测试 + 文档）。
+3. 启动 W8 文档：`README.md` 架构图刷新（含 L3 Prompt 注入、情感时序、跨本体映射的新设计）。
+4. 完成 `docs/beyond_mva.md` 与 `docs/interview_cheat_sheet.md` 交叉 Review。
+5. 评估 `serve_mva.py` 是否需要引入真实 WebSocket 依赖（`websockets` / `fastapi`）或保持 MVA 占位。
 
 ---
 
