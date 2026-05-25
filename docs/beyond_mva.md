@@ -165,6 +165,30 @@
 **预估工时**：2 天  
 **MVA 状态**：`navigation_path` 字段已存在，当前为空列表。
 
+### 2.10 P1：LangGraph 状态机迁移
+
+**解决的问题**：手写状态机难以维护复杂分支（条件跳转、循环、中断恢复）  
+**设计思路**：引入 `langgraph` 库，将 `StateMachineAgentCore` 重构为 `StateGraph`；定义 Input/Intent/Memory/LLM/Action/Output 节点，条件边路由 + 循环回退机制  
+**预估工时**：3 天
+
+### 2.11 P2：IntentGraph 持久化（PostgreSQL + CTE）
+
+**解决的问题**：MVA 纯内存结构，进程重启丢失图谱；无数据库执行计划优化与索引加速  
+**设计思路**：边表迁移至 PostgreSQL；`navigate()` 使用 Recursive CTE；`get_edges()` 使用复合索引查询；支持 `MATERIALIZED` CTE 与执行计划调优  
+**预估工时**：4 天
+
+### 2.12 P2：Episodic Store 分布式化（Qdrant）
+
+**解决的问题**：MVA 使用本地 FAISS `IndexFlatIP`，无法横向扩展，重启需重建索引  
+**设计思路**：替换为 Qdrant HNSW 近似索引；支持多副本、动态扩缩容、快照恢复  
+**预估工时**：3 天
+
+### 2.13 P3：HybridRetriever Intent-Aware 融合
+
+**解决的问题**：`SimpleEpisodicStore` 层 `intent` 参数未消费，意图过滤仅在 `MemoryNode` 层粗略执行  
+**设计思路**：在 `HybridRetriever` 层实现 `intent` 与 `IntentPattern` 的精确匹配过滤；支持 intent 相似度降级（如 `causal_explore` 降级到 `retrieve` 而非直接丢弃）  
+**预估工时**：1 天
+
 ---
 
 ## 3. 明确不采纳项（MVA 设计取舍）
