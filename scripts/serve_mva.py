@@ -1,5 +1,11 @@
 """MVA launch script: WebSocket gateway + MockAgentCore + GridWorldAdapter."""
 
+import sys
+from pathlib import Path
+
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_PROJECT_ROOT))
+
 from chronopersona.agent_core.state_machine import StateMachineAgentCore
 from chronopersona.api.ws_gateway import WebSocketGateway
 from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
