@@ -81,7 +81,7 @@ make test
 make eval
 
 # 4. 启动 MVA 演示
-python scripts/serve_mva.py
+python scripts/serve_mva.py  # 当前为模块加载占位，WebSocket 实时联调与前端数据推送待 W7+ 完成
 ```
 
 ## 🗓️ 8 周路线图速览
@@ -105,8 +105,8 @@ graph TD
     D --> E[ActionPlanner<br/>Token → Action + Emotion Modulation]
     E --> F[Output<br/>Text + 2D Command]
     F --> G[Async Reflection<br/>Entity Link → Graph Update]
-    G --> H[(PostgreSQL<br/>Intent Graph)]
-    C --> I[(Qdrant<br/>Episodic Vector)]
+    G --> H[(Intent Graph<br/>MVA: Python 内存 dict + deque BFS<br/>W8+: PostgreSQL + Recursive CTE)]
+    C --> I[(Episodic Store<br/>MVA: Simple/Faiss 内存索引<br/>W8+: Qdrant/Milvus 分布式)]
     G --> J[(LWW-CRDT<br/>Multi-device Sync)]
 ```
 

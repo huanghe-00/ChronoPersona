@@ -105,7 +105,7 @@
 
 | 日期 | 重点任务 |
 |------|---------|
-| 06-08 (一) | LangGraph State Machine: Input → Intent → Memory → LLM → Output |
+| 06-08 (一) | `StateMachineAgentCore` 纯 Python 状态机: Input → Intent → Memory → LLM → Output（MVA 手写状态机满足管线需求，未引入外部 LangGraph 库） |
 | 06-09 (二) | Intent Node（T0/T1 本地模型接入）+ Entity Extract（T2） |
 | 06-10 (三) | Memory Node（分支 checkout + 混合检索） |
 | 06-11 (四) | LLM Node + Persona Anchor 注入 + Emotion Filter |
@@ -228,6 +228,7 @@
 | P3 | **动态 max_hops** | 多跳推理断裂 | 按边类型配置 max_hops | 1d |
 | P3 | **动作执行后感知反馈闭环** | 动作-结果记忆对缺失 | 2D 环境状态变化回写 L2 | 2d |
 | P3 | **检索结果可解释性** | "Recall@5 高但用户感觉健忘" | `navigation_path` 详细填充 | 2d |
+| P1 | **LangGraph 状态机迁移** | 手写状态机难以维护复杂分支（条件跳转、循环、中断恢复） | 引入 `langgraph` 库，将 `StateMachineAgentCore` 重构为 `StateGraph`；定义 Input/Intent/Memory/LLM/Action/Output 节点，条件边路由 + 循环回退机制 | 3d |
 
 **明确不采纳项（MVA 设计取舍）**：
 - Causal Tier 1.5 启发式规则：当前 Tier 1 召回率 ~40% 是已知取舍，增加启发式会引入测试负担，面试时坦诚说明即可。
