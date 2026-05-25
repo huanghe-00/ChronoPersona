@@ -42,10 +42,9 @@ W8+ PRODUCTION: Replace with FastAPI / python-socketio or asyncio + websockets
 import sys
 from pathlib import Path
 
-# Add project root to Python path when running script directly
+# Ensure project root is in Python path when running script directly
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(_PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PROJECT_ROOT))
+sys.path.insert(0, str(_PROJECT_ROOT))
 
 import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
