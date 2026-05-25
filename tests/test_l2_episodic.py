@@ -171,10 +171,11 @@ class TestSimpleEpisodicStore:
     def test_near_duplicate_keeps_longer_content(self) -> None:
         """T59: Near-duplicate merge retains longer content version."""
         store = SimpleEpisodicStore()
-        # MockBGEEmbedder vectors are length-based; length difference of 1
-        # yields similarity ~0.986 (>0.95 threshold), triggering merge.
-        mid1 = store.add(MemoryEntry(content="short"), branch_id="main")
-        mid2 = store.add(MemoryEntry(content="shortX"), branch_id="main")  # len=6 > len=5
+        # Use 20 identical chars to guarantee cosine similarity >0.95
+        # with ASCII-based mock vectors (sim = sqrt(20/21) ≈ 0.975).
+        base = "a" * 20
+        mid1 = store.add(MemoryEntry(content=base), branch_id="main")
+        mid2 = store.add(MemoryEntry(content=base + "b"), branch_id="main")
         assert mid1 == mid2
-        ctx = store.retrieve("short", branch_id="main")
-        assert ctx.episodic_memories[0].content == "shortX"
+        ctx = store.retrieve(base, branch_id="main")
+        assert ctx.episodic_memories[0].content == base + "b"
