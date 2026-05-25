@@ -238,4 +238,7 @@ class StateMachineAgentCore(AbstractAgentCore):
         """Return a summary of memory state."""
         if not branch_id:
             raise ValueError("branch_id must not be empty")
-        ctx = self._memory_store.retrieve("", branch_id)
+        window = self._get_or_create_window(branch_id)
+        parts: List[str] = []
+        parts.append(f"Working: {len(window._turns)} turns")
+        return "\n".join(parts)
