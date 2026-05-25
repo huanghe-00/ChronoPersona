@@ -90,7 +90,7 @@
 **坦诚加分项**:
 1. 条件感知蒸馏缺失（Dreaming 丢失"如果/除非"）
 2. MockBGEEmbedder 局限性（长度-based，非语义）
-3. WebSocket 联调未完成
+3. WebSocket 实时联调未完成（HTTP API `serve_mva.py` 已可用，双向推送待 W8+）
 
 **路线图**: `docs/beyond_mva.md` —— 15 项缺陷的防御策略索引
 

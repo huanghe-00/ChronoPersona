@@ -26,7 +26,7 @@
 
 ## 3. 已知限制（面试时必须坦诚）
 
-1. `serve_mva.py` 为占位，WebSocket 实时联调未完成
+1. `serve_mva.py` HTTP API 已可用（`GET /health` + `POST /chat`），WebSocket 实时双向推送待 W8+
 2. `MockBGEEmbedder` 基于长度，非语义相似度
 3. `GridWorldAdapter` 返回命令但未执行闭环（无 `execute()` 回写 L2）
 4. `LWWMap.get_delta` 修复后需压测验证增量同步性能
@@ -34,5 +34,5 @@
 ## 4. Git Tag
 
 ```bash
-git tag -a v1.0-mva -m "MVA freeze: 421 passed, 94% coverage, 7 docs"
+git tag -a v1.0-mva -m "MVA freeze: 425 passed, 94% coverage, 7 docs, serve_mva.py HTTP API"
 ```

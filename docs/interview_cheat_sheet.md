@@ -26,7 +26,7 @@
 **标准答法**：
 1. **条件感知蒸馏缺失**：Dreaming 阶段 LLM 摘要会丢失"如果/除非"等条件从句。MVA 阶段 Schema 已预留 `BehavioralRule.trigger`，但 NLP 条件句识别模块推迟到 W8+。
 2. **MockBGEEmbedder 的局限性**：当前基于文本长度生成确定性向量，无法检测语义近重复（如"short" vs "short version"）。生产环境必须替换为 sentence-transformers。
-3. **WebSocket 实时联调未完成**：Canvas 前端目前为纯本地渲染，`serve_mva.py` 是骨架，真实数据推送需 W7 末完成。
+3. **WebSocket 实时联调未完成**：`serve_mva.py` 已提供零依赖 HTTP API（`POST /chat` 返回结构化 JSON），但 WebSocket 双向实时推送与 Canvas 前端数据联动仍待 W8+。
 
 **禁忌**：不要试图掩盖缺陷；面试官更欣赏对边界的清醒认知。
 

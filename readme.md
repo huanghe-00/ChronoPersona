@@ -26,7 +26,8 @@
 | **Agent Core** | ✅ 真实实现 | `StateMachineAgentCore`（Input → Intent → Memory → LLM → Output），H1 情感时序修复，`[Emotion State]` + `[Semantic Facts]` Prompt 注入 |
 | **ActionPlanner** | ✅ 真实实现 | 情感调制表 + `ActionPlan` 可审计 reasoning，NEUTRAL 基准不降速 |
 | **Embodied** | ✅ 真实实现 | `GridWorldAdapter`（20×20 网格、FOV、边界钳制、5 动作真实跨本体映射） |
-| **WebSocket** | 🟡 Stub | `WebSocketGateway` + `frontend/canvas.js` 网格渲染、MVA 启动脚本 `serve_mva.py` |
+| **HTTP API** | ✅ 可用 | `serve_mva.py` 零依赖 HTTP 服务器（`GET /health` + `POST /chat`），返回结构化 JSON |
+| **WebSocket** | 🟡 Stub | `WebSocketGateway` 骨架已就绪，双向实时推送与 Canvas 联动待 W8+ |
 
 ---
 
