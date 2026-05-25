@@ -33,10 +33,10 @@ effective_access = access_count * exp(-days_since_last_access / 30.0)
 
 ## 4.5.3 语义边与反学习
 
-**边的生命周期状态**：
+**边的生命周期状态（Schema 已预留）**：
 - `SemanticEdge` 增加 `status: str` 字段（`"active"` / `"deprecated"` / `"archived"`）。
-- `IntentGraph.get_edges()` 与 `navigate()` 默认过滤 `status != "active"` 的边。
-- 反学习标记 `deprecated` 的边不再参与检索与图谱导航，解决"反学习滞后"问题。
+- `[FUTURE] IntentGraph.get_edges()` 与 `navigate()` 将过滤 `status != "active"` 的边。当前 MVA 阶段 `IntentGraph` 模块待重建，该过滤逻辑尚未激活。
+- 反学习标记 `deprecated` 的边在过滤激活后不再参与检索与图谱导航，解决"反学习滞后"问题。
 
 ---
 
@@ -44,7 +44,7 @@ effective_access = access_count * exp(-days_since_last_access / 30.0)
 
 - **L1**：session 结束即清空，无需遗忘。
 - **L2**：指数衰减 `R = e^(-t/S)`，低于阈值后标记 `deprecated`。
-- **L3**：`deprecated` 边在检索阶段默认过滤（不参与 `navigate` 与 `get_edges`），但保留在存储中供审计追溯。
+- **L3**：`deprecated` 边在 `[FUTURE] IntentGraph` 过滤激活后不再参与 `navigate` 与 `get_edges`，但保留在存储中供审计追溯。当前 Schema 已预留 `status` 字段。
 - **动态重要性重算**（W8+）：每月/每 100 轮触发一次全量 L3 `importance` 审计，剔除被后续 `CONTRADICTS` 覆盖的低分记忆。
 
 ---
