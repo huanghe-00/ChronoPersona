@@ -30,3 +30,10 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+"""MVA launch script: WebSocket gateway + MockAgentCore + GridWorldAdapter.
+
+CURRENT STATUS (W7): Placeholder. Imports and assembles core components,
+                     then runs an idle loop to verify module loading.
+W8+ PRODUCTION: Replace with FastAPI / python-socketio or asyncio + websockets
+                 for real-time bidirectional embodied state streaming.
+"""

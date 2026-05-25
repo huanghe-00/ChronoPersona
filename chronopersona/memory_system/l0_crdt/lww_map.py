@@ -173,7 +173,7 @@ class LWWMap:
         delta: Dict[str, LWWEntry] = {}
         for key, entry in self._store.items():
             remote_ts = since_vector_clock.get(entry.device_id, 0)
-            if entry.timestamp.physical > remote_ts:
+            if entry.timestamp.logical > remote_ts:
                 delta[key] = entry
         return delta
 
