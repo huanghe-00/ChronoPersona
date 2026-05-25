@@ -92,7 +92,7 @@ class TestA6IntentGraph:
             branch_id="main",
         )
         graph.add_edge(
-            SemanticEdge("e2", "c2", "mem-b", "MENTIONS", branch_id="main"),
+            SemanticEdge("e2", "c1", "mem-b", "MENTIONS", branch_id="main"),
             branch_id="main",
         )
         # Deprecate e1
