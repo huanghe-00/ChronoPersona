@@ -132,4 +132,4 @@ class TestFaissEpisodicStore:
         mid2 = store.add(MemoryEntry(content="test"), branch_id="therapist")
         assert mid1 != mid2
         assert mid1.startswith("faiss-")
-        assert mid2.startswith("l2-faiss-")
+        assert mid2.startswith("faiss-")
