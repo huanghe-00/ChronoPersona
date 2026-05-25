@@ -80,8 +80,13 @@ make test
 # 3. 运行评估报告
 make eval
 
-# 4. 启动 MVA 演示
-python scripts/serve_mva.py  # 当前为模块加载占位，WebSocket 实时联调与前端数据推送待 W7+ 完成
+# 4. 启动 MVA HTTP API 服务器
+python scripts/serve_mva.py
+# 测试：
+curl -X POST http://localhost:8765/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "你好", "branch_id": "main"}'
+# 返回：{"reply_text": "...", "emotion_state": {...}, "action_plan": {...}}
 ```
 
 ## 🗓️ 8 周路线图速览
