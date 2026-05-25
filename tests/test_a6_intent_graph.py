@@ -79,3 +79,82 @@ class TestA6IntentGraph:
         assert len(results) >= 1
         node_ids = {nid for nid, _ in results}
         assert "mem-restaurant" in node_ids
+
+    def test_a6_5_navigate_filters_deprecated_edges(self) -> None:
+        """A6-5: navigate excludes edges with status != 'active'."""
+        graph = IntentGraph()
+        graph.add_concept(Concept("c1", "A", "abstract", branch_id="main"), branch_id="main")
+        graph.add_concept(Concept("c2", "B", "abstract", branch_id="main"), branch_id="main")
+        graph.add_memory_node("mem-a", "main")
+        graph.add_memory_node("mem-b", "main")
+        graph.add_edge(
+            SemanticEdge("e1", "c1", "mem-a", "MENTIONS", branch_id="main"),
+            branch_id="main",
+        )
+        graph.add_edge(
+            SemanticEdge("e2", "c2", "mem-b", "MENTIONS", branch_id="main"),
+            branch_id="main",
+        )
+        # Deprecate e1
+        graph.deprecate_edge("e1", "main")
+
+        pattern = IntentPattern("retrieve", ["A"], ["MENTIONS"], 3)
+        nav = IntentNavigator(graph, [pattern])
+        results = nav.navigate("A", "retrieve", "main")
+        node_ids = {nid for nid, _ in results}
+        # e1 is deprecated, so mem-a should not appear
+        assert "mem-a" not in node_ids
+        # e2 is still active, so mem-b should be reachable
+        assert "mem-b" in node_ids
+
+    def test_a6_6_reactivate_restores_navigate(self) -> None:
+        """A6-6: reactivating a deprecated edge makes it traversable again."""
+        graph = IntentGraph()
+        graph.add_concept(Concept("c1", "A", "abstract", branch_id="main"), branch_id="main")
+        graph.add_memory_node("mem-a", "main")
+        graph.add_edge(
+            SemanticEdge("e1", "c1", "mem-a", "MENTIONS", branch_id="main"),
+            branch_id="main",
+        )
+        graph.deprecate_edge("e1", "main")
+        graph.reactivate_edge("e1", "main")
+
+        pattern = IntentPattern("retrieve", ["A"], ["MENTIONS"], 3)
+        nav = IntentNavigator(graph, [pattern])
+        results = nav.navigate("A", "retrieve", "main")
+        node_ids = {nid for nid, _ in results}
+        assert "mem-a" in node_ids
+
+    def test_a6_7_deprecate_updates_edge_status(self) -> None:
+        """A6-7: deprecate_edge sets edge.status to 'deprecated'."""
+        graph = IntentGraph()
+        graph.add_concept(Concept("c1", "A", "abstract", branch_id="main"), branch_id="main")
+        graph.add_concept(Concept("c2", "B", "abstract", branch_id="main"), branch_id="main")
+        edge = SemanticEdge("e1", "c1", "c2", "MENTIONS", branch_id="main")
+        graph.add_edge(edge, branch_id="main")
+        graph.deprecate_edge("e1", "main")
+        # Retrieve the edge from the graph to check status
+        edges = graph.get_edges("main")
+        # get_edges already filters deprecated, so we need to access internal store
+        # We'll verify via navigate exclusion instead (covered by A6-5)
+        # But we can also check that the edge is no longer returned by get_edges
+        assert len(edges) == 0
+        # Directly inspect the internal edge list to confirm status change
+        internal_edges = graph._edges.get("main", [])
+        assert any(e.id == "e1" and e.status == "deprecated" for e in internal_edges)
+
+    def test_a6_8_reactivate_updates_edge_status(self) -> None:
+        """A6-8: reactivate_edge sets edge.status back to 'active'."""
+        graph = IntentGraph()
+        graph.add_concept(Concept("c1", "A", "abstract", branch_id="main"), branch_id="main")
+        graph.add_concept(Concept("c2", "B", "abstract", branch_id="main"), branch_id="main")
+        edge = SemanticEdge("e1", "c1", "c2", "MENTIONS", branch_id="main")
+        graph.add_edge(edge, branch_id="main")
+        graph.deprecate_edge("e1", "main")
+        graph.reactivate_edge("e1", "main")
+        internal_edges = graph._edges.get("main", [])
+        assert any(e.id == "e1" and e.status == "active" for e in internal_edges)
+        # Also verify get_edges returns it again
+        edges = graph.get_edges("main")
+        assert len(edges) == 1
+        assert edges[0].id == "e1"

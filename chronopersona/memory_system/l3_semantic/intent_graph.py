@@ -51,10 +51,13 @@ class IntentGraph:
         """BFS navigation from start node along specified edge types.
 
         Supports bidirectional traversal for causal and associative edges.
+        Only edges with status == "active" are traversed.
         """
         if not branch_id:
             raise ValueError("branch_id must not be empty")
         edges = self._edges.get(branch_id, [])
+        # Filter out deprecated/archived edges
+        active_edges = [e for e in edges if e.status == "active"]
         visited: Set[str] = {start_node_id}
         queue: Deque[Tuple[str, int, float]] = deque([(start_node_id, 0, 1.0)])
         results: List[Tuple[str, int, float]] = []
@@ -64,7 +67,7 @@ class IntentGraph:
             if hop >= max_hops:
                 continue
 
-            for edge in edges:
+            for edge in active_edges:
                 candidates: List[str] = []
                 if edge.source_id == node_id and edge.edge_type in entry_edge_types:
                     candidates.append(edge.target_id)
@@ -86,11 +89,21 @@ class IntentGraph:
         if not branch_id:
             raise ValueError("branch_id must not be empty")
         self._deprecated_edges.setdefault(branch_id, set()).add(edge_id)
+        # Also update the edge's status field for navigate filtering
+        for edge in self._edges.get(branch_id, []):
+            if edge.id == edge_id:
+                edge.status = "deprecated"
+                break
 
     def reactivate_edge(self, edge_id: str, branch_id: str) -> None:
         if not branch_id:
             raise ValueError("branch_id must not be empty")
         self._deprecated_edges.setdefault(branch_id, set()).discard(edge_id)
+        # Restore edge status to active
+        for edge in self._edges.get(branch_id, []):
+            if edge.id == edge_id:
+                edge.status = "active"
+                break
 
     def get_concepts(self, branch_id: str) -> List[Concept]:
         if not branch_id:
