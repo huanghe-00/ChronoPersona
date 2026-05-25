@@ -132,7 +132,13 @@ class SimpleEpisodicStore(AbstractEpisodicStore):
         return False
 
     def _find_near_duplicate(self, entry: MemoryEntry, branch_id: str) -> Optional[MemoryEntry]:
-        """Return existing entry if similarity > 0.95, else None."""
+        """Return existing entry if similarity > 0.95, else None.
+
+        NOTE: MockBGEEmbedder generates vectors based on text length only.
+        Identical lengths yield similarity 1.0; different lengths yield ~0.0.
+        Production embedders (sentence-transformers) will correctly detect
+        semantic near-duplicates regardless of length differences.
+        """
         entries = self._entries.get(branch_id, [])
         vectors = self._vectors.get(branch_id, [])
         if not entries:
