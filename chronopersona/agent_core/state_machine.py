@@ -241,4 +241,5 @@ class StateMachineAgentCore(AbstractAgentCore):
         window = self._get_or_create_window(branch_id)
         parts: List[str] = []
         parts.append(f"Working: {len(window._turns)} turns")
+        parts.append("Episodic: retrieved via memory node")
         return "\n".join(parts)
