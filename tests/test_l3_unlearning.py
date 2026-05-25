@@ -65,3 +65,25 @@ class TestL3Unlearning:
         graph.deprecate_edge("e1", "a")
         assert len(graph.get_edges("b")) == 0
         assert len(graph.get_edges("a")) == 0
+
+    def test_get_edges_filters_by_edge_type(self) -> None:
+        """T06: get_edges with edge_type filters correctly and excludes deprecated."""
+        graph = IntentGraph()
+        graph.add_concept(Concept("c1", "A", "abstract", branch_id="main"), branch_id="main")
+        graph.add_concept(Concept("c2", "B", "abstract", branch_id="main"), branch_id="main")
+        graph.add_edge(
+            SemanticEdge("e1", "c1", "c2", "MENTIONS", branch_id="main"),
+            branch_id="main",
+        )
+        graph.add_edge(
+            SemanticEdge("e2", "c1", "c2", "CAUSED", branch_id="main"),
+            branch_id="main",
+        )
+        # Filter by type
+        mentions = graph.get_edges("main", edge_type="MENTIONS")
+        assert len(mentions) == 1
+        assert mentions[0].edge_type == "MENTIONS"
+        # Deprecate one, filter by type should return empty
+        graph.deprecate_edge("e1", "main")
+        mentions_after = graph.get_edges("main", edge_type="MENTIONS")
+        assert len(mentions_after) == 0

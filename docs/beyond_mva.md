@@ -10,7 +10,7 @@
 | 缺陷类别 | MVA 已实施的防御 | 验证方式 |
 |---------|----------------|---------|
 | 错误分类（情感误标） | T0 规则引擎 + `confidence` 阈值（`>=0.7` 才注入 Prompt） | `test_state_machine.py` T18 |
-| 错误分类（边类型滞后） | `SemanticEdge.status` 字段 + `deprecated` 过滤机制 | `test_intent_graph.py`（待补全） |
+| 错误分类（边类型滞后） | `SemanticEdge.status` 字段 + `deprecated` 过滤机制 | `test_intent_graph.py`、`test_a6_intent_graph.py`、`test_l3_unlearning.py` 已补全（覆盖 `navigate` 过滤、`status` 同步、`get_edges` 过滤） |
 | 过拟合（LFU Trap） | `access_count` 30 天半衰期衰减 | `test_l2_episodic.py` T57 |
 | 过拟合（重复膨胀） | L2 近重复检测与合并（`sim > 0.95`） | `test_l2_episodic.py` T58 |
 | 归纳遗漏（幽灵记忆） | Faiss `_deleted_indices` 过滤 + 防御性跳过 | `test_faiss_store.py` T03 |

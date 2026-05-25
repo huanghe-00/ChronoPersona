@@ -118,3 +118,4 @@ class IntentGraph:
         edges = [e for e in edges if e.id not in deprecated]
         if edge_type is None:
             return edges
+        return [e for e in edges if e.edge_type == edge_type]
