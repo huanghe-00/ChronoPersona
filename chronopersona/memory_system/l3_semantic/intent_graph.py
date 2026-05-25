@@ -106,3 +106,121 @@ class IntentGraph:
         if edge_type is None:
             return edges
         return [e for e in edges if e.edge_type == edge_type]
+"""Intent graph implementation for L3 semantic memory."""
+
+from __future__ import annotations
+
+from typing import Dict, List, Optional
+
+from loguru import logger
+
+from chronopersona.contracts.schemas.semantic import Concept, IntentPattern, SemanticEdge
+
+
+class IntentGraph:
+    """In-memory intent graph with typed edges and navigation support."""
+
+    def __init__(self) -> None:
+        self._concepts: Dict[str, Concept] = {}
+        self._edges: Dict[str, SemanticEdge] = {}
+        # adjacency: source_id -> list of edge ids
+        self._adjacency: Dict[str, List[str]] = {}
+
+    def add_concept(self, concept: Concept) -> None:
+        """Add a concept node to the graph."""
+        self._concepts[concept.id] = concept
+        logger.info("Added concept '{}' (type={})", concept.name, concept.concept_type)
+
+    def add_edge(self, edge: SemanticEdge) -> None:
+        """Add a typed edge between two concepts."""
+        self._edges[edge.id] = edge
+        self._adjacency.setdefault(edge.source_id, []).append(edge.id)
+        logger.info(
+            "Added edge '{}' ({} -> {}) type={}",
+            edge.id,
+            edge.source_id,
+            edge.target_id,
+            edge.edge_type,
+        )
+
+    def get_edges(
+        self,
+        source_id: Optional[str] = None,
+        edge_type: Optional[str] = None,
+        branch_id: Optional[str] = None,
+        include_deprecated: bool = False,
+    ) -> List[SemanticEdge]:
+        """Retrieve edges with optional filters.
+
+        Args:
+            source_id: If provided, only edges originating from this concept.
+            edge_type: If provided, only edges of this type.
+            branch_id: If provided, only edges belonging to this branch.
+            include_deprecated: If False (default), edges with status='deprecated' are excluded.
+
+        Returns:
+            Filtered list of SemanticEdge objects.
+        """
+        result: List[SemanticEdge] = []
+        for edge in self._edges.values():
+            if source_id is not None and edge.source_id != source_id:
+                continue
+            if edge_type is not None and edge.edge_type != edge_type:
+                continue
+            if branch_id is not None and edge.branch_id != branch_id:
+                continue
+            if not include_deprecated and getattr(edge, "status", "active") == "deprecated":
+                continue
+            result.append(edge)
+        return result
+
+    def navigate(
+        self,
+        start_id: str,
+        pattern: IntentPattern,
+        branch_id: Optional[str] = None,
+        include_deprecated: bool = False,
+    ) -> List[Concept]:
+        """Navigate the graph following an intent pattern.
+
+        Args:
+            start_id: Starting concept id.
+            pattern: IntentPattern describing allowed edge types and max hops.
+            branch_id: Optional branch filter.
+            include_deprecated: If False, deprecated edges are skipped.
+
+        Returns:
+            List of reached Concept nodes (excluding the start node).
+        """
+        visited: set[str] = {start_id}
+        frontier: List[str] = [start_id]
+        reached: List[Concept] = []
+
+        for _ in range(pattern.max_hops):
+            next_frontier: List[str] = []
+            for node_id in frontier:
+                edges = self.get_edges(
+                    source_id=node_id,
+                    branch_id=branch_id,
+                    include_deprecated=include_deprecated,
+                )
+                for edge in edges:
+                    if edge.edge_type not in pattern.entry_edge_types:
+                        continue
+                    target = edge.target_id
+                    if target in visited:
+                        continue
+                    visited.add(target)
+                    next_frontier.append(target)
+                    concept = self._concepts.get(target)
+                    if concept is not None:
+                        reached.append(concept)
+            frontier = next_frontier
+            if not frontier:
+                break
+
+        return reached
+
+    def get_concept(self, concept_id: str) -> Optional[Concept]:
+        """Return a concept by id, or None if not found."""
+        return self._concepts.get(concept_id)
