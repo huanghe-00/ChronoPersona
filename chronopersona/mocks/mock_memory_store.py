@@ -22,10 +22,10 @@ class MockMemoryStore(AbstractMemoryStore):
     def add(self, memory: MemoryEntry, branch_id: str) -> str:
         if not branch_id:
             raise ValueError("branch_id must not be empty")
-        mid = self._next_id()
-        memory.id = mid
+        if not memory.id:
+            memory.id = self._next_id()
         self._memories.setdefault(branch_id, []).append(memory)
-        return mid
+        return memory.id
 
     def retrieve(
         self,
