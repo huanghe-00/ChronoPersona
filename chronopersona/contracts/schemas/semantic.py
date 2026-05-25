@@ -35,8 +35,8 @@ class IntentPattern:
     """Navigation strategy for a specific intent type."""
 
     intent_type: str
-    trigger_keywords: list[str]
-    entry_edge_types: list[str]
+    trigger_keywords: List[str]
+    entry_edge_types: List[str]
     max_hops: int = 3
-    target_memory_types: list[str] = field(default_factory=lambda: ["episodic", "semantic"])
+    target_memory_types: List[str] = field(default_factory=lambda: ["episodic", "semantic"])
     priority_score: float = 1.0
