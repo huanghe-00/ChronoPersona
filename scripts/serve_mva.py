@@ -36,19 +36,12 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-"""MVA launch script: WebSocket gateway + MockAgentCore + GridWorldAdapter.
-
-CURRENT STATUS (W7): Placeholder. Imports and assembles core components,
-                     then runs an idle loop to verify module loading.
-W8+ PRODUCTION: Replace with FastAPI / python-socketio or asyncio + websockets
-                 for real-time bidirectional embodied state streaming.
-"""
+#!/usr/bin/env python3
 """MVA HTTP API server: zero-dependency, standard library only."""
 
 import sys
 from pathlib import Path
 
-# Ensure project root is in Python path when running script directly
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT))
 
@@ -62,22 +55,18 @@ from chronopersona.mocks.mock_model_router import MockModelRouter
 
 
 class _SilentHandler(BaseHTTPRequestHandler):
-    """Suppress default request logging."""
-
     def log_message(self, format, *args):
         pass
 
 
 class ChatHandler(_SilentHandler):
-    """Handle POST /chat and GET /health."""
-
-    def _send_json(self, status_code: int, data: dict) -> None:
+    def _send_json(self, status_code, data):
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode("utf-8"))
 
-    def do_POST(self) -> None:
+    def do_POST(self):
         if self.path != "/chat":
             self._send_json(404, {"error": "Not found"})
             return
@@ -93,15 +82,14 @@ class ChatHandler(_SilentHandler):
         except (ValueError, KeyError, json.JSONDecodeError) as e:
             self._send_json(400, {"error": f"Bad request: {e}"})
 
-    def do_GET(self) -> None:
+    def do_GET(self):
         if self.path == "/health":
             self._send_json(200, {"status": "ok", "version": "1.0-mva"})
         else:
             self._send_json(404, {"error": "Not found"})
 
 
-def main() -> None:
-    """Start MVA HTTP API server on port 8765."""
+def main():
     core = StateMachineAgentCore(
         memory_store=MockMemoryStore(),
         model_router=MockModelRouter(),
