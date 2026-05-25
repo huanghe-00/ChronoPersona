@@ -131,7 +131,7 @@ class SimpleEpisodicStore(AbstractEpisodicStore):
                 return True
         return False
 
-    def _find_near_duplicate(self, entry: MemoryEntry, branch_id: str) -> MemoryEntry | None:
+    def _find_near_duplicate(self, entry: MemoryEntry, branch_id: str) -> Optional[MemoryEntry]:
         """Return existing entry if similarity > 0.95, else None."""
         entries = self._entries.get(branch_id, [])
         vectors = self._vectors.get(branch_id, [])

@@ -8,7 +8,7 @@ from loguru import logger
 from chronopersona.memory_system.l0_crdt.hybrid_timestamp import HybridTimestamp
 
 MAX_CLOCK_SKEW_NS: int = 500_000_000
-MAX_CONTRADICTS: int = 10  # Soft limit: alarm when skew conflicts exceed this per key
+MAX_CONTRADICT_KEYS: int = 10  # Soft limit: alarm when total skew-conflicted keys exceed this
 
 
 @dataclass
@@ -75,10 +75,10 @@ class LWWMap:
                 MAX_CLOCK_SKEW_NS,
             )
             # Conflict edge soft limit alarm
-            if len(self._skew_conflicts) > MAX_CONTRADICTS:
+            if len(self._skew_conflicts) > MAX_CONTRADICT_KEYS:
                 logger.warning(
-                    "LWWMap conflict edges exceed soft limit {} (current: {})",
-                    MAX_CONTRADICTS,
+                    "LWWMap skew-conflicted keys exceed soft limit {} (current: {})",
+                    MAX_CONTRADICT_KEYS,
                     len(self._skew_conflicts),
                 )
 
