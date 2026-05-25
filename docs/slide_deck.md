@@ -32,7 +32,7 @@
 **架构图**: `LWWMap` + HLC + add-wins
 
 **关键数据**:
-- 1,000 节点 P99 < 2ms
+- 设计目标: 1,000 节点 P99 < 2ms（MVA 阶段未压测，基于 HLC 比较逻辑的复杂度推导）
 - 500ms clock-skew 检测，超阈值保留双版本 + `CONTRADICTS` 边
 - `MAX_CONTRADICT_KEYS: 10` 软限制防止冲突堆积
 
