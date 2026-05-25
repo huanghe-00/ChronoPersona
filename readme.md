@@ -11,7 +11,7 @@
 **ChronoPersona** 是一个面向生产级 AI Agent 的长期记忆系统，核心差异化在于将**分布式一致性（CRDT）**与**版本化记忆（MVCC）**引入 Agent 记忆架构，解决多端同步冲突、角色人格漂移、记忆幻觉三大痛点。同时通过 **Token→Action Bridge** 实现人格与身体的解耦，使同一套"灵魂"可零样本迁移到任意机器人本体。
 
 **定位**：面试展示项目 | **周期**：8 周（MVA） | **核心语言**：Python / TypeScript  
-**当前状态**：W6 评估框架已完成 — **400+ passed, 1 skipped, 94% coverage**
+**当前状态**：W7 2D 世界 + 前端骨架 80% 就位 — **400+ passed, 1 skipped, 94% coverage**
 
 ## 🚀 项目状态
 
@@ -26,7 +26,7 @@
 | **Agent Core** | ✅ 真实实现 | `StateMachineAgentCore`（Input → Intent → Memory → LLM → Output），H1 情感时序修复，`[Emotion State]` + `[Semantic Facts]` Prompt 注入 |
 | **ActionPlanner** | ✅ 真实实现 | 情感调制表 + `ActionPlan` 可审计 reasoning，NEUTRAL 基准不降速 |
 | **Embodied** | ✅ 真实实现 | `GridWorldAdapter`（20×20 网格、FOV、边界钳制、5 动作真实跨本体映射） |
-| **WebSocket** | 🟡 Stub | `WebSocketGateway` + `frontend/canvas.js` 骨架，MVA 启动脚本 |
+| **WebSocket** | 🟡 Stub | `WebSocketGateway` + `frontend/canvas.js` 网格渲染、MVA 启动脚本 `serve_mva.py` |
 
 ---
 
@@ -92,7 +92,7 @@ python scripts/serve_mva.py
 - **W4** ✅ Insight 完整实现 + CAUSED Tier 2 + A1/A2 召回测试
 - **W5** ✅ Agent 核心循环 + ActionPlanner + H1 情感时序修复 + LSTM 监督骨架 + `[Emotion State]` Prompt 注入
 - **W6** ✅ A1-A11 对抗测试集（39 文件/400+ 用例）+ `evaluation/runner.py` 自动化报告 + 测试语义红线硬化
-- **W7** 🟡 2D Canvas 前端 + WebSocket 联调 + MVA 启动脚本
+- **W7** 🟡 2D Canvas 前端 + WebSocket 联调 + MVA 启动脚本（`GridWorldAdapter` 5 动作真实跨本体映射已落地）
 - **W8** ⚪ 技术博客 + Slide Deck + 面试准备
 
 ## 系统架构
@@ -149,6 +149,15 @@ graph TD
 - **A1-A11 对抗测试集**：覆盖记忆召回、跨会话关联、角色隔离、多端冲突、意图图谱导航、情感一致性、具身感知、跨本体迁移、动作可审计、人格漂移检测
 - **双轨评估**：pytest 断言驱动（PASS/FAIL）+ `evaluation/runner.py` 量化指标（Recall@5 / MRR）
 - **测试语义红线**：AIDER.md 5.1/5.2 条硬化，识别并回退"测试迁就实现"
+
+### 7. Prompt 全层注入（W7 交付）
+
+- **L1 工作记忆**：最近 N 轮对话压缩后注入 `[Recent Conversation]`
+- **L2 情景记忆**：FAISS/向量检索 Top-K 结果注入 `[Retrieved Memories]`
+- **L3 语义事实**：`IntentGraph` 导航召回的 `semantic_facts` 注入 `[Semantic Facts]`
+- **Insight 洞察**：`ReflectionAgent` 提取的模式与冲突注入 `[Insights]`
+- **Emotion 状态**：T0 规则引擎动态更新的情感状态注入 `[Emotion State]`（`confidence >= 0.7` 且非 NEUTRAL 时触发）
+- **具身感知**：2D 环境 FOV 物体列表注入 `[Embodied State]`
 
 ---
 
