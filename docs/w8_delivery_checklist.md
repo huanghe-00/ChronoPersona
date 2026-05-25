@@ -10,8 +10,8 @@
 
 | 文件 | 状态 | 验证方式 |
 |------|------|---------|
-| `make test` | ✅ 400+ passed | 本地执行 |
-| `make eval` | ✅ 6/6 PASS | 本地执行 |
+| `make test` | ✅ 425 passed | 本地执行 |
+| `make eval` | ✅ A1-A5 recall@5=1.0, A3=0.0 (expected) | 本地执行 |
 | `pytest tests/test_mock_pipeline.py` | ✅ W1 守卫 | CI 阻塞项 |
 
 ## 2. 架构文档
