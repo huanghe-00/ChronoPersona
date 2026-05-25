@@ -27,7 +27,7 @@
 **实际达成**：
 - `contracts/interfaces/` 14 个抽象接口全部冻结并导出。
 - `mocks/` 12 个 Mock 实现 100% 覆盖对应接口。
-- `tests/` 新增 12 个专门测试文件，全量 **262 passed, 1 skipped, 0 failed**；语句覆盖率 **94%**。
+- `tests/` **39 个测试文件**，全量 **400+ passed, 1 skipped, 0 failed**；语句覆盖率 **94%**。
 - 真实实现交付：`L0SyncLayer`（HLC + add-wins + clock-skew）、`GridWorldAdapter`（FOV + 边界钳制）、`IntentGraph`/`IntentNavigator`（BFS + 意图模式匹配）、`StateMachineAgentCore`（端到端状态机）、`WorkingMemoryWindow`（滑动窗口 + 动态压缩）。
 - 关键缺陷修复：`L0SyncLayer.get_delta()` 运行时 `NameError`（缺失 `self.`）。
 - PLACEHOLDER 合规：`test_caused_tier2.py` 正确 skip，无违规实现复杂算法。
@@ -53,7 +53,7 @@
 | T102-T103 | `test_llm_node.py` | 2 | LLMNode：delegation、空分支校验 |
 | T104-T106 | `test_output_node.py` | 3 | OutputNode：assembly、emotion 默认、memory_id 过滤 |
 | T107-T110 | `test_memory_node.py` | 4 | MemoryNode：retrieve、意图降级、intent graph boost |
-| **合计** | **16 个测试文件** | **262** | **全部通过** |
+| **合计** | **39 个测试文件** | **400+** | **全部通过** |
 
 ---
 

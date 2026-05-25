@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import List, Optional
 
 
 @dataclass
@@ -12,7 +13,7 @@ class Concept:
     id: str
     name: str
     concept_type: str
-    parent_id: str | None = None
+    parent_id: Optional[str] = None
     branch_id: str = "main"
 
 

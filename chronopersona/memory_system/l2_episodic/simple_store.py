@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from chronopersona.contracts.interfaces import AbstractEpisodicStore
 from chronopersona.contracts.schemas import MemoryEntry, RetrievedContext
@@ -18,7 +18,7 @@ class SimpleEpisodicStore(AbstractEpisodicStore):
     for cosine similarity, avoiding external dependencies.
     """
 
-    def __init__(self, embedder: MockBGEEmbedder | None = None) -> None:
+    def __init__(self, embedder: Optional[MockBGEEmbedder] = None) -> None:
         self._embedder = embedder or MockBGEEmbedder()
         # branch_id -> list of MemoryEntry
         self._entries: Dict[str, List[MemoryEntry]] = {}
@@ -68,7 +68,7 @@ class SimpleEpisodicStore(AbstractEpisodicStore):
         query: str,
         branch_id: str,
         top_k: int = 5,
-        intent: str | None = None,
+        intent: Optional[str] = None,
     ) -> RetrievedContext:
         """Retrieve top-k most similar memories for the given query.
 

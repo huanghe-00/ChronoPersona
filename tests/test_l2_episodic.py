@@ -139,3 +139,37 @@ class TestSimpleEpisodicStore:
         store.add(MemoryEntry(content="common text", importance=0.9), branch_id="main")
         ctx = store.retrieve("common text", branch_id="main", top_k=2)
         assert ctx.episodic_memories[0].importance == 0.9
+
+    def test_access_count_decay_boosts_recent_over_frequent(self) -> None:
+        """T57: 30-day half-life decay: recent low-count beats old high-count."""
+        from datetime import datetime, timedelta
+        store = SimpleEpisodicStore()
+        old_entry = MemoryEntry(content="old frequent memory", access_count=10)
+        old_entry.last_accessed = (datetime.now() - timedelta(days=60)).isoformat()
+        store.add(old_entry, branch_id="main")
+
+        recent_entry = MemoryEntry(content="recent rare memory", access_count=5)
+        recent_entry.last_accessed = datetime.now().isoformat()
+        store.add(recent_entry, branch_id="main")
+
+        ctx = store.retrieve("memory", branch_id="main", top_k=2)
+        # recent rare should rank higher despite lower raw access_count
+        assert ctx.episodic_memories[0].content == "recent rare memory"
+
+    def test_near_duplicate_merge_increments_access_count(self) -> None:
+        """T58: Near-duplicate detection merges identical content, accumulates access_count."""
+        store = SimpleEpisodicStore()
+        mid1 = store.add(MemoryEntry(content="my phone is 13800138000"), branch_id="main")
+        mid2 = store.add(MemoryEntry(content="my phone is 13800138000"), branch_id="main")
+        assert mid1 == mid2
+        ctx = store.retrieve("phone", branch_id="main")
+        assert ctx.episodic_memories[0].access_count == 2
+
+    def test_near_duplicate_keeps_longer_content(self) -> None:
+        """T59: Near-duplicate merge retains longer content version."""
+        store = SimpleEpisodicStore()
+        mid1 = store.add(MemoryEntry(content="short"), branch_id="main")
+        mid2 = store.add(MemoryEntry(content="short version expanded longer"), branch_id="main")
+        assert mid1 == mid2
+        ctx = store.retrieve("short", branch_id="main")
+        assert "expanded longer" in ctx.episodic_memories[0].content
