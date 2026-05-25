@@ -66,6 +66,28 @@ class TestL3Unlearning:
         assert len(graph.get_edges("b")) == 0
         assert len(graph.get_edges("a")) == 0
 
+    def test_add_edge_with_deprecated_status_syncs_to_filter(self) -> None:
+        """T07: Adding edge with status='deprecated' directly is filtered by get_edges and navigate."""
+        graph = IntentGraph()
+        graph.add_concept(Concept("c1", "A", "abstract", branch_id="main"), branch_id="main")
+        graph.add_concept(Concept("c2", "B", "abstract", branch_id="main"), branch_id="main")
+        # Add edge directly with deprecated status
+        graph.add_edge(
+            SemanticEdge(
+                id="e1", source_id="c1", target_id="c2",
+                edge_type="MENTIONS", branch_id="main", status="deprecated",
+            ), branch_id="main"
+        )
+        # get_edges should filter it
+        assert len(graph.get_edges("main")) == 0
+        # navigate should also filter it
+        from chronopersona.contracts.schemas.semantic import IntentPattern
+        from chronopersona.memory_system.l3_semantic import IntentNavigator
+        pattern = IntentPattern("retrieve", ["A"], ["MENTIONS"], 3)
+        nav = IntentNavigator(graph, [pattern])
+        results = nav.navigate("A", "retrieve", "main")
+        assert len(results) == 0
+
     def test_get_edges_filters_by_edge_type(self) -> None:
         """T06: get_edges with edge_type filters correctly and excludes deprecated."""
         graph = IntentGraph()

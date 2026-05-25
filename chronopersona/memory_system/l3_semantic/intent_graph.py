@@ -40,6 +40,9 @@ class IntentGraph:
         }:
             raise ValueError(f"unsupported edge_type: {edge.edge_type}")
         self._edges.setdefault(edge.branch_id, []).append(edge)
+        # Sync _deprecated_edges if edge is added with non-active status
+        if edge.status != "active":
+            self._deprecated_edges.setdefault(branch_id, set()).add(edge.id)
 
     def navigate(
         self,
@@ -56,8 +59,9 @@ class IntentGraph:
         if not branch_id:
             raise ValueError("branch_id must not be empty")
         edges = self._edges.get(branch_id, [])
-        # Filter out deprecated/archived edges
-        active_edges = [e for e in edges if e.status == "active"]
+        deprecated = self._deprecated_edges.get(branch_id, set())
+        # Filter out deprecated/archived edges using _deprecated_edges as source of truth
+        active_edges = [e for e in edges if e.id not in deprecated]
         visited: Set[str] = {start_node_id}
         queue: Deque[Tuple[str, int, float]] = deque([(start_node_id, 0, 1.0)])
         results: List[Tuple[str, int, float]] = []
