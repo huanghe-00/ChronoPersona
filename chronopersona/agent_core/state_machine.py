@@ -151,11 +151,15 @@ class StateMachineAgentCore(AbstractAgentCore):
                 f"[Embodied State] Agent at ({embodied_state.x}, {embodied_state.y}), "
                 f"facing {embodied_state.theta:.2f} rad. FOV: {fov}"
             )
-        if self._emotion_state is not None and self._emotion_state.current_state != EmotionLabel.NEUTRAL:
-            parts.append(
-                f"[Emotion State] {self._emotion_state.current_state.value} "
-                f"(intensity={self._emotion_state.intensity:.1f})"
-            )
+        if self._emotion_state is not None:
+            if (
+                self._emotion_state.current_state != EmotionLabel.NEUTRAL
+                and self._emotion_state.confidence >= 0.7
+            ):
+                parts.append(
+                    f"[Emotion State] {self._emotion_state.current_state.value} "
+                    f"(intensity={self._emotion_state.intensity:.1f})"
+                )
         if l1_text:
             parts.append(f"[Recent Conversation]\n{l1_text}")
         if l2_text:
@@ -208,7 +212,7 @@ class StateMachineAgentCore(AbstractAgentCore):
         self._insight_scheduler = scheduler
 
     def _update_emotion(self, user_input: str, branch_id: str) -> EmotionState:
-        """T0 rule-based emotion classification.
+        """T0 rule-based emotion classification with confidence.
 
         Args:
             user_input: The user's input text.
@@ -225,14 +229,20 @@ class StateMachineAgentCore(AbstractAgentCore):
                 current_state=EmotionLabel.CONCERNED,
                 intensity=0.7,
                 trigger_reason="User expressed negative emotion",
+                confidence=0.9,
             )
         if any(w in text for w in positive_words):
             return EmotionState(
                 current_state=EmotionLabel.EMPATHETIC,
                 intensity=0.5,
                 trigger_reason="User expressed positive emotion",
+                confidence=0.9,
             )
-        return EmotionState(current_state=EmotionLabel.NEUTRAL, intensity=0.0)
+        return EmotionState(
+            current_state=EmotionLabel.NEUTRAL,
+            intensity=0.0,
+            confidence=0.5,
+        )
 
     def get_memory_summary(self, branch_id: str) -> str:
         """Return a summary of memory state."""
