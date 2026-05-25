@@ -48,6 +48,24 @@ class TestL0SyncLayerReal:
         delta: Dict[str, Any] = sync.get_delta("main")
         assert "k1" in delta
 
+    def test_get_delta_returns_only_newer_entries(self) -> None:
+        """get_delta with vector_clock returns only entries with higher logical counter."""
+        from chronopersona.memory_system.l0_crdt.lww_map import LWWMap
+        
+        map1 = LWWMap("device-a")
+        map1.set("key1", "value1")  # logical counter becomes 1
+        map1.set("key2", "value2")  # logical counter becomes 2
+        
+        delta_all = map1.get_delta(since_vector_clock={"device-a": 0})
+        assert len(delta_all) == 2
+        
+        delta_partial = map1.get_delta(since_vector_clock={"device-a": 1})
+        assert len(delta_partial) == 1
+        assert "key2" in delta_partial
+        
+        delta_none = map1.get_delta(since_vector_clock={"device-a": 2})
+        assert len(delta_none) == 0
+
     def test_merge_rejects_non_lww_entry_values(self) -> None:
         """T06: merge raises TypeError when remote_state contains raw values."""
         sync: AbstractL0SyncLayer = L0SyncLayer(device_id="test-device")
