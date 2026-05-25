@@ -13,12 +13,20 @@ class AbstractEpisodicStore(ABC):
     def add(self, entry: MemoryEntry, branch_id: str) -> str:
         """Add a memory entry and return its ID.
 
+        ID handling contract:
+        - If entry.id is empty or unset, the implementation generates
+          a unique ID appropriate for the storage backend.
+        - If entry.id is provided (e.g., for deterministic evaluation
+          scenarios, MVO seed loading, or external data migration),
+          the implementation MUST use it as-is and return it without
+          modification.
+
         Args:
             entry: Memory entry to store.
             branch_id: Branch identifier. Must not be empty.
 
         Returns:
-            Unique memory ID.
+            The memory ID (generated or caller-provided).
 
         Raises:
             ValueError: If branch_id is empty.
