@@ -53,7 +53,7 @@
 | T102-T103 | `test_llm_node.py` | 2 | LLMNode：delegation、空分支校验 |
 | T104-T106 | `test_output_node.py` | 3 | OutputNode：assembly、emotion 默认、memory_id 过滤 |
 | T107-T110 | `test_memory_node.py` | 4 | MemoryNode：retrieve、意图降级、intent graph boost |
-| **合计** | **39 个测试文件** | **400+** | **全部通过** |
+| **合计** | **39 个测试文件** | **~170 显式编号 + 辅助/参数化用例 = 400+ 总断言** | **全部通过** |
 
 ---
 

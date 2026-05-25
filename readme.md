@@ -4,7 +4,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status: W6 Eval Complete](https://img.shields.io/badge/status-W6%20Eval%20Complete-brightgreen.svg)]()
+[![Status: W7 In Progress](https://img.shields.io/badge/status-W7%20In%20Progress-yellow.svg)]()
 [![Tests: 400+ passed](https://img.shields.io/badge/tests-400%2B%20passed-success.svg)]()
 [![Coverage: 94%](https://img.shields.io/badge/coverage-94%25-success.svg)]()
 
