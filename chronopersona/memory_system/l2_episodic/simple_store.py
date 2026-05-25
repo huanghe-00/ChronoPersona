@@ -48,6 +48,14 @@ class SimpleEpisodicStore(AbstractEpisodicStore):
         """
         if not branch_id:
             raise ValueError("branch_id must not be empty")
+        # Near-duplicate detection
+        existing = self._find_near_duplicate(entry, branch_id)
+        if existing is not None:
+            existing.access_count += 1
+            existing.last_accessed = datetime.now().isoformat()
+            if len(entry.content) > len(existing.content):
+                existing.content = entry.content
+            return existing.id
         mid = self._next_id()
         entry.id = mid
         self._entries.setdefault(branch_id, []).append(entry)
@@ -76,10 +84,20 @@ class SimpleEpisodicStore(AbstractEpisodicStore):
 
         query_vec = self._embedder.embed_query(query)
         scored = []
+        now = datetime.now()
         for vec, entry in zip(vectors, entries):
             sim = self._cosine_similarity(query_vec, vec)
             importance = max(entry.importance, 0.01)
-            freq_boost = 1.0 + math.log1p(entry.access_count)
+            
+            # 30-day half-life decay for access_count
+            try:
+                last_access = datetime.fromisoformat(entry.last_accessed or "")
+                days_elapsed = max((now - last_access).days, 0)
+            except (ValueError, TypeError):
+                days_elapsed = 0
+            effective_access = entry.access_count * math.exp(-days_elapsed / 30.0)
+            freq_boost = 1.0 + math.log1p(effective_access)
+            
             score = sim * importance * freq_boost
             scored.append((score, entry))
 
@@ -112,3 +130,16 @@ class SimpleEpisodicStore(AbstractEpisodicStore):
                 del vectors[idx]
                 return True
         return False
+
+    def _find_near_duplicate(self, entry: MemoryEntry, branch_id: str) -> MemoryEntry | None:
+        """Return existing entry if similarity > 0.95, else None."""
+        entries = self._entries.get(branch_id, [])
+        vectors = self._vectors.get(branch_id, [])
+        if not entries:
+            return None
+        new_vec = self._embedder.embed_query(entry.content)
+        for vec, existing in zip(vectors, entries):
+            sim = self._cosine_similarity(new_vec, vec)
+            if sim > 0.95:
+                return existing
+        return None

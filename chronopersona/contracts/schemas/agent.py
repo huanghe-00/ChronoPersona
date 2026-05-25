@@ -37,6 +37,7 @@ class EmotionState:
     intensity: float = 0.0
     trigger_reason: str = ""
     state_since: str = ""
+    confidence: float = 1.0  # T0 rule: match=0.9, no-match=0.5
 
 
 @dataclass

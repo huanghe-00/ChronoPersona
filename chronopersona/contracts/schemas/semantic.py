@@ -26,6 +26,7 @@ class SemanticEdge:
     edge_type: str
     weight: float = 1.0
     branch_id: str = "main"
+    status: str = "active"  # "active" | "deprecated" | "archived"
 
 
 @dataclass
