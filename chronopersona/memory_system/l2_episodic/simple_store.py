@@ -56,12 +56,15 @@ class SimpleEpisodicStore(AbstractEpisodicStore):
             if len(entry.content) > len(existing.content):
                 existing.content = entry.content
             return existing.id
-        mid = self._next_id()
-        entry.id = mid
+        
+        # Respect caller-provided ID; generate only if absent
+        if not entry.id:
+            entry.id = self._next_id()
+        
         self._entries.setdefault(branch_id, []).append(entry)
         vec = self._embedder.embed_query(entry.content)
         self._vectors.setdefault(branch_id, []).append(vec)
-        return mid
+        return entry.id
 
     def retrieve(
         self,

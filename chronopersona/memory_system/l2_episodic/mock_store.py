@@ -21,12 +21,13 @@ class MockEpisodicStore(AbstractEpisodicStore):
         """Add a memory entry and return its ID."""
         if not branch_id:
             raise ValueError("branch_id must not be empty")
-        self._counter += 1
-        memory_id = f"l2-mem-{self._counter}"
+        if not entry.id:
+            self._counter += 1
+            entry.id = f"l2-mem-{self._counter}"
         if branch_id not in self._store:
             self._store[branch_id] = {}
-        self._store[branch_id][memory_id] = entry
-        return memory_id
+        self._store[branch_id][entry.id] = entry
+        return entry.id
 
     def retrieve(
         self,
