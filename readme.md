@@ -86,7 +86,7 @@ python scripts/serve_mva.py
 
 ## 🗓️ 8 周路线图速览
 
-- **W1** ✅ 契约冻结 + Mock 全量 + 真实节点（262 passed / 94% coverage）
+- **W1** ✅ 契约冻结 + Mock 全量 + 真实节点（400+ passed / 94% coverage）
 - **W2** ✅ 无冲突域契约 + Dreaming骨架 + L2 GC + PersonaInjector + Eval基线 + L3 Unlearning
 - **W3** ✅ MVO Seed Loader + EdgeBuilder Tier1 + HybridRetriever + CTE 导航
 - **W4** ✅ Insight 完整实现 + CAUSED Tier 2 + A1/A2 召回测试

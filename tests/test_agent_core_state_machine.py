@@ -50,4 +50,25 @@ class TestStateMachineAgentCore:
         assert isinstance(summary, str)
         assert "Working:" in summary
 
+    def test_emotion_state_has_confidence_field(self) -> None:
+        """EmotionState includes confidence field with T0 rule values."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        out = core.run_turn("我好焦虑", branch_id="main")
+        es = out.emotion_state
+        assert es.current_state.value == "CONCERNED"
+        assert es.confidence == 0.9  # matched keyword -> high confidence
+
+    def test_neutral_emotion_has_low_confidence(self) -> None:
+        """Neutral fallback has reduced confidence."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        out = core.run_turn("今天天气不错", branch_id="main")
+        es = out.emotion_state
+        assert es.current_state.value == "NEUTRAL"
+        assert es.confidence == 0.5  # no keyword match -> low confidence
 
