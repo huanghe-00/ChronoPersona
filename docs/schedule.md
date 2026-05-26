@@ -204,7 +204,7 @@
 1. 全量回归 `make test` 保持 400+ passed，`make eval` 保持 6/6 PASS。
 2. 确认 `IntentGraph` 的 `get_edges()` / `navigate()` deprecated 过滤与 `status` 字段同步已闭环（代码 + 测试 + 文档）。
 3. 启动 W8 文档：`README.md` 架构图刷新（含 L3 Prompt 注入、情感时序、跨本体映射的新设计）。
-4. 完成 `docs/beyond_mva.md` 与 `docs/interview_cheat_sheet.md` 交叉 Review。
+4. 完成 Beyond MVA 优化项在 `docs/requirements.md` 第12节与 `docs/schedule.md` 第7节的交叉 Review，确保设计描述、依赖条件与工时排期一致；**删除**已归并的 `docs/beyond_mva.md` 独立文件，避免三份数据源。
 5. 评估 `serve_mva.py` 是否需要引入真实 WebSocket 依赖（`websockets` / `fastapi`）或保持 MVA 占位。
 
 ---
@@ -229,8 +229,14 @@
 | P3 | **动作执行后感知反馈闭环** | 动作-结果记忆对缺失 | 2D 环境状态变化回写 L2 | 2d |
 | P3 | **检索结果可解释性** | "Recall@5 高但用户感觉健忘" | `navigation_path` 详细填充 | 2d |
 | P1 | **LangGraph 状态机迁移** | 手写状态机难以维护复杂分支（条件跳转、循环、中断恢复） | 引入 `langgraph` 库，将 `StateMachineAgentCore` 重构为 `StateGraph`；定义 Input/Intent/Memory/LLM/Action/Output 节点，条件边路由 + 循环回退机制 | 3d |
+| P2 | **IntentGraph 持久化（PostgreSQL + CTE）** | MVA 纯内存结构，进程重启丢失图谱；无数据库执行计划优化与索引加速 | PostgreSQL 14+，`(source_id, edge_type)` 复合索引，`MATERIALIZED` CTE hint | 4d |
+| P2 | **Episodic Store 分布式化（Qdrant）** | 本地 FAISS `IndexFlatIP` 无法横向扩展，重启需重建索引 | Qdrant HNSW 服务端，多副本、动态扩缩容、快照恢复 | 3d |
+| P3 | **HybridRetriever Intent-Aware 融合** | `SimpleEpisodicStore` 层 `intent` 参数未消费，意图过滤仅在 `MemoryNode` 层粗略执行 | `HybridRetriever` 层实现 `intent` 与 `IntentPattern` 精确匹配过滤；支持 intent 相似度降级 | 1d |
 
 **明确不采纳项（MVA 设计取舍）**：
-- Causal Tier 1.5 启发式规则：当前 Tier 1 召回率 ~40% 是已知取舍，增加启发式会引入测试负担，面试时坦诚说明即可。
-- 近因偏见显式修正：与 `access_count` 时间衰减耦合，MVA 阶段保持简单公式。
-- L1 分层保留原始轮次：已有 `CompressedSummary.source_turn_ids`，MVA 够用；全量归档区需存储重构。
+
+| 项 | 不采纳理由 |
+|----|-----------|
+| **Causal Tier 1.5 启发式规则** | 当前 Tier 1 召回率 ~40% 是已知设计取舍（`requirements.md` 4.5.2）。增加启发式规则会引入新的测试负担与误标风险，W6 排期无法收敛。生产环境建议直接上 Tier 2 统计验证或 Tier 3 LLM 验证。 |
+| **近因偏见显式修正** | 与 `access_count` 时间衰减（P1 已落地）存在耦合，独立 `recency` 项需大量调参。MVA 阶段 `effective_access = access_count * exp(-days/30)` 已足够覆盖。 |
+| **L1 分层保留原始轮次** | 已有 `CompressedSummary.source_turn_ids` 记录被压缩的原始索引。全量"归档区"需 `WorkingMemoryWindow` 存储结构重构（`_turns` + `_archive` 双区），MVA 收益不足以支持风险。 |

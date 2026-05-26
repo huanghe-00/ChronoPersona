@@ -2548,6 +2548,18 @@ ChronoPersona 的当前设计已无意中遵循了此原则：
 
 以下优化项在 MVA 阶段已识别并文档化，但因排期/复杂度原因推迟至生产环境实施。
 
+### 12.0 已落地的 MVA 防御基线
+
+| 缺陷类别 | MVA 已实施的防御 | 验证方式 |
+|---------|----------------|---------|
+| 错误分类（情感误标） | T0 规则引擎 + `confidence` 阈值（`>=0.7` 才注入 Prompt） | `test_state_machine.py` T18 |
+| 错误分类（边类型滞后） | `SemanticEdge.status` 字段 + `deprecated` 过滤机制 | `test_intent_graph.py`、`test_a6_intent_graph.py`、`test_l3_unlearning.py` 已补全（覆盖 `navigate` 过滤、`status` 同步、`get_edges` 过滤） |
+| 过拟合（LFU Trap） | `access_count` 30 天半衰期衰减 | `test_l2_episodic.py` T57 |
+| 过拟合（重复膨胀） | L2 近重复检测与合并（`sim > 0.95`） | `test_l2_episodic.py` T58 |
+| 归纳遗漏（幽灵记忆） | Faiss `_deleted_indices` 过滤 + 防御性跳过 | `test_faiss_store.py` T03 |
+| 归纳遗漏（情感时序） | `_update_emotion` 前置于 `ActionPlanner.plan()` | `test_state_machine.py` T16 |
+| 一致性（冲突堆积） | `MAX_CONTRADICT_KEYS` 软限制 + 告警 | `test_l0_crdt.py`（日志断言） |
+
 ### 12.1 P1 级优化（高优先级）
 
 #### 12.1.1 条件感知蒸馏器（Conditional Distiller）
@@ -2741,11 +2753,11 @@ A: 这是检索结果**可解释性**问题。当前 Recall@5 高但排序靠后
 
 ### A.4 已知缺陷与坦诚应答（加分项）
 
-**Q: "你们的系统有什么生产级缺陷？"**  
-标准答法：  
-1. **条件感知蒸馏缺失**：Dreaming 阶段 LLM 摘要会丢失"如果/除非"等条件从句。MVA 阶段 Schema 已预留 `BehavioralRule.trigger`，但 NLP 条件句识别模块推迟到 W8+（见 12.1.1）。  
-2. **MockBGEEmbedder 的局限性**：当前基于文本长度生成确定性向量，无法检测语义近重复（如"short" vs "short version"）。生产环境必须替换为 sentence-transformers。  
-3. **WebSocket 实时联调未完成**：`serve_mva.py` 已提供零依赖 HTTP API（`POST /chat` 返回结构化 JSON），但 WebSocket 双向实时推送与 Canvas 前端数据联动仍待 W8+。
+**Q: "你们的记忆系统有什么生产级缺陷？"**  
+A: "MVA 阶段我们主动识别了 15 项缺陷，其中 5 项已在代码中硬化防御（如 `access_count` 衰减、情感置信度、近重复合并），其余 9 项已文档化为 W8+ 路线图。最核心的是 **条件感知蒸馏** —— 当前 Dreaming 会丢失'如果/除非'等条件从句，生产环境必须补上 NLP 条件句识别模块。"
+
+**Q: "评估指标高但用户仍感觉健忘，怎么解决？"**  
+A: "这是检索结果可解释性问题。当前 Recall@5 高但排序靠后的记忆被 4K token 截断。我们的 roadmap 中有 **Retrieval Explanation**，为每条召回记忆填充 `navigation_path`，前端展示'为什么召回这条'，同时支持用户追问时反查 L2 原始轮次。"
 
 > **禁忌**：不要试图掩盖缺陷；面试官更欣赏对边界的清醒认知。
 
