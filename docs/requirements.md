@@ -2659,4 +2659,66 @@ ChronoPersona 的当前设计已无意中遵循了此原则：
 
 ---
 
+## 附录 A：面试应答参考
+
+### A.1 项目一句话定位
+
+> ChronoPersona 是一个面向生产级 AI Companion 的长期记忆系统，核心差异化是将 **CRDT 分布式一致性**与 **MVCC 版本化记忆**引入 Agent 架构，解决多端同步冲突、角色人格漂移、记忆幻觉三大痛点，同时通过 Token→Action Bridge 实现人格与身体的解耦。
+
+### A.2 关键技术数据速查
+
+| 面试官问题 | 关键数据 | 可展开章节 |
+|-----------|---------|-----------|
+| "测试覆盖率怎么样？" | **39 个测试文件，400+ passed，94% 语句覆盖率** | 第 8 章评估框架 |
+| "多端同步怎么做？" | 自研 `LWWMap` + HLC（500ms skew 检测） | 4.1 LWW-CRDT |
+| "角色隔离怎么保证不串台？" | `branch_id` 显式传递，物理隔离 | 4.2 MVCC、3.2 数据流 |
+| "记忆幻觉怎么解决？" | Faiss `_deleted_indices` + `SemanticEdge.status` 过滤 | 4.4 L2、4.5.3 反学习 |
+| "情感状态怎么影响行为？" | CONCERNED 降速 50%、音量降 20%；NEUTRAL 基准不降速 | 4.9 Emotion Engine、4.7 ActionPlanner |
+| "评估框架有什么？" | A1-A11 对抗测试集 + `evaluation/runner.py` 量化报告 | 第 8 章 |
+
+### A.3 架构决策 FAQ
+
+**Q: 为什么不用 Yjs，要自研 CRDT？**  
+A: Yjs 是通用文本协同库，但我们的场景是 KV 存储 + add-wins 语义。自研 `LWWMap` 可以：① 精确控制 HLC 物理时间 + 逻辑计数器的比较逻辑；② 嵌入 clock-skew 检测（500ms 阈值），这是 Yjs 不具备的；③ 避免引入整个 Yjs 依赖树（MVA 追求轻量）。
+
+**Q: 为什么情感引擎用 T0 规则 + LSTM，不用端到端 LLM？**  
+A: ① **确定性**：T0 规则引擎对"难过/焦虑"等关键词的响应是 100% 可预期的，LLM 可能因 Prompt 变化产生漂移；② **资源效率**：Qwen3.5-9B 本地推理 ~100ms+，T0 规则 <1ms；③ **可审计**：规则触发的 emotion state 可以精确追溯原因（`trigger_reason`），LLM 的黑盒 reasoning 难以调试。LSTM 回归器作为 Layer 2，用于捕捉"连续 5 轮负面输入"这类规则无法覆盖的时序模式。
+
+**Q: 为什么 Intent Graph 用 8 类边而不是更少的通用边？**  
+A: 8 类边来自对对话场景的语义分析：`MENTIONS`（指代消解）、`CAUSED`（因果回溯）、`TEMPORAL_NEXT`（时序推理）、`CONTRADICTS`（多端冲突保留）、`SIMILAR_TO`（平行比较）。减少边类型会损失这些特定检索路径；增加更多类型会导致边稀疏、导航效率下降。8 类是在 A1-A11 评估中验证的甜点。
+
+**Q: 评估指标高但用户仍感觉健忘，怎么解决？**  
+A: 这是检索结果**可解释性**问题。当前 Recall@5 高但排序靠后的记忆被 4K token 截断，用户无感知。生产 roadmap 中有 **Retrieval Explanation**（12.3.4）：为每条召回记忆填充 `navigation_path`，前端展示"为什么召回这条"，同时支持用户追问时反查 L2 原始轮次。
+
+### A.4 已知缺陷与坦诚应答（加分项）
+
+**Q: "你们的系统有什么生产级缺陷？"**  
+标准答法：  
+1. **条件感知蒸馏缺失**：Dreaming 阶段 LLM 摘要会丢失"如果/除非"等条件从句。MVA 阶段 Schema 已预留 `BehavioralRule.trigger`，但 NLP 条件句识别模块推迟到 W8+（见 12.1.1）。  
+2. **MockBGEEmbedder 的局限性**：当前基于文本长度生成确定性向量，无法检测语义近重复（如"short" vs "short version"）。生产环境必须替换为 sentence-transformers。  
+3. **WebSocket 实时联调未完成**：`serve_mva.py` 已提供零依赖 HTTP API（`POST /chat` 返回结构化 JSON），但 WebSocket 双向实时推送与 Canvas 前端数据联动仍待 W8+。
+
+> **禁忌**：不要试图掩盖缺陷；面试官更欣赏对边界的清醒认知。
+
+### A.5 快速演示命令
+
+```bash
+# 1. 全量测试（展示工程纪律）
+make test  # 400+ passed
+
+# 2. 评估报告（展示量化思维）
+make eval  # A1-A11 量化 JSON
+
+# 3. HTTP API 演示（展示具身智能接口）
+python scripts/serve_mva.py
+curl -X POST http://localhost:8765/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "你好", "branch_id": "main"}'
+# 返回：{"reply_text": "...", "emotion_state": {...}, "action_plan": {...}}
+```
+
+---
+
+*附录仅用于面试快速索引，详细设计见正文各章节。*
+
 *文档结束*
