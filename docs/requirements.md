@@ -1437,6 +1437,12 @@ class SkillPermissionDenied(Exception):
 2. **模式提取（Pattern Extraction）**：识别重复交互模式。
    - 示例："用户每次提到'优化性能'时，后续都会要求查看火焰图"
    - 示例："当代码包含 `unsafe` 块时，Agent 应主动提示安全检查清单"
+
+**条件感知蒸馏（Conditional Distiller）**：
+- Dreaming 阶段增加 NLP 条件句识别（"如果..."、"除非..."、"当...时"）。
+- 将条件从结论中剥离，提取为 `BehavioralRule.trigger` 字段，结论作为 `.action`，避免"条件上下文剥离"导致关键约束丢失。
+- 否定词（"不"、"没有"）在蒸馏时保留，禁止消除。
+
 3. **噪声清理（Noise Reduction）**：去除临时性、上下文依赖过强的内容，保留可泛化的行为规则。
 4. **知识固化（Crystallization）**：将自然语言经验转化为结构化规则，存储格式为 **三元组 + 向量嵌入** 的混合形式：
    ```python
