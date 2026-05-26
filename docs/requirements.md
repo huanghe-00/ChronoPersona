@@ -618,6 +618,12 @@ class SyncManager:
 ```
 
 **W1 实现状态**：`LWWMap`、`HybridTimestamp`、`L0SyncLayer`、`SyncManager` 已全部真实实现并单元测试覆盖。支持 multi-device add-wins、HLC 逻辑时钟、500ms clock-skew 检测与冲突标记。`MockL0SyncLayer` 保留用于快速测试。
+
+**MVA 防御状态（已落地）**：
+- `LWWMap` + `HybridTimestamp` + `SyncManager` 已全部真实实现并单元测试覆盖。
+- 支持 multi-device add-wins、HLC 逻辑时钟、500ms clock-skew 检测与冲突标记。
+- `MAX_CONTRADICT_KEYS: 10` 软限制防止冲突堆积（见 4.1.1）。
+- `MockL0SyncLayer` 保留用于快速测试。
 ```
 
 #### 4.1.1 故障恢复与同步保障
@@ -749,6 +755,12 @@ Agent位于客厅(3,4)，面向北方。
 - 1,000 节点：P99 检索延迟 < 2ms
 - 10,000 节点：P99 检索延迟 < 5ms
 - 100,000 节点：建议切换至 `IndexIVFFlat` 或 Qdrant HNSW
+
+**MVA 防御状态（已落地）**：
+- `access_count` 30 天半衰期衰减已落地（`effective_access = access_count * exp(-days/30)`）。
+- L2 近重复检测与合并已落地（`sim > 0.95` 触发合并）。
+- `SimpleEpisodicStore` / `FaissEpisodicStore` 已真实实现，`FaissEpisodicStore` 引入 `_deleted_indices` 保证删除一致性。
+- `MockBGEEmbedder` 基于文本长度生成确定性向量，MVA 阶段使用；生产环境替换为 sentence-transformers。
 
 **检索打分公式（增强版）**：
 ```
@@ -1048,6 +1060,11 @@ ORDER BY path_weight DESC, hop ASC LIMIT 20;
 MVA 初始权重：`final_score = 0.6 * graph_score + 0.4 * vector_score`
 
 后续根据 A6 评估场景动态调参。
+
+**MVA 防御状态（已落地）**：
+- `SemanticEdge` 已增加 `status: str` 字段（`"active"` / `"deprecated"` / `"archived"`）。
+- `IntentGraph` 通过 `_deprecated_edges` 集合维护已弃用边 ID，`get_edges()` 与 `navigate()` 均过滤该集合中的边，反学习即时生效。
+- `deprecate_edge()` / `reactivate_edge()` 方法同步更新 `SemanticEdge.status` 字段与 `_deprecated_edges` 集合。
 ### 4.6 Retrieval Engine
 
 检索执行遵循 4.5.7 的 6 步流程，混合召回阶段采用 `0.6 * graph_score + 0.4 * vector_score` 的融合权重。
@@ -1216,6 +1233,12 @@ trainable_emotion_model.py
   - 中性闲聊标记为 NEUTRAL 0.0
 - **评估指标**：MAE < 0.2（预测强度与标注强度的平均绝对误差）；5-fold 交叉验证。
 - **数据划分**：训练 70% / 验证 15% / 测试 15%，按 session 划分避免数据泄漏。
+
+**MVA 防御状态（已落地）**：
+- `EmotionState` 已增加 `confidence: float` 字段。
+- T0 规则引擎：关键词匹配成功 → `confidence = 0.9`；无匹配 → `confidence = 0.5`。
+- `_build_prompt` 仅当 `confidence >= 0.7` 且 `current_state != NEUTRAL` 时注入 `[Emotion State]` 文本段。
+- H1 时序修复：`_update_emotion` 已前置于 `ActionPlanner.plan()` 调用之前。
 
 ### 4.10 2D Virtual Environment（Token→Action Bridge 架构）
 
@@ -1459,6 +1482,11 @@ class SkillPermissionDenied(Exception):
 **与 RAG 的本质区别**：RAG 是"外部知识注入"（读文档），Dreaming 是"经验学习"（从自身操作历史中提炼启发式规则）。模型权重不变，但系统行为持续进化。
 
 **W1 实现状态**：`SimpleInsightEngine` 已实现 Tier 1 关键词共现（Phase A 骨架）。Phase B 模式提取标记为 `[FUTURE]`，W2 启动轻量级骨架。
+
+**MVA 防御状态（已落地）**：
+- `SimpleInsightEngine` 已实现 Tier 1 关键词共现（Phase A 骨架）。
+- Phase B 模式提取标记为 `[FUTURE]`，W2 启动轻量级骨架。
+- `BehavioralRule` Schema 已预留（`trigger` / `action` / `confidence` / `source_memory_ids` / `branch_id`）。
 
 ### 4.13 差异化遗忘与重要性评分（借鉴行业实践 "Pull on demand, never fill up"）
 
@@ -2456,6 +2484,170 @@ ChronoPersona 的当前设计已无意中遵循了此原则：
 | **CRDT 同步复杂度高** | 多端演示难以构建 | MVA 阶段仅演示单端 + 模拟冲突，真实多端放到第二月 |
 | **8周做不完** | 项目无法成型 | Week 4 设置 checkpoint，若 L3 未完成则砍掉 Insight 模块，保核心记忆+评估 |
 | **面试官质疑" toy 项目"** | 印象分降低 | 强调架构设计的生产级考量（CRDT、MVCC、量化压缩、模型路由），而非功能堆砌 |
+
+---
+
+## 12. Beyond MVA：生产级优化路线图
+
+以下优化项在 MVA 阶段已识别并文档化，但因排期/复杂度原因推迟至生产环境实施。
+
+### 12.1 P1 级优化（高优先级）
+
+#### 12.1.1 条件感知蒸馏器（Conditional Distiller）
+
+**解决的问题**：归纳遗漏（条件上下文剥离）  
+**根因**：Dreaming 阶段 LLM 摘要会丢弃"如果/除非/当...时"等条件从句，导致"如果明天不下雨就去爬山"蒸馏为"用户喜欢爬山"。
+
+**设计思路**：
+- 在 `ReflectionAgent` Phase B 中增加 NLP 条件句识别模块（基于依存句法分析或轻量规则）。
+- 将条件提取为 `BehavioralRule.trigger` 字段，结论作为 `.action`。
+- 否定词（"不"、"没有"）标记为不可消除，强制保留。
+
+**依赖条件**：NLP 条件句识别模块（可用 `spacy` 或 `stanza` 的依存解析）。  
+**预估工时**：3 天
+
+#### 12.1.2 记忆溯源链（Provenance Chain）
+
+**解决的问题**：幻觉注入、评估指标与真实体验脱节  
+**根因**：LLM 生成的 L3 事实无法追溯原始来源，导致"用户有猫"幻觉无法根因定位。
+
+**设计思路**：
+- `MemoryEntry` / `Fact` 增加 `source_memory_ids: List[str]` + `extraction_model: str` + `extraction_confidence: float`。
+- `RetrievedContext` 增加 `provenance: Dict[str, ProvenanceRecord]`，支持"这条知识从哪来"的逐条追溯。
+
+**依赖条件**：`MemoryEntry` / `Fact` Schema 扩展（非破坏性，新增可选字段）。  
+**预估工时**：2 天
+
+#### 12.1.3 LangGraph 状态机迁移
+
+**解决的问题**：手写状态机难以维护复杂分支（条件跳转、循环、中断恢复）  
+**设计思路**：引入 `langgraph` 库，将 `StateMachineAgentCore` 重构为 `StateGraph`；定义 Input/Intent/Memory/LLM/Action/Output 节点，条件边路由 + 循环回退机制。
+
+**预估工时**：3 天
+
+### 12.2 P2 级优化（中优先级）
+
+#### 12.2.1 动态重要性重算（Dynamic Importance Recalc）
+
+**解决的问题**：短期波动固化、遗忘曲线僵化  
+**根因**：`MemoryEntry.importance` 写入后静态不变，临时情绪（"我讨厌社交"）被永久固化。
+
+**设计思路**：
+- 每月 / 每 100 轮触发一次"重要性审计"批量任务。
+- 重新计算所有 L3 记忆的 `importance`：基于后续 `CONTRADICTS` 覆盖次数、访问频率衰减、时效性。
+- 得分低于阈值的记忆标记 `deprecated`（非物理删除，保留审计链）。
+
+**依赖条件**：定时任务基础设施（`APScheduler` 或 `celery beat`）。  
+**预估工时**：4 天
+
+#### 12.2.2 硬预算截断（Hard Budget Throttle）
+
+**解决的问题**：成本失控  
+**根因**：每轮多次 LLM 调用（T2 实体提取 + T3 边构建 + T4 反思），token 消耗指数增长。
+
+**设计思路**：
+- 实时 token 计数器（`session_id` 级累加）。
+- 80% 预算时：T2/T3 降级为本地规则引擎（如 spaCy NER + 模板匹配）。
+- 100% 预算时：关闭 `ReflectionAgent`，仅保留核心对话链路。
+- 超支告警：单 session 超支时记录 `CostReport.budget_exceeded = True`。
+
+**依赖条件**：`CostRecord` / `CostReport` Schema 已存在，需增加实时累加逻辑。  
+**预估工时**：2 天
+
+#### 12.2.3 跨分支记忆继承过滤器（Branch Inheritance Filter）
+
+**解决的问题**：跨分支污染  
+**根因**：`main` 分支向 `therapist` / `rpg-hero` 穿透时，可能携带医疗记录 / 剧情设定等敏感信息。
+
+**设计思路**：
+- 定义 `IPrivacyFilter` 接口：基于 `memory_type` + `content` NER 识别 PII（姓名、电话、地址、医疗术语）。
+- 定义 `IRelevanceFilter` 接口：基于目标 branch 的 `IntentPattern` 判断记忆相关性。
+- `main` → 子 branch 穿透时，双重过滤后仅保留"基础画像"（姓名、偏好）而非全量记忆。
+
+**依赖条件**：PII 识别模块（可用 `presidio` 或规则引擎）。  
+**预估工时**：3 天
+
+#### 12.2.4 IntentGraph 持久化（PostgreSQL + CTE）
+
+**解决的问题**：MVA 纯内存结构，进程重启丢失图谱；无数据库执行计划优化与索引加速  
+**设计思路**：
+- 边表迁移至 PostgreSQL；`get_edges()` 改写为 `SELECT * FROM semantic_edges WHERE branch_id = ?`；`navigate()` 使用 Recursive CTE 执行 BFS。
+- PostgreSQL 对 `source_id + edge_type` 建立复合索引；CTE 使用 `MATERIALIZED` hint 避免递归层数过深导致的计划劣化。
+
+**预估工时**：4 天
+
+#### 12.2.5 Episodic Store 分布式化（Qdrant）
+
+**解决的问题**：MVA 使用本地 FAISS `IndexFlatIP`，无法横向扩展，重启需重建索引  
+**设计思路**：替换为 Qdrant HNSW 近似索引；支持多副本、动态扩缩容、快照恢复。
+
+**预估工时**：3 天
+
+### 12.3 P3 级优化（低优先级）
+
+#### 12.3.1 边类型纠错机制（Edge Type Correction）
+
+**解决的问题**：错误分类（边类型误标）  
+**根因**：Tier 1 模板匹配召回率 ~40%，大量真实因果被降级为 `CORRELATED`。
+
+**设计思路**：
+- `EdgeBuilder` 增加置信度追踪：记录 `tier1_confidence`、`tier2_statistical_score`、`tier3_llm_score`。
+- 当后续发现 `CORRELATED` 边满足 Tier 2/3 升级条件时，自动升级为 `CAUSED`。
+- 支持人工审核队列：高价值升级建议进入 `pending_review` 状态。
+
+**预估工时**：2 天
+
+#### 12.3.2 动态 max_hops
+
+**解决的问题**：多跳推理断裂  
+**根因**：固定 `max_hops=3` 对 `CAUSED` 因果链过短，对 `IS_A` 泛化链过长。
+
+**设计思路**：
+- 按边类型配置动态 `max_hops`：
+  - `CAUSED` / `TRIGGERED_BY`：允许 4-5 跳
+  - `IS_A` / `BELONGS_TO`：限制 2 跳
+  - `MENTIONS`：限制 1 跳
+
+**预估工时**：1 天
+
+#### 12.3.3 动作执行后感知反馈闭环
+
+**解决的问题**：动作-结果记忆对缺失  
+**根因**：`GridWorldAdapter` 返回 `LowLevelCommand` 后，环境状态变化未回写 L2，无法形成"动作→结果"的条件反射。
+
+**设计思路**：
+- `GridWorldAdapter.execute()` 后，捕获环境 diff（Agent 坐标变化、FOV 变化、物体交互结果）。
+- 将 diff 文本化为 `ActionResult` 记忆，写入 L2（`memory_type="action_result"`）。
+- 后续 Dreaming 阶段提取"动作→结果"规则，强化行为策略。
+
+**预估工时**：2 天
+
+#### 12.3.4 检索结果可解释性（Retrieval Explanation）
+
+**解决的问题**："Recall@5 高但用户感觉健忘"  
+**根因**：检索返回了正确记忆，但排序靠后被截断在 4K token 外，用户无感知。
+
+**设计思路**：
+- `RetrievedContext` 的 `navigation_path` 字段填充详细路径（为什么召回这条）。
+- 格式：`{"memory_id": "...", "path": ["IntentPattern.retrieve", "SemanticEdge.MENTIONS", "Concept.c_plan"], "score_breakdown": {"similarity": 0.9, "importance": 0.8, "recency": 0.7}}`
+- 前端展示：鼠标悬停记忆片段时显示溯源路径。
+
+**预估工时**：2 天
+
+#### 12.3.5 HybridRetriever Intent-Aware 融合
+
+**解决的问题**：`SimpleEpisodicStore` 层 `intent` 参数未消费，意图过滤仅在 `MemoryNode` 层粗略执行  
+**设计思路**：在 `HybridRetriever` 层实现 `intent` 与 `IntentPattern` 的精确匹配过滤；支持 intent 相似度降级（如 `causal_explore` 降级到 `retrieve` 而非直接丢弃）。
+
+**预估工时**：1 天
+
+### 12.4 明确不采纳项（MVA 设计取舍）
+
+| 项 | 不采纳理由 |
+|----|-----------|
+| **Causal Tier 1.5 启发式规则** | 当前 Tier 1 召回率 ~40% 是已知设计取舍（4.5.2）。增加启发式规则会引入新的测试负担与误标风险，W6 排期无法收敛。生产环境建议直接上 Tier 2 统计验证或 Tier 3 LLM 验证。 |
+| **近因偏见显式修正** | 与 `access_count` 时间衰减（P1 已落地）存在耦合，独立 `recency` 项需大量调参。MVA 阶段 `effective_access = access_count * exp(-days/30)` 已足够覆盖。 |
+| **L1 分层保留原始轮次** | 已有 `CompressedSummary.source_turn_ids` 记录被压缩的原始索引。全量"归档区"需 `WorkingMemoryWindow` 存储结构重构（`_turns` + `_archive` 双区），MVA 收益不足以支持风险。 |
 
 ---
 
