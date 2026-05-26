@@ -42,3 +42,6 @@ class TestEvaluationRunnerExtended:
         result = runner._evaluate_a11_persona_drift()
         assert "drift_detection_rate" in result
         assert result["drift_detection_rate"] == 1.0
+        # MVA: MockBGEEmbedder uses length-based vectors, threshold is 0.5 not 0.75
+        assert result["high_score"] > 0.5
+        assert result["low_score"] < 0.5

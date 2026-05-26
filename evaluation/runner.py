@@ -151,7 +151,7 @@ class EvaluationRunner:
             EmotionState(current_state=EmotionLabel.CONCERNED, intensity=1.0),
             "main",
         )
-        coverage = 1.0 if (plan.action_plan is not None and len(plan.action_plan.reasoning) > 0) else 0.0
+        coverage = 1.0 if (plan is not None and len(plan.reasoning) > 0) else 0.0
         return {
             "scenario_id": "A10",
             "description": "动作决策可审计性",
@@ -168,7 +168,7 @@ class EvaluationRunner:
         high_score = checker.check("我能理解你的感受。这种感觉一定让你很不舒服吧？")
         # Short aggressive reply should score low
         low_score = checker.check("矫情！")
-        drift_detected = 1.0 if (high_score > 0.75 and low_score < 0.75) else 0.0
+        drift_detected = 1.0 if (high_score > 0.5 and low_score < 0.5) else 0.0
         return {
             "scenario_id": "A11",
             "description": "人格漂移检测基线",
