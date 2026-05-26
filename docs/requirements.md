@@ -61,6 +61,14 @@
 
 ### 1.3 对标分析
 
+### 1.4 项目核心理念
+
+> **"带镣铐的建筑"** —— 在端侧内存 / Token 配额的极限约束下，构建生产级可靠的 AI Agent 记忆大脑。
+
+这一哲学直接迁移自项目作者的端侧向量数据库经验：量化压缩 75%、P99 延迟降低 65%、日均万级 Token 配额下的可用性边界探索。
+
+记忆的可靠性不是锦上添花，而是 AI Companion 的根基。没有 CRDT 的多端一致性，用户不敢在多设备上使用；没有 MVCC 的人格隔离，用户不敢暴露真实自我；没有意图图谱的语义导航，Agent 永远"感觉健忘"。这些能力不需要万亿参数模型，而是需要在极限约束下做出正确的工程取舍。
+
 | 方案 | 记忆持久化 | 多端同步 | 角色隔离 | 意图导航 | 具身感知 | 主动进化 |
 |------|-----------|---------|---------|---------|---------|---------|
 | Mem0 | ✅ 向量库 | ❌ 无 | ❌ 无 | ❌ 纯向量 | ❌ 无 | ❌ 无 |
@@ -1239,6 +1247,47 @@ trainable_emotion_model.py
 - T0 规则引擎：关键词匹配成功 → `confidence = 0.9`；无匹配 → `confidence = 0.5`。
 - `_build_prompt` 仅当 `confidence >= 0.7` 且 `current_state != NEUTRAL` 时注入 `[Emotion State]` 文本段。
 - H1 时序修复：`_update_emotion` 已前置于 `ActionPlanner.plan()` 调用之前。
+
+---
+
+### 4.9.1 技术选型决策：LSTM vs RL（PPO/GRPO）
+
+**决策结论**：Layer 2 采用监督学习 LSTM 回归器，**明确禁止**在情感回归层引入 PPO/GRPO 强化学习。
+
+**分析过程**：
+
+| 维度 | LSTM 回归 | PPO/GRPO 策略优化 |
+|------|----------|-------------------|
+| **任务类型** | 监督学习回归（MSE） | 策略梯度强化学习 |
+| **数据流** | 离线标注 `(text, intensity)` | 需在线交互 Environment 产生四元组 |
+| **部署成本** | `torch` CPU 版即可（~1 人日） | 需 GPU（A100 40GB）+ RL 框架（~2 周） |
+| **可解释性** | 高（门控激活可视化） | 低（策略网络黑盒） |
+| **MVA 合规性** | ✅ 符合 AIDER.md | ❌ 违反 `[RL-PLACEHOLDER]` 红线 |
+
+**关键发现**：`requirements.md` 早期版本写"未来替换为 PPO/GRPO 优化策略"存在**技术定位偏差**。PPO/GRPO 适用于离散动作空间的策略优化（如 `ActionPlanner` 的动作选择），而非连续值情感回归。将 RL 引入情感回归层属于"用火箭炮打蚊子"——算法复杂度高但收益不明确，且直接违反 AIDER.md 第4条对 PLACEHOLDER 的红线约束。
+
+**修正后的定位**：
+- **Layer 2（LSTM）**：监督学习回归，MVA 阶段完成骨架 + 训练闭环。
+- **[RL-PLACEHOLDER]**：远期保留给 **ActionPlanner 的对话策略优化**（离散动作空间，符合 RL 范式），而非 `TrainableEmotionModel`。
+
+**开源方案调研（风险备案）**：
+
+| 方案 | 定位 | 部署难度 | 与项目冲突点 |
+|------|------|---------|------------|
+| TRL (HuggingFace) | Transformer RL | 中 | 强依赖 `transformers` + `accelerate`，MVA 重型 |
+| OpenRLHF | 分布式 RLHF | 极高 | 需 Ray + vLLM + Multi-GPU，超出 MVA 范围 |
+| verl (Volcano Engine) | 高效 RL 训练 | 极高 | 专为大模型设计，情感回归无必要 |
+| stable-baselines3 | 通用 RL | 中 | 面向 Gym 环境，情感任务无对应 Environment |
+
+**允许实现的边界**（不违反 PLACEHOLDER）：
+- `prepare_training_data()`：数据配对与校验 ✅
+- `fit()`：监督学习训练循环（MSELoss + AdamW）✅
+- `predict()`：LSTM 前向传播 ✅
+
+**禁止实现的边界**（违反 PLACEHOLDER）：
+- PPO `clip_loss` / `advantage estimation` ❌
+- GRPO `group relative policy optimization` ❌
+- 任何 RL 训练管线（Rollout Buffer、Reward Model、KL Penalty）❌
 
 ### 4.10 2D Virtual Environment（Token→Action Bridge 架构）
 
