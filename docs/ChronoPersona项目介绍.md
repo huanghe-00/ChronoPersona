@@ -547,3 +547,161 @@ L0–L3 的严格分层本身就是模块化基础：
 *文档版本: v1.1*  
 *基线日期: 2026-05-22*  
 *对应代码版本: MVA v1.5*
+
+---
+
+## 13. 简历关键技术点实现状态诚实评估
+
+以下针对简历中三项核心表述，基于 MVA v1.5 代码基线做逐项对照。原则是：**已真实落地的如实描述，框架/接口就绪但无真实后端连接的明确标注，规划中的不夸大。**
+
+---
+
+### 13.1 四层 Persona Anchor 与 Embedding 风格指纹漂移检测
+
+#### 13.1.1 四层混合格式 Anchor：框架冻结，完整解析器为 W8+
+
+**简历表述**：四层 Persona Anchor（W++ 锚点 + 对话示例 + 叙事 + 权限）
+
+**真实实现状态**：
+
+| 层级 | 状态 | 代码证据 | 说明 |
+|------|------|---------|------|
+| **Schema 定义** | ✅ 已冻结 | `contracts/schemas/agent.py` 相关 dataclass / `docs/requirements.md` 4.0.1 | 四层结构（`style_fingerprint` / `core_narrative` / `style_examples` / `skill_permissions`）已作为强类型配置写入设计文档与数据契约。 |
+| **Prompt 注入** | ✅ 已落地 | `StateMachineAgentCore._build_prompt()` | 人格切换时，`PersonaAnchor` 的 `core_narrative` 与 `style_fingerprint` 字段已注入 LLM Prompt。`switch_persona()` 方法强制要求 `branch_id`，切换后 L1 清空、L2/L3 按分支隔离。 |
+| **W++ 解析器** | ⚠️ 框架级 | `IPersonaInjector` 接口已冻结 | W++ 字段（`mbti`, `traits`, `taboos`）当前作为 YAML 配置中的结构化文本直接拼接进 Prompt，**尚未实现 W++ 语法的专用解析器**（如 `{{char}}` 变量替换、属性继承）。 |
+| **权限执行** | ⚠️ Mock 级 | `skill_permissions` / `memory_access_policy` 已定义 | `forbidden_skills` 与 `readable_branches` 在 Schema 中存在，但执行层校验当前为 Mock（`MockAgentCore` 直接放行）。生产级 `ISkillRegistry` 的权限拦截逻辑接口已冻结，W8+ 实现。 |
+| **Ali:Chat 示例注入** | ✅ 已落地 | `PersonaAnchor.style_examples` | 对话对已作为 `list[dict]` 结构注入 Prompt，用于风格锚定。 |
+
+**结论**：四层混合格式的**数据模型与 Prompt 注入链路**已在 MVA 跑通；但 W++ 专用语法解析器、权限执行的策略引擎属于**接口冻结 + Mock 占位**状态。面试时可表述为"四层 Schema 已冻结并验证注入效果，专用解析器与权限策略引擎是 W8+ 生产级收尾项"。
+
+#### 13.1.2 Embedding 风格指纹漂移检测：已真实实现
+
+**简历表述**：Embedding 风格指纹漂移检测
+
+**真实实现状态**：
+
+| 组件 | 状态 | 代码位置 | 说明 |
+|------|------|---------|------|
+| **PersonaDriftChecker** | ✅ 已真实实现 | `evaluation/drift_checker.py` | 基于 `MockBGEEmbedder` 预计算 `style_examples` 的 embedding 均值作为基线，单轮回复 embedding 与基线计算余弦相似度。 |
+| **评估集成** | ✅ 已落地 | `evaluation/runner.py` `_evaluate_a11_persona_drift()` | A11 场景自动化运行漂移检测，输出 `high_score` / `low_score` 与 `drift_detection_rate`。 |
+| **基线替换** | ⚠️ MVA 占位 | `MockBGEEmbedder` | 当前使用基于文本长度的确定性向量（128d），非真实语义 embedding。MVA 阶段验证**流程与接口**正确性；生产环境需替换为 `sentence-transformers`（`paraphrase-multilingual-MiniLM-L12-v2` 或 BGE 系列）以获取真实语义相似度。 |
+
+**关键设计细节**：
+- 基线计算：`mean([embed(f"user: {ex.user}\nagent: {ex.agent}") for ex in style_examples])`
+- 阈值：`similarity < 0.75` 触发漂移告警，下轮增加 Anchor 权重。
+- MVA 防御：由于 `MockBGEEmbedder` 是长度敏感型，A11 测试使用**相对 gap**（`high_score > low_score`）而非绝对阈值，避免与 Mock 内部实现耦合。
+
+**结论**：风格指纹漂移检测的**完整链路（基线预计算 → 在线检测 → 告警反馈）已在 MVA 真实实现并纳入自动化评估**。唯一遗留是 embedding 模型从 Mock 迁移到生产级向量模型，属于"换模型不换架构"的低成本替换。
+
+---
+
+### 13.2 T0–T7 端云协同模型路由
+
+#### 13.2.1 路由表与降级链：Schema 冻结，真实模型未接入
+
+**简历表述**：构建 T0–T7 端云协同模型路由（端侧 Qwen3.5-9B / 云端 DS-V4-pro）
+
+**真实实现状态**：
+
+| 组件 | 状态 | 代码证据 | 说明 |
+|------|------|---------|------|
+| **路由表设计** | ✅ 已冻结 | `docs/requirements.md` 4.8 节 | T0–T7 八级任务分层、首选模型、降级链、本地/云端标注已全部文档化。 |
+| **接口抽象** | ✅ 已冻结 | `contracts/interfaces/`（`AbstractModelRouter`） | `route()` / `get_cost_summary()` / `cache_clear()` 方法签名已冻结。 |
+| **Mock 实现** | ✅ 已落地 | `mocks/mock_model_router.py` | MVA 阶段所有 LLM 调用均走 Mock，返回固定文本，保障 Agent Core 端到端流程可测试。 |
+| **真实模型接入** | ❌ 未实现 | — | Qwen3.5-9B 本地部署（LM Studio / vLLM）与 DS-V4-pro / Kimi 2.6 云端 API 未接入。MVA 阶段无法产生真实模型延迟与成本数据。 |
+| **端侧推理** | ❌ 未实现 | — | 本地 Qwen3.5-9B 的 ONNX / TorchScript 导出、量化压缩均未执行。 |
+| **成本追踪** | ⚠️ 接口级 | `CostRecord` / `CostReport` Schema 已定义 | `ModelCallRecord` 的 16 个字段已设计（含 `ttft_ms`, `cache_hit`, `token_scope`），但 `ICostTracker.record()` 当前为 Mock 空实现。 |
+
+**T0–T7 路由表（设计冻结状态）**：
+
+| 任务层级 | 任务类型 | 首选模型 | 降级链 | MVA 实际运行 |
+|---------|---------|---------|--------|-------------|
+| T0 | 情感分类 | Qwen3.5-9B | DS-V4-flash | MockModelRouter 固定返回值 |
+| T1 | 意图识别 | Qwen3.5-9B | DS-V4-flash | MockModelRouter 固定返回值 |
+| T2 | 实体提取 | DS-V4-flash | Kimi 2.6 | MockModelRouter 固定返回值 |
+| T3 | 边构建 | DS-V4-flash | Kimi 2.6 | MockModelRouter 固定返回值 |
+| T4 | 记忆反思 | Kimi 2.6 | DS-V4-pro | MockModelRouter 固定返回值 |
+| T5 | 回复生成 | DS-V4-pro | Kimi 2.6 | MockModelRouter 固定返回值 |
+| T6 | 冲突消解 | Kimi 2.6 | DS-V4-pro | MockModelRouter 固定返回值 |
+| T7 | 评估/测试 | DS-V4-pro | Kimi 2.6 | MockModelRouter 固定返回值 |
+
+**结论**：T0–T7 的**分层策略、降级链、成本追踪 Schema** 已在 MVA 完成设计冻结；但**真实模型接入（本地 Qwen3.5 + 云端 DeepSeek/Kimi）尚未实现**。MVA 的核心目标是验证"Agent Core 在接到不同 task_type 时能否正确路由到对应模型槽位"，而非真实跑通多模型推理。面试时应明确表述为"路由策略与降级链已设计冻结，真实模型接入是生产级部署项"。
+
+#### 13.2.2 是否有必要在 MVA 实现真实模型路由？
+
+**必要性分析**：
+
+| 维度 | 若 MVA 强行接入真实模型 | 当前 Mock 策略 |
+|------|------------------------|---------------|
+| **成本** | 8 周 MVA 日均万级 Token 配额，真实 DS-V4-pro 调用 3-5 天即可耗尽预算 | 零成本，无限测试 |
+| **稳定性** | 云端 API RateLimit、网络抖动导致 CI 不稳定 | 100% 确定性，CI 可靠 |
+| **核心目标** | MVA 需验证的是架构分层与接口契约，而非模型效果 | 精准验证接口契约 |
+| **时间开销** | 本地 Qwen3.5-9B 部署需 1-2 天调通环境 | 零环境依赖 |
+
+**结论**：MVA 阶段**不接入真实模型是正确取舍**。但 W8+ 生产化必须接入，否则"端云协同"仅停留在纸面设计。
+
+---
+
+### 13.3 SQLite 缓存与三级风险兜底
+
+#### 13.3.1 SQLite 缓存：接口设计完成，真实缓存层未落地
+
+**简历表述**：SQLite 缓存与三级风险兜底
+
+**真实实现状态**：
+
+| 组件 | 状态 | 代码证据 | 说明 |
+|------|------|---------|------|
+| **缓存策略设计** | ✅ 已冻结 | `docs/requirements.md` 4.8 节 | TTL 24h、缓存键 `hash(task_type + prompt + branch_id + persona_id)`、禁止跨分支污染，已文档化。 |
+| **缓存键规则** | ✅ 已冻结 | `docs/requirements.md` 4.8 节 | 显式包含 `branch_id` 与 `persona_id`，确保不同分支/人格不共享缓存。 |
+| **SQLite 表结构** | ⚠️ 未实现 | — | 无真实 SQLite 连接、无 `cache_entries` 表、无 `LRU eviction` 逻辑。 |
+| **Mock 缓存** | ⚠️ 内存 Dict | `MockModelRouter` | MVA 阶段若存在缓存，仅为 Python 内存字典，进程退出即丢失。 |
+
+#### 13.3.2 三级风险兜底：策略定义完成，执行层为 Mock
+
+**三级兜底定义**（来自 `docs/requirements.md`）：
+
+| 级别 | 触发条件 | 兜底动作 | MVA 状态 |
+|------|---------|---------|---------|
+| **一级** | 首选模型超时 / RateLimit | 降级到备选模型（T1→T2→T3 链） | 策略已定义，未真实触发 |
+| **二级** | 云端全部不可用 | 切换本地规则引擎（T0/T1 规则 + T3b 模板） | `ConsolidationAgent` Tier 1 规则已落地，可作为二级兜底 |
+| **三级** | 本地规则也无法覆盖 | 返回安全预设回复 + 记录告警日志 | `ActionPlanner` 预设安全回复尚未固化 |
+
+**真实实现状态**：
+- **一级降级**：`ModelRouter` 降级链在文档中完整定义，但 MVA 无真实模型调用，因此无超时/RateLimit 检测逻辑。
+- **二级兜底**：T0 情感规则引擎、T1 意图模板匹配、T3b `CORRELATED` 边构建的本地规则已真实实现，可作为"云端不可用时"的降级基础。
+- **三级兜底**：`ModelRouter` 在全部失败时返回预设安全回复的逻辑当前为 Mock（直接返回空字符串或固定文本），未接入真实异常捕获与日志告警。
+
+#### 13.3.3 是否有必要在 MVA 实现？
+
+| 组件 | MVA 必要性 | 理由 |
+|------|-----------|------|
+| SQLite 缓存 | 低 | MVA 调用量为 Mock，无真实延迟痛点；缓存主要是生产环境降低成本与提升稳定性的手段。 |
+| 三级兜底 | 中 | 一级降级（模型切换）可推迟；但二级兜底（本地规则引擎）已部分实现（T0/T1 规则），这本身是 Agent Core 正确性的一部分。三级安全回复建议 W8 前补全，防止面试演示时异常路径暴露实现粗糙。 |
+
+**结论**：SQLite 缓存属于**生产级成本优化项**，MVA 不做不影响架构验证；三级风险兜底的**策略层已定义，执行层为 Mock**，面试时可表述为"降级链与兜底策略已设计，生产环境需补齐异常捕获与安全回复固化"。
+
+---
+
+## 14. 面试话术修正建议
+
+基于上述实现状态，以下是针对这三项技术的**诚实且专业**的面试表述：
+
+### 14.1 Persona Anchor + 漂移检测
+
+> "人格工程我们做了四层混合格式 Anchor：W++ 结构化锚点、自然语言叙事、Ali:Chat 风格示例、以及权限与行为参数。Schema 和 Prompt 注入链路已在 MVA 跑通，风格指纹漂移检测也已完成自动化评估（A11 场景）。当前 W++ 专用解析器和权限策略引擎是接口冻结状态，W8+ 补全为生产级解析器。"
+
+### 14.2 T0–T7 模型路由
+
+> "端云协同的路由策略已设计冻结：T0/T1 走本地 Qwen3.5-9B，T2-T7 按敏感度走云端 DeepSeek/Kimi，每级都有降级链。MVA 阶段用 Mock 验证路由接口与 Agent Core 的集成正确性，真实模型接入是生产部署项——这在 8 周 MVA 内是正确取舍，否则 API 成本 3-5 天就会耗尽预算。"
+
+### 14.3 SQLite 缓存与三级兜底
+
+> "缓存策略和三级兜底已经在架构文档中定义清楚：24h TTL、分支隔离的缓存键、以及模型→规则→安全回复的三级降级。MVA 阶段重点是验证核心记忆层与评估框架，缓存层和完整兜底执行是 W8+ 生产收尾。"
+
+---
+
+*文档版本: v1.2*  
+*新增章节: 第13-14章*  
+*基线日期: 2026-05-22*  
+*对应代码版本: MVA v1.5*
