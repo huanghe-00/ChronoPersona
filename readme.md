@@ -4,18 +4,18 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status: W7 In Progress](https://img.shields.io/badge/status-W7%20In%20Progress-yellow.svg)]()
+[![Status: v0.7.0-alpha](https://img.shields.io/badge/status-v0.7.0--alpha-yellow.svg)]()
 [![Tests: 400+ passed](https://img.shields.io/badge/tests-400%2B%20passed-success.svg)]()
 [![Coverage: 94%](https://img.shields.io/badge/coverage-94%25-success.svg)]()
 
 **ChronoPersona** 是一个面向生产级 AI Agent 的长期记忆系统，核心差异化在于将**分布式一致性（CRDT）**与**版本化记忆（MVCC）**引入 Agent 记忆架构，解决多端同步冲突、角色人格漂移、记忆幻觉三大痛点。同时通过 **Token→Action Bridge** 实现人格与身体的解耦，使同一套"灵魂"可零样本迁移到任意机器人本体。
 
-**定位**：技术探索项目 | **周期**：8 周（MVA） | **核心语言**：Python  
-**当前状态**：W7 2D 世界 + 前端骨架 80% 就位 — **400+ passed, 1 skipped, 94% coverage**
+**定位**：技术探索项目 | **周期**：8 个迭代（MVA） | **核心语言**：Python  
+**当前状态**：v0.7.0 2D 世界 + 前端骨架 80% 就位 — **400+ passed, 1 skipped, 94% coverage**
 
 ## 🚀 项目状态
 
-**W6 评估框架已完成**：`make test` **400+ passed, 1 skipped, 0 failed** | 语句覆盖率 **94%**
+**v0.6.0 评估框架已完成**：`make test` **400+ passed, 1 skipped, 0 failed** | 语句覆盖率 **94%**
 
 | 层级 | 状态 | 关键交付 |
 |------|------|---------|
@@ -90,16 +90,16 @@ curl -X POST http://localhost:8765/chat \
 # 返回：{"reply_text": "...", "emotion_state": {...}, "action_plan": {...}}
 ```
 
-## 🗓️ 8 周路线图速览
+## 🗓️ 版本路线图速览
 
-- **W1** ✅ 契约冻结 + Mock 全量 + 真实节点（400+ passed / 94% coverage）
-- **W2** ✅ 无冲突域契约 + Dreaming骨架 + L2 GC + PersonaInjector + Eval基线 + L3 Unlearning
-- **W3** ✅ MVO Seed Loader + EdgeBuilder Tier1 + HybridRetriever + CTE 导航
-- **W4** ✅ Insight 完整实现 + CAUSED Tier 2 + A1/A2 召回测试
-- **W5** ✅ Agent 核心循环 + ActionPlanner + H1 情感时序修复 + LSTM 监督骨架 + `[Emotion State]` Prompt 注入
-- **W6** ✅ A1-A11 对抗测试集（39 文件/400+ 用例）+ `evaluation/runner.py` 自动化报告 + 测试语义红线硬化
-- **W7** 🟡 2D Canvas 前端 + WebSocket 联调 + MVA 启动脚本（`GridWorldAdapter` 5 动作真实跨本体映射已落地）
-- **W8** ⚪ 技术博客 + Slide Deck + 面试准备
+- **v0.1.0** ✅ 契约冻结 + Mock 全量 + 真实节点（400+ passed / 94% coverage）
+- **v0.2.0** ✅ 无冲突域契约 + Dreaming骨架 + L2 GC + PersonaInjector + Eval基线 + L3 Unlearning
+- **v0.3.0** ✅ MVO Seed Loader + EdgeBuilder Tier1 + HybridRetriever + CTE 导航
+- **v0.4.0** ✅ Insight 完整实现 + CAUSED Tier 2 + A1/A2 召回测试
+- **v0.5.0** ✅ Agent 核心循环 + ActionPlanner + H1 情感时序修复 + LSTM 监督骨架 + `[Emotion State]` Prompt 注入
+- **v0.6.0** ✅ A1-A11 对抗测试集（39 文件/400+ 用例）+ `evaluation/runner.py` 自动化报告 + 测试语义红线硬化
+- **v0.7.0** 🟡 2D Canvas 前端 + WebSocket 联调 + MVA 启动脚本（`GridWorldAdapter` 5 动作真实跨本体映射已落地）
+- **v1.0.0** ⚪ 技术博客 + Slide Deck + 演示准备
 
 ## 系统架构
 
