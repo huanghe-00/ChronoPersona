@@ -2358,15 +2358,18 @@ async def test_concurrent_write_creates_conflict_edge():
 
 ---
 
-## 9. 8周执行路线图
+## 9. 版本化执行路线图
 
-### 9.1 Week 1: 契约与孤岛
+> 采用语义化版本号（SemVer）+ 阶段代号双轨制，彻底解耦日历时间。
+> 版本号体系详见 `docs/schedule.md` 第 1 节。
+
+### 9.1 v0.1.0 `foundation`：契约与孤岛
 
 **目标**：所有抽象接口、API 规范、Mock 实现、单测框架完成，`make test` 跑通全 Mock Agent 流程。
 
 | 交付物 | 说明 |
 |--------|------|
-| `contracts/interfaces/` | **14 个抽象接口文件全部冻结**（含 W4+ 预留空壳） |
+| `contracts/interfaces/` | **14 个抽象接口文件全部冻结**（含 `≥v0.4.0` 预留空壳） |
 | `contracts/schemas/` | 18 个数据实体定义（含 `MemoryEntry` 重要性评分字段） |
 | `mocks/` | **12 个 Mock 实现，全部通过专门单元测试** |
 | `tests/` | **16 个测试文件，258 passed，94% 语句覆盖率** |
@@ -2387,22 +2390,22 @@ async def test_concurrent_write_creates_conflict_edge():
 | `test_intent_graph_navigation` | 意图图谱检索返回预期记忆节点 |
 | `test_persona_anchor_injection` | 切换人格后 system prompt 包含对应 Anchor |
 
-### 9.2 Week 2-3: 记忆系统核心
+### 9.2 v0.2.0 `memory-core`：记忆系统核心
 
 **目标**：CRDT-MVCC 混合记忆层（L0-L3），命令行可演示角色切换和记忆召回。
 
-| 周次 | 聚焦 | 交付物 |
+| 阶段 | 聚焦 | 交付物 |
 |------|------|--------|
-| Week 2 | L0 CRDT + L1 Working Memory + L2 Episodic Memory | **L0 LWW-CRDT 实现、滑动窗口、Qdrant Mock 接入** |
-| Week 3 | L3 Semantic Memory + Intent Graph (PostgreSQL CTE) | 概念层级、语义边、意图导航策略、Recursive CTE（含 6 步检索、MVO 种子、PostgreSQL CTE） |
+| v0.2.0 | L0 CRDT + L1 Working Memory + L2 Episodic Memory | **L0 LWW-CRDT 实现、滑动窗口、Qdrant Mock 接入** |
+| v0.2.0 | L3 Semantic Memory + Intent Graph (PostgreSQL CTE) | 概念层级、语义边、意图导航策略、Recursive CTE（含 6 步检索、MVO 种子、PostgreSQL CTE） |
 
-**持续回归要求**：Week 2 交付附带 ≥3 个集成测试（覆盖 `LWWMap.merge()`、滑动窗口压缩、Qdrant Mock 全链路）；Week 3 交付附带 ≥3 个集成测试（覆盖 CTE 导航、MVO 种子加载、边构建器正确性）。
+**持续回归要求**：v0.2.0 交付附带 ≥3 个集成测试（覆盖 `LWWMap.merge()`、滑动窗口压缩、Qdrant Mock 全链路）；L3 部分交付附带 ≥3 个集成测试（覆盖 CTE 导航、MVO 种子加载、边构建器正确性）。
 
 **里程碑**：命令行运行 `python demo_memory.py`，演示：
 1. 写入记忆 → 切换 therapist branch → 查询同一实体得到不同结果
 2. 模拟多端冲突 → 检查 CONTRADICTS 边存在
 
-### 9.3 Week 4: 主动反思与 Insight
+### 9.3 v0.3.0 `insight`：主动反思与 Insight
 
 **目标**：周期性主动反思模块 + Insight 生成。
 
@@ -2414,15 +2417,15 @@ async def test_concurrent_write_creates_conflict_edge():
 | `insights` 表 | 存储反思产出，带有效期 |
 | 评估 | A1/A2 测试中加入 insight 辅助后的召回提升 |
 
-**持续回归要求**：本周交付附带 ≥3 个集成测试，覆盖 Insight 生成触发条件、insight 有效期过期清理、以及 A1/A2 召回提升的自动化断言。
+**持续回归要求**：本阶段交付附带 ≥3 个集成测试，覆盖 Insight 生成触发条件、insight 有效期过期清理、以及 A1/A2 召回提升的自动化断言。
 
 **里程碑**：运行 3 轮 session 后，系统自动产出洞察如"用户近3次谈话焦虑程度上升"。
 
-**Checkpoint 3.1（Week 3 末尾强制关卡）**：
+**准入检查点（v0.2.0 末尾强制关卡）**：
 - L3 Semantic Memory 必须通过 **10 轮对话稳定性测试**：每轮对话后 MENTIONS / TEMPORAL_NEXT 边正确写入 PostgreSQL，Intent Graph CTE 查询 Recall@5 ≥ 0.6。
-- **未通过**：推迟 Insight 模块到 Week 5，Week 4 优先修复 L3 检索链路。
+- **未通过**：推迟 Insight 模块到 v0.4.0，v0.3.0 优先修复 L3 检索链路。
 
-### 9.4 Week 5: Agent 循环与算法插槽
+### 9.4 v0.4.0 `agent-loop`：Agent 循环与算法插槽
 
 **目标**：LangGraph 循环 + 可训练情感模型 + VLA 预留接口。
 
@@ -2433,11 +2436,11 @@ async def test_concurrent_write_creates_conflict_edge():
 | `[RL-PLACEHOLDER]` | 标注未来 PPO/GRPO 优化位置 |
 | VLA 可插拔接口 | `predict_action()` 默认 LLM 实现 |
 
-**持续回归要求**：本周交付附带 ≥3 个集成测试，覆盖端到端对话流转、情感状态机转移路径验证、以及 ActionPlan 的可审计性（`reasoning` 字段非空校验）。
+**持续回归要求**：本阶段交付附带 ≥3 个集成测试，覆盖端到端对话流转、情感状态机转移路径验证、以及 ActionPlan 的可审计性（`reasoning` 字段非空校验）。
 
 **里程碑**：端到端对话可用，情感状态机可观测，LSTM 模型可训练。
 
-### 9.5 Week 6: 评估框架
+### 9.5 v0.5.0 `evaluation`：评估框架
 
 **目标**：8 场景对抗测试集 + 量化对比表。
 
@@ -2448,11 +2451,11 @@ async def test_concurrent_write_creates_conflict_edge():
 | `evaluation/baseline.py` | 纯向量 RAG 基线实现 |
 | `reports/` | 自动生成对比报告（Markdown + JSON） |
 
-**持续回归要求**：本周交付附带 ≥3 个集成测试，覆盖评估流水线端到端执行、基线对比自动化、以及报告生成的正确性。
+**持续回归要求**：本阶段交付附带 ≥3 个集成测试，覆盖评估流水线端到端执行、基线对比自动化、以及报告生成的正确性。
 
 **里程碑**：`python run_eval.py` 输出完整的量化对比表。
 
-### 9.6 Week 7: 极简 2D 世界 + 前端
+### 9.6 v0.6.0 `embodied`：极简 2D 世界 + 前端
 
 **目标**：文本化 2D 世界 + 极简 HTML Canvas 展示。
 
@@ -2465,7 +2468,7 @@ async def test_concurrent_write_creates_conflict_edge():
 
 **里程碑**：打开浏览器，看到 Agent 在网格中移动，对话内容随位置变化。
 
-### 9.7 Week 8: 文档准备
+### 9.7 v0.7.0 `frontend`：文档准备
 
 **目标**：README、技术博客、Slide Deck。
 
