@@ -2481,6 +2481,39 @@ async def test_concurrent_write_creates_conflict_edge():
 
 ---
 
+### 9.8 v1.0.0 `mva`：文档与发布准备
+
+**目标**：MVA 冻结，所有功能封版，产出面向外部的技术资产。
+
+| 交付物 | 说明 |
+|--------|------|
+| `README.md` | 架构图刷新、快速开始、评估结果填入 |
+| 技术博客 | 《生产级记忆系统的十五个陷阱与防御策略》 |
+| Slide Deck | 10 页技术汇报：3 分钟项目介绍 + 5 分钟 Deep Dive |
+| `docs/beyond_mva.md` | 生产级优化路线图（v1.1.0–v2.0.0 版本化索引） |
+| Demo 脚本 | 3 分钟可复现演示 |
+
+**冻结宣言**：v1.0.0 发布后，A-MAC、L1 Budget、Engram Schema、Spindle Gating、Affective VAD 等 5 项穿插改进若未完成，必须降级至 v1.1.0，禁止无限拖延 MVA。
+
+---
+
+### 9.9 v1.1.0+ 延伸路线图概览
+
+**定位**：MVA 之后的生产迭代，共 5 个功能版本 + 1 次架构换代。
+
+| 版本 | 阶段主题 | 核心目标 |
+|------|---------|---------|
+| **v1.1.0** | `production-baseline` | 生产基线硬化：认证权限、硬预算截断、隐私过滤、溯源链、WebSocket、全链路日志 |
+| **v1.2.0** | `memory-quality` | 记忆质量跃迁：条件蒸馏、动态重要性、检索可解释性、边纠错、动态 max_hops |
+| **v1.3.0** | `graph-production` | 图谱生产化：PostgreSQL CTE 持久化、Qdrant 分布式、Intent-Aware 融合、级联更新 |
+| **v1.4.0** | `cognitive-deepening` | 认知深化：L4/L5 层级、Dream T2–T6 全周期、元记忆、DynamicImportance |
+| **v1.5.0** | `agent-autonomy` | 自治增强：反事实回放、评估 CI、VLA 解禁、Persona Drift 自动修复 |
+| **v2.0.0** | `architecture-refresh` | 架构换代：LangGraph 状态机、真实多端 CRDT、多模态感知、Semantic Merge Agent |
+
+详细排期、交付物与准入标准见 `docs/schedule.md` 第 3 节（v1.1.0–v2.0.0）与第 7 节。
+
+---
+
 ## 10. Cursor 多 Agent 架构深度调研：对 ChronoPersona 的借鉴分析
 
 ### 10.1 调研总结：Cursor 的真实架构 vs 技术误解
@@ -2669,23 +2702,11 @@ ChronoPersona 的当前设计已无意中遵循了此原则：
 | 归纳遗漏（情感时序） | `_update_emotion` 前置于 `ActionPlanner.plan()` | `test_state_machine.py` T16 |
 | 一致性（冲突堆积） | `MAX_CONTRADICT_KEYS` 软限制 + 告警 | `test_l0_crdt.py`（日志断言） |
 
-### 12.1 P1 级优化（高优先级）
+### 12.1 v1.1.0 `production-baseline`：生产基线硬化
 
-#### 12.1.1 条件感知蒸馏器（Conditional Distiller）
+#### 12.1.1 记忆溯源链（Provenance Chain）
 
-**解决的问题**：归纳遗漏（条件上下文剥离）  
-**根因**：Dreaming 阶段 LLM 摘要会丢弃"如果/除非/当...时"等条件从句，导致"如果明天不下雨就去爬山"蒸馏为"用户喜欢爬山"。
-
-**设计思路**：
-- 在 `ReflectionAgent` Phase B 中增加 NLP 条件句识别模块（基于依存句法分析或轻量规则）。
-- 将条件提取为 `BehavioralRule.trigger` 字段，结论作为 `.action`。
-- 否定词（"不"、"没有"）标记为不可消除，强制保留。
-
-**依赖条件**：NLP 条件句识别模块（可用 `spacy` 或 `stanza` 的依存解析）。  
-**预估工时**：3 天
-
-#### 12.1.2 记忆溯源链（Provenance Chain）
-
+**目标版本**：v1.1.0  
 **解决的问题**：幻觉注入、评估指标与真实体验脱节  
 **根因**：LLM 生成的 L3 事实无法追溯原始来源，导致"用户有猫"幻觉无法根因定位。
 
@@ -2696,30 +2717,9 @@ ChronoPersona 的当前设计已无意中遵循了此原则：
 **依赖条件**：`MemoryEntry` / `Fact` Schema 扩展（非破坏性，新增可选字段）。  
 **预估工时**：2 天
 
-#### 12.1.3 LangGraph 状态机迁移
+#### 12.1.2 硬预算截断（Hard Budget Throttle）
 
-**解决的问题**：手写状态机难以维护复杂分支（条件跳转、循环、中断恢复）  
-**设计思路**：引入 `langgraph` 库，将 `StateMachineAgentCore` 重构为 `StateGraph`；定义 Input/Intent/Memory/LLM/Action/Output 节点，条件边路由 + 循环回退机制。
-
-**预估工时**：3 天
-
-### 12.2 P2 级优化（中优先级）
-
-#### 12.2.1 动态重要性重算（Dynamic Importance Recalc）
-
-**解决的问题**：短期波动固化、遗忘曲线僵化  
-**根因**：`MemoryEntry.importance` 写入后静态不变，临时情绪（"我讨厌社交"）被永久固化。
-
-**设计思路**：
-- 每月 / 每 100 轮触发一次"重要性审计"批量任务。
-- 重新计算所有 L3 记忆的 `importance`：基于后续 `CONTRADICTS` 覆盖次数、访问频率衰减、时效性。
-- 得分低于阈值的记忆标记 `deprecated`（非物理删除，保留审计链）。
-
-**依赖条件**：定时任务基础设施（`APScheduler` 或 `celery beat`）。  
-**预估工时**：4 天
-
-#### 12.2.2 硬预算截断（Hard Budget Throttle）
-
+**目标版本**：v1.1.0  
 **解决的问题**：成本失控  
 **根因**：每轮多次 LLM 调用（T2 实体提取 + T3 边构建 + T4 反思），token 消耗指数增长。
 
@@ -2732,8 +2732,9 @@ ChronoPersona 的当前设计已无意中遵循了此原则：
 **依赖条件**：`CostRecord` / `CostReport` Schema 已存在，需增加实时累加逻辑。  
 **预估工时**：2 天
 
-#### 12.2.3 跨分支记忆继承过滤器（Branch Inheritance Filter）
+#### 12.1.3 跨分支记忆继承过滤器（Branch Inheritance Filter）
 
+**目标版本**：v1.1.0  
 **解决的问题**：跨分支污染  
 **根因**：`main` 分支向 `therapist` / `rpg-hero` 穿透时，可能携带医疗记录 / 剧情设定等敏感信息。
 
@@ -2745,26 +2746,52 @@ ChronoPersona 的当前设计已无意中遵循了此原则：
 **依赖条件**：PII 识别模块（可用 `presidio` 或规则引擎）。  
 **预估工时**：3 天
 
-#### 12.2.4 IntentGraph 持久化（PostgreSQL + CTE）
+### 12.2 v1.2.0 `memory-quality`：记忆质量跃迁
 
-**解决的问题**：MVA 纯内存结构，进程重启丢失图谱；无数据库执行计划优化与索引加速  
+#### 12.2.1 条件感知蒸馏器（Conditional Distiller）
+
+**目标版本**：v1.2.0  
+**解决的问题**：归纳遗漏（条件上下文剥离）  
+**根因**：Dreaming 阶段 LLM 摘要会丢弃"如果/除非/当...时"等条件从句，导致"如果明天不下雨就去爬山"蒸馏为"用户喜欢爬山"。
+
 **设计思路**：
-- 边表迁移至 PostgreSQL；`get_edges()` 改写为 `SELECT * FROM semantic_edges WHERE branch_id = ?`；`navigate()` 使用 Recursive CTE 执行 BFS。
-- PostgreSQL 对 `source_id + edge_type` 建立复合索引；CTE 使用 `MATERIALIZED` hint 避免递归层数过深导致的计划劣化。
+- 在 `ReflectionAgent` Phase B 中增加 NLP 条件句识别模块（基于依存句法分析或轻量规则）。
+- 将条件提取为 `BehavioralRule.trigger` 字段，结论作为 `.action`。
+- 否定词（"不"、"没有"）标记为不可消除，强制保留。
 
-**预估工时**：4 天
-
-#### 12.2.5 Episodic Store 分布式化（Qdrant）
-
-**解决的问题**：MVA 使用本地 FAISS `IndexFlatIP`，无法横向扩展，重启需重建索引  
-**设计思路**：替换为 Qdrant HNSW 近似索引；支持多副本、动态扩缩容、快照恢复。
-
+**依赖条件**：NLP 条件句识别模块（可用 `spacy` 或 `stanza` 的依存解析）。  
 **预估工时**：3 天
 
-### 12.3 P3 级优化（低优先级）
+#### 12.2.2 动态重要性重算（Dynamic Importance Recalc）
 
-#### 12.3.1 边类型纠错机制（Edge Type Correction）
+**目标版本**：v1.2.0  
+**解决的问题**：短期波动固化、遗忘曲线僵化  
+**根因**：`MemoryEntry.importance` 写入后静态不变，临时情绪（"我讨厌社交"）被永久固化。
 
+**设计思路**：
+- 每月 / 每 100 轮触发一次"重要性审计"批量任务。
+- 重新计算所有 L3 记忆的 `importance`：基于后续 `CONTRADICTS` 覆盖次数、访问频率衰减、时效性。
+- 得分低于阈值的记忆标记 `deprecated`（非物理删除，保留审计链）。
+
+**依赖条件**：定时任务基础设施（`APScheduler` 或 `celery beat`）。  
+**预估工时**：4 天
+
+#### 12.2.3 检索结果可解释性（Retrieval Explanation）
+
+**目标版本**：v1.2.0  
+**解决的问题**："Recall@5 高但用户感觉健忘"  
+**根因**：检索返回了正确记忆，但排序靠后被截断在 4K token 外，用户无感知。
+
+**设计思路**：
+- `RetrievedContext` 的 `navigation_path` 字段填充详细路径（为什么召回这条）。
+- 格式：`{"memory_id": "...", "path": ["IntentPattern.retrieve", "SemanticEdge.MENTIONS", "Concept.c_plan"], "score_breakdown": {"similarity": 0.9, "importance": 0.8, "recency": 0.7}}`
+- 前端展示：鼠标悬停记忆片段时显示溯源路径。
+
+**预估工时**：2 天
+
+#### 12.2.4 边类型纠错机制（Edge Type Correction）
+
+**目标版本**：v1.2.0  
 **解决的问题**：错误分类（边类型误标）  
 **根因**：Tier 1 模板匹配召回率 ~40%，大量真实因果被降级为 `CORRELATED`。
 
@@ -2775,8 +2802,9 @@ ChronoPersona 的当前设计已无意中遵循了此原则：
 
 **预估工时**：2 天
 
-#### 12.3.2 动态 max_hops
+#### 12.2.5 动态 max_hops
 
+**目标版本**：v1.2.0  
 **解决的问题**：多跳推理断裂  
 **根因**：固定 `max_hops=3` 对 `CAUSED` 因果链过短，对 `IS_A` 泛化链过长。
 
@@ -2788,8 +2816,67 @@ ChronoPersona 的当前设计已无意中遵循了此原则：
 
 **预估工时**：1 天
 
-#### 12.3.3 动作执行后感知反馈闭环
+### 12.3 v1.3.0 `graph-production`：图谱与检索生产化
 
+#### 12.3.1 IntentGraph 持久化（PostgreSQL + CTE）
+
+**目标版本**：v1.3.0  
+**解决的问题**：MVA 纯内存结构，进程重启丢失图谱；无数据库执行计划优化与索引加速  
+**设计思路**：
+- 边表迁移至 PostgreSQL；`get_edges()` 改写为 `SELECT * FROM semantic_edges WHERE branch_id = ?`；`navigate()` 使用 Recursive CTE 执行 BFS。
+- PostgreSQL 对 `source_id + edge_type` 建立复合索引；CTE 使用 `MATERIALIZED` hint 避免递归层数过深导致的计划劣化。
+
+**预估工时**：4 天
+
+#### 12.3.2 Episodic Store 分布式化（Qdrant）
+
+**目标版本**：v1.3.0  
+**解决的问题**：MVA 使用本地 FAISS `IndexFlatIP`，无法横向扩展，重启需重建索引  
+**设计思路**：替换为 Qdrant HNSW 近似索引；支持多副本、动态扩缩容、快照恢复。
+
+**预估工时**：3 天
+
+#### 12.3.3 HybridRetriever Intent-Aware 融合
+
+**目标版本**：v1.3.0  
+**解决的问题**：`SimpleEpisodicStore` 层 `intent` 参数未消费，意图过滤仅在 `MemoryNode` 层粗略执行  
+**设计思路**：在 `HybridRetriever` 层实现 `intent` 与 `IntentPattern` 的精确匹配过滤；支持 intent 相似度降级（如 `causal_explore` 降级到 `retrieve` 而非直接丢弃）。
+
+**预估工时**：1 天
+
+### 12.4 v1.4.0 `cognitive-deepening`：认知仿生深化
+
+#### 12.4.1 L4 Procedural Memory（程序记忆层）
+
+**目标版本**：v1.4.0  
+**评估**：将 Skill/Rule 固化上升为独立层级。MVA 已有 `ActionPlanner` + `ISkill` 接口骨架，但缺少从 L3 `BehavioralRule` 到 L4 可执行规则的自动晋升机制（频率 ≥3、正向反馈、无负向经历）。  
+**排期**：依赖 L3 积累足够 `BehavioralRule` 数据。  
+**工作量预估**：4–5 天。
+
+#### 12.4.2 Dream Phase T2–T6 完整实现
+
+**目标版本**：v1.4.0  
+**评估**：当前仅实现 T1（关键词共现/去重）。新想法的 T2（冲突消解 LLM 仲裁）、T3（模式分离/重嵌入）、T4（系统巩固 L2→L3 抽象）、T5（程序结晶 L4 晋升）、T6（元记忆更新）均需独立模块与额外 LLM 调用。  
+**排期**：T2/T4 优先；T3/T5/T6 次之。  
+**工作量预估**：T2=2d, T3=3d, T4=3d, T5=2d, T6=2d。
+
+#### 12.4.3 L5 Meta-Memory（元记忆层）
+
+**目标版本**：v1.4.0  
+**评估**：包含 Memory Worth 计算、自适应检索策略权重动态调整 + Meta-Dream。当前架构无此概念，需从零建设自监控层。  
+**排期**：需先积累多轮检索 outcome 数据。  
+**工作量预估**：5 天。
+
+#### 12.4.4 DynamicImportance（基于 outcome）
+
+**目标版本**：v1.4.0  
+**评估**：`base_importance * (1 + 0.1*successful_uses - 0.3*failed_uses)` 需要长期追踪每次检索后的任务 outcome（成功/失败），MVA 无此反馈闭环基础设施。  
+**排期**：与 L5 Meta-Memory 协同建设。  
+**工作量预估**：3 天。
+
+#### 12.4.5 动作执行后感知反馈闭环
+
+**目标版本**：v1.4.0  
 **解决的问题**：动作-结果记忆对缺失  
 **根因**：`GridWorldAdapter` 返回 `LowLevelCommand` 后，环境状态变化未回写 L2，无法形成"动作→结果"的条件反射。
 
@@ -2800,24 +2887,67 @@ ChronoPersona 的当前设计已无意中遵循了此原则：
 
 **预估工时**：2 天
 
-#### 12.3.4 检索结果可解释性（Retrieval Explanation）
+### 12.5 v1.5.0 `agent-autonomy`：智能体自治增强
 
-**解决的问题**："Recall@5 高但用户感觉健忘"  
-**根因**：检索返回了正确记忆，但排序靠后被截断在 4K token 外，用户无感知。
+#### 12.5.1 Stochastic Replay / Counterfactuals
 
-**设计思路**：
-- `RetrievedContext` 的 `navigation_path` 字段填充详细路径（为什么召回这条）。
-- 格式：`{"memory_id": "...", "path": ["IntentPattern.retrieve", "SemanticEdge.MENTIONS", "Concept.c_plan"], "score_breakdown": {"similarity": 0.9, "importance": 0.8, "recency": 0.7}}`
-- 前端展示：鼠标悬停记忆片段时显示溯源路径。
+**目标版本**：v1.5.0  
+**评估**：生物启发机制，通过 LLM 生成反事实变体来压力测试因果结构。需要额外 LLM 调用，成本高，属于研究性质增强。  
+**排期**：实验性分支。  
+**工作量预估**：4 天。
 
-**预估工时**：2 天
+#### 12.5.2 评估框架 CI 集成
 
-#### 12.3.5 HybridRetriever Intent-Aware 融合
+**目标版本**：v1.5.0  
+**评估**：nightly 自动化评估流水线 + 性能基准回归。  
+**工作量预估**：2 天。
 
-**解决的问题**：`SimpleEpisodicStore` 层 `intent` 参数未消费，意图过滤仅在 `MemoryNode` 层粗略执行  
-**设计思路**：在 `HybridRetriever` 层实现 `intent` 与 `IntentPattern` 的精确匹配过滤；支持 intent 相似度降级（如 `causal_explore` 降级到 `retrieve` 而非直接丢弃）。
+#### 12.5.3 VLA 可插拔接口真实实现
 
-**预估工时**：1 天
+**目标版本**：v1.5.0  
+**评估**：`predict_action()` 接入微调 VLA 模型（替换 LLM default），[VLA-PLACEHOLDER] 解禁。  
+**工作量预估**：3 天。
+
+#### 12.5.4 Persona Drift 自动修复
+
+**目标版本**：v1.5.0  
+**评估**：检测相似度 < 0.75 后，自动强化注入 Persona Anchor，无需人工干预。  
+**工作量预估**：1 天。
+
+#### 12.5.5 ContextualBias / Cluster 感知检索
+
+**目标版本**：v1.5.0  
+**评估**：基于话题聚类（topic cluster）和会话主题的上下文检索偏置。当前 `IntentGraph` 无 cluster 级索引，需新增聚类模块。  
+**排期**：P3。  
+**工作量预估**：2 天。
+
+### 12.6 v2.0.0 `architecture-refresh`：架构换代
+
+#### 12.6.1 LangGraph 状态机迁移
+
+**目标版本**：v2.0.0  
+**解决的问题**：手写状态机难以维护复杂分支（条件跳转、循环、中断恢复）  
+**设计思路**：引入 `langgraph` 库，将 `StateMachineAgentCore` 重构为 `StateGraph`；定义 Input/Intent/Memory/LLM/Action/Output 节点，条件边路由 + 循环回退机制。
+
+**预估工时**：3 天
+
+#### 12.6.2 真实多设备 CRDT 同步
+
+**目标版本**：v2.0.0  
+**评估**：从单端模拟升级为手机/车机/音箱三端真实 WebSocket 组网。  
+**工作量预估**：3 天。
+
+#### 12.6.3 多模态感知
+
+**目标版本**：v2.0.0  
+**评估**：FOV 从纯文本描述扩展为视觉+文本（CLIP 编码图像特征，注入 L1）。  
+**工作量预估**：4 天。
+
+#### 12.6.4 Semantic Merge Agent
+
+**目标版本**：v2.0.0  
+**评估**：`CONTRADICTS` 高价值冲突触发 LLM 三路仲裁（Base/Left/Right），产出融合洞察。  
+**工作量预估**：3 天。
 
 ### 12.4 明确不采纳项（MVA 设计取舍）
 
