@@ -17,7 +17,7 @@
 6. [接口与契约设计](#6-接口与契约设计)
 7. [模型路由策略](#7-模型路由策略)
 8. [测试与评估设计](#8-测试与评估设计)
-9. [8周执行路线图](#9-8周执行路线图)
+9. [版本化执行路线图](#9-版本化执行路线图)
 10. [Cursor 多 Agent 架构深度调研：对 ChronoPersona 的借鉴分析](#10-cursor-多-agent-架构深度调研对-chronopersona-的借鉴分析)
 11. [风险与兜底策略](#11-风险与兜底策略)
 
@@ -939,7 +939,7 @@ async def retrieve(query: str, branch_id: str, intent: IntentType) -> RetrievedC
 - **向量检索**：`SimpleEpisodicStore` / `FaissEpisodicStore`（CPU 版，FAISS `IndexFlatIP`），无外部向量数据库依赖。
 - **混合召回**：`HybridRetriever` 在 Python 层执行 0.6×图谱结果 + 0.4×向量结果的融合与去重。
 
-**W8+ 生产级方案**：
+**post-v1.0.0 生产级方案**：
 - **图持久化**：`IntentGraph` 边表迁移至 PostgreSQL，`get_edges()` 改写为 `SELECT * FROM semantic_edges WHERE branch_id = ?`；`navigate()` 使用 Recursive CTE 执行 BFS：
   ```sql
   WITH RECURSIVE nav AS (
@@ -1740,7 +1740,7 @@ CREATE TABLE intent_patterns (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- [FUTURE: W4] 周期性主动反思产出（Insight 模块启用时解冻）
+-- [FUTURE: v0.4.0] 周期性主动反思产出（Insight 模块启用时解冻）
 -- CREATE TABLE insights (...);
 
 -- MVCC 版本链（L3 Entity 级细粒度）
@@ -1759,7 +1759,7 @@ CREATE TABLE entity_versions (
 );
 CREATE INDEX idx_entity_versions_lookup ON entity_versions(entity_id, branch_id, version);
 
--- [FUTURE: M4/W7] 空间-情感-动作关联记忆（具身模块启用时解冻）
+-- [FUTURE: v0.6.0+] 空间-情感-动作关联记忆（具身模块启用时解冻）
 -- CREATE TABLE embodied_interactions (...);
 
 -- 同步操作日志（W1 冻结：CRDT 操作落盘与故障恢复）

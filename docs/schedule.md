@@ -1,28 +1,28 @@
-# ChronoPersona 项目执行排期表
+# ChronoPersona 项目版本路线图
 
 **版本**: v2.0  
 **基线日期**: 2026-05-22 (周五)  
-**总工期**: 8 周（2026-05-11 ~ 2026-07-05）  
-**当前状态**: W6 评估框架已完成，W7 2D 世界 + 前端进行中，W8 文档与生产优化启动
+**总工期**: 8 个迭代（v0.1.0 ~ v1.0.0）  
+**当前状态**: v0.6.0 评估框架已完成，v0.7.0 2D 世界 + 前端进行中，v1.0.0 文档与发布准备启动
 
 ---
 
 ## 1. 排期总览（修订后）
 
-| 周次 | 日期范围 | 阶段主题 | 核心交付物 | 状态 |
+| 版本 | 日期范围 | 阶段主题 | 核心交付物 | 状态 |
 |------|---------|---------|-----------|------|
-| **W1** | 05-11 ~ 05-17 | 契约与孤岛 | 接口冻结(14个)、Mock全量(12个)、真实节点(5个)、**测试400+ passed** 覆盖率94% | ✅ 已完成 |
-| **W2** | 05-18 ~ 05-24 | 评估基线与骨架预热 | 无冲突域契约、Dreaming骨架、L2GC、PersonaInjector、Eval基线、L3 Unlearning | ✅ 已完成 |
-| **W3** | 05-25 ~ 05-31 | L3 + Intent Graph 深化 | MVO Seed、EdgeBuilder、HybridRetriever、CTEs | ✅ 已完成 |
-| **W4** | 06-01 ~ 06-07 | Insight + 反思 | InsightGenerator、CAUSED Tier 2、A1/A2 召回测试 | ✅ 已完成 |
-| **W5** | 06-08 ~ 06-14 | Agent 核心循环 | StateMachineAgentCore 端到端、ActionPlanner、LSTM 监督骨架、RL-PLACEHOLDER 合规、**H1 情感时序修复** | ✅ 已完成 |
-| **W6** | 06-15 ~ 06-21 | 评估框架 | A1-A11 对抗测试集（**39 文件/400+ 用例**）、量化对比表、**测试语义红线** | ✅ 已完成 |
-| **W7** | 06-22 ~ 06-28 | 2D 世界 + 前端 | GridWorldAdapter **5 动作真实跨本体映射**、WebSocket Gateway Stub、Canvas 骨架、`[Emotion State]` + `[Semantic Facts]` Prompt 注入 | 🟡 进行中 |
-| **W8** | 06-29 ~ 07-05 | 文档与发布准备 | README、技术博客、Slide Deck、Demo 脚本、**记忆系统生产优化文档化** | ⚪ 未开始 |
+| **v0.1.0** | 05-11 ~ 05-17 | `foundation`：契约与孤岛 | 接口冻结(14个)、Mock全量(12个)、真实节点(5个)、**测试400+ passed** 覆盖率94% | ✅ 已完成 |
+| **v0.2.0** | 05-18 ~ 05-24 | `memory-core`：评估基线与骨架预热 | 无冲突域契约、Dreaming骨架、L2GC、PersonaInjector、Eval基线、L3 Unlearning | ✅ 已完成 |
+| **v0.3.0** | 05-25 ~ 05-31 | `insight`：L3 + Intent Graph 深化 | MVO Seed、EdgeBuilder、HybridRetriever、CTEs | ✅ 已完成 |
+| **v0.4.0** | 06-01 ~ 06-07 | `agent-loop`：Insight + 反思 | InsightGenerator、CAUSED Tier 2、A1/A2 召回测试 | ✅ 已完成 |
+| **v0.5.0** | 06-08 ~ 06-14 | `evaluation`：Agent 核心循环 | StateMachineAgentCore 端到端、ActionPlanner、LSTM 监督骨架、RL-PLACEHOLDER 合规、**H1 情感时序修复** | ✅ 已完成 |
+| **v0.6.0** | 06-15 ~ 06-21 | `embodied`：评估框架 | A1-A11 对抗测试集（**39 文件/400+ 用例**）、量化对比表、**测试语义红线** | ✅ 已完成 |
+| **v0.7.0** | 06-22 ~ 06-28 | `frontend`：2D 世界 + 前端 | GridWorldAdapter **5 动作真实跨本体映射**、WebSocket Gateway Stub、Canvas 骨架、`[Emotion State]` + `[Semantic Facts]` Prompt 注入 | 🟡 进行中 |
+| **v1.0.0** | 06-29 ~ 07-05 | `mva`：文档与发布准备 | README、技术博客、Slide Deck、Demo 脚本、**记忆系统生产优化文档化** | ⚪ 未开始 |
 
 ---
 
-## 2. Week 1 完成总结（05-15 基线锚定）
+## 2. v0.1.0 发布总结（05-15 基线锚定）
 
 **实际达成**：
 - `contracts/interfaces/` 14 个抽象接口全部冻结并导出。
@@ -33,7 +33,7 @@
 - PLACEHOLDER 合规：`test_caused_tier2.py` 正确 skip，无违规实现复杂算法。
 - 借鉴点吸收：`MemoryEntry` 重要性评分 Schema 落地、L2 检索加权实现。
 
-**W1 验收测试矩阵**：
+**v0.1.0 验收测试矩阵**：
 
 | 编号 | 测试文件 | 用例数 | 验证目标 |
 |------|---------|--------|---------|
@@ -175,7 +175,7 @@
 
 | 检查点 | 日期 | 通过标准 | 未通过兜底 |
 |--------|------|---------|-----------|
-| **M1** | 05-17 | `make test` 262 passed, 94% coverage, 接口冻结 ✅ 已完成 | W2 前 2 天收尾，Insight 模块降级 |
+| **M1** | 05-17 | `make test` 262 passed, 94% coverage, 接口冻结 ✅ 已完成 | v0.2.0 前 2 天收尾，Insight 模块降级 |
 | **Checkpoint 3.1** | 05-30 | L3 10 轮稳定性 + CTE Recall@5 ≥ 0.6 | W4 修 L3，Insight 延至 W5 |
 | **M2** | 06-07 | A1/A2 召回测试自动化通过 | 砍 CAUSED Tier 2，保 Tier 1 |
 | **M3** | 06-14 | 端到端 Agent 对话可用，情感状态机可观测 | 砍 LSTM 训练，保 Rule-based 情感 |
