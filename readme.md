@@ -72,7 +72,7 @@
 ## 📦 快速开始
 
 ```bash
-# 1. 安装依赖
+# 1. 安装依赖（覆盖 FAISS、torch、fastapi、pytest、loguru 等全部基线）
 pip install -r requirements.txt
 
 # 2. 运行全量测试（400+ passed）
