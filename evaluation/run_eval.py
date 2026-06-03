@@ -1,7 +1,9 @@
-"""Evaluation pipeline entry point.
+"""Evaluation pipeline entry point (v1.0+).
 
 Compares VectorRAG baseline against Intent Graph retrieval
 across scenarios A1-A6.
+
+Version: v1.0 (MVA evaluation framework)
 """
 
 from __future__ import annotations
@@ -76,7 +78,7 @@ def main() -> None:
     ]
 
     print("=" * 70)
-    print("ChronoPersona Evaluation Pipeline")
+    print("ChronoPersona Evaluation Pipeline v1.0")
     print("=" * 70)
     print(f"{'Scenario':<6} {'Description':<30} {'Recall@5':>10}")
     print("-" * 70)
@@ -90,8 +92,9 @@ def main() -> None:
         )
 
     print("-" * 70)
-    print("Evaluation complete. Intent Graph path uses placeholder (VectorRAG).")
+    print("Evaluation complete (v1.0). Intent Graph path uses placeholder (VectorRAG).")
     print("Replace retriever with IntentGraphRetriever for full comparison.")
+    print("Next: v1.5 adds A-MAC, VAD, Spindle Gating evaluation scenarios.")
 
 
 if __name__ == "__main__":

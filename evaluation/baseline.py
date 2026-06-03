@@ -1,7 +1,9 @@
-"""Pure vector RAG baseline for comparison.
+"""Pure vector RAG baseline for comparison (v1.0+).
 
 Uses SimpleEpisodicStore (cosine similarity) as the default backend
 to provide a realistic baseline for evaluation scenarios.
+
+Version: v1.0 (MVA evaluation framework baseline)
 """
 
 from __future__ import annotations
