@@ -1564,6 +1564,112 @@ effective_score = vector_similarity × importance × exp(-elapsed_hours / (ttl_b
 
 **W1 实现状态**：Schema 与检索加权已落地；指数衰减 `gc()` 与 `entropy_gain` 计算标记为 `[FUTURE]`，W2 实现。
 
+### 4.14 记忆架构新想法对比评估
+
+基于 `docs/interview/ChronaPersona_Memory_System_some_new_ideas.md`（五层 Engram 堆栈、A-MAC 准入控制、Dream 双相巩固、级联更新、VAD 情感信号等）与当前 MVA 基线（L0–L3 + 评估框架）的系统性对比，分类如下：
+
+#### 4.14.1 适合立刻执行（MVA 阶段落地）
+
+**① A-MAC 自适应准入评分（简化版）**
+- **新想法要点**：`AdmissionScore = w1*Utility + w2*Confidence + w3*Novelty + w4*Recency + w5*TypePrior`，两级阈值（≥0.65 进 L2+L3，0.40–0.65 仅进 L2，<0.40 丢弃）。
+- **与当前设计对比**：当前仅依赖静态 `importance` 字段，无系统级准入 gate，导致低价值闲聊噪声容易进入向量库。
+- **MVA 落地方式**：**舍弃 LLM-based Utility 预测**（万级 Token 配额下每次写入增加 1 次 LLM 调用，成本过高且可靠性低），改用硬编码 `TypePrior` 权重（procedural=1.0, preference=0.9, fact=0.6, chitchat=0.1）。整合现有 `importance` / `access_count` / `ttl_hours` 为简化 `AdmissionScore`，在 `MemoryEntry` 新增 `admission_score` 字段，`SimpleEpisodicStore.add()` 入口处增加两级阈值拦截。
+- **工作量**：1–2 天。
+
+**② L1 上下文预算显式分层**
+- **新想法要点**：128K tokens 按 40% Session / 30% Memory / 20% Procedural / 10% Scratchpad 分配。
+- **与当前设计对比**：当前 `WorkingMemoryWindow` 仅有单一 `token_limit`，无显式分层，易出现 Persona Anchor 挤占用户对话历史的情况。
+- **MVA 落地方式**：**舍弃 128K 假设**（项目约束为万级 Token），按实际预算（4K–8K context）缩放比例：`session_history=40%`, `retrieved_memories=30%`, `persona_anchor=20%`, `scratchpad=10%`。在 `WorkingMemoryWindow` 中增加 `_budget_allocations` 字典，超限层硬截断。
+- **工作量**：0.5 天。
+
+**③ Engram Schema 简化扩展**
+- **新想法要点**：LLM 每轮输出完整 Engram JSON（含 raw/abstracted/procedural/embedding、relation_graph triples、retrieval_hints、provenance）。
+- **与当前设计对比**：当前 `MemoryEntry` 结构较扁平，缺少结构化内容层与情感信号，导致 Reflection Agent 异步提取时信息不足。
+- **MVA 落地方式**：**舍弃"每轮强制输出完整 Schema"**（Token 消耗高、延迟大、校验失败风险高），改为：
+  - 扩展 `MemoryEntry`：增加 `abstracted_fact`（Reflection Agent 异步生成）、`affective_valence`（T0 情感引擎映射）、`source_turn_index`。
+  - `relation_graph`（entities/triples）保留为 Reflection Agent 异步提取产物，不阻塞对话主链路。
+- **工作量**：1–2 天。
+
+**④ Spindle Gating（纺锤门控）轻量版**
+- **新想法要点**：Dream 前预过滤，`importance > 7.0 AND confidence > 0.85 AND |valence| > 0.2` 才进入巩固。
+- **与当前设计对比**：当前 `InsightScheduler` 仅有 `min_confidence=0.6` 和轮数/时间触发，低价值记忆容易堆积在 Insight 队列。
+- **MVA 落地方式**：在 `InsightScheduler.should_trigger()` 中增加 `importance_score` 硬门槛（如 ≥0.7），低于门槛的记忆不进入 `SimpleInsightEngine` 处理队列，直接标记为 `latent` 待下次 Dream 重新评估。
+- **工作量**：0.5 天。
+
+**⑤ Affective VAD 三维扩展（轻量）**
+- **新想法要点**：情感信号从单一极值扩展为 Valence/Arousal/Dominance 三维，用于检索增强与行为调制。
+- **与当前设计对比**：当前 `EmotionState` 为 5 状态 + intensity + confidence，缺少连续情感空间，难以精细化调制物理行为参数。
+- **MVA 落地方式**：在 `EmotionState` 中增加 `valence`（-1.0 ~ +1.0）和 `arousal`（0.0 ~ 1.0）字段；T0 规则引擎按状态映射初始 VAD 值（如 CONCERNED → valence=-0.7, arousal=0.6）。将 VAD 接入 `ActionPlanner.EMOTION_BEHAVIOR_MODULATION` 表（如高 arousal 增加移动速度基准）。**舍弃 Dominance 维度的记忆调制**（Companion 场景缺乏稳定提取信号，与现有 5 状态机重叠度高，ROI 低）。
+- **工作量**：1 天。
+
+#### 4.14.2 适合排入远期计划（W8+ / Beyond MVA）
+
+**① L4 Procedural Memory（程序记忆层）**
+- **评估**：新想法将 Skill/Rule 固化上升为独立层级。当前 MVA 已有 `ActionPlanner` + `ISkill` 接口骨架，但缺少从 L3 `BehavioralRule` 到 L4 可执行规则的自动晋升机制（频率 ≥3、正向反馈、无负向经历）。
+- **排期**：P1，依赖 L3 积累足够 `BehavioralRule` 数据。
+- **工作量预估**：4–5 天。
+
+**② L5 Meta-Memory（元记忆层）**
+- **评估**：包含 Memory Worth 计算、自适应检索策略权重（`semantic_weight` / `recency_weight` / `importance_weight` / `emotional_weight` 动态调整）、Meta-Dream（元记忆递归精简）。当前架构无此概念，需从零建设自监控层。
+- **排期**：P2，需先积累多轮检索 outcome 数据。
+- **工作量预估**：5–7 天。
+
+**③ Dream Phase T2–T6 完整实现**
+- **评估**：当前仅实现 T1（关键词共现/去重）。新想法的 T2（冲突消解 LLM 仲裁）、T3（模式分离/重嵌入）、T4（系统巩固 L2→L3 抽象）、T5（程序结晶 L4 晋升）、T6（元记忆更新）均需独立模块与额外 LLM 调用。
+- **排期**：P1–P2，T2/T4 优先；T3/T5/T6 次之。
+- **工作量预估**：T2=2d, T3=3d, T4=3d, T5=2d, T6=2d。
+
+**④ Engram Cascade Update（级联更新）**
+- **评估**：通过图边传播局部向量 delta，避免全局重嵌入。MVA 阶段数据量 <10K，FAISS 全局重建成本 <100ms，引入级联更新的工程收益不足以覆盖图传播复杂度。
+- **排期**：P3，待数据量突破 100K 或迁移至 Qdrant 后实施。
+- **工作量预估**：3–4 天。
+
+**⑤ DynamicImportance（基于 outcome 的动态重要性）**
+- **评估**：`base_importance * (1 + 0.1*successful_uses - 0.3*failed_uses)` 需要长期追踪每次检索后的任务 outcome（成功/失败），MVA 无此反馈闭环基础设施。
+- **排期**：P2，与 L5 Meta-Memory 协同建设。
+- **工作量预估**：2–3 天。
+
+**⑥ ContextualBias / Cluster 感知检索**
+- **评估**：基于话题聚类（topic cluster）和会话主题的上下文检索偏置。当前 `IntentGraph` 无 cluster 级索引，需新增聚类模块。
+- **排期**：P3。
+- **工作量预估**：2 天。
+
+**⑦ Stochastic Replay with Counterfactuals（随机反事实回放）**
+- **评估**：生物启发机制，通过 LLM 生成反事实变体来压力测试因果结构。需要额外 LLM 调用，成本高，属于研究性质增强。
+- **排期**：P3 或实验性分支。
+- **工作量预估**：3–4 天。
+
+**⑧ 语义边类型扩展（supports / generalizes / specializes / co_occurs）**
+- **评估**：新想法在现有 8 类边之外提议更多细粒度关系。当前 8 类边已在 A6 评估中验证覆盖度，新增边类型会提高图谱稀疏性，需更多数据支撑。
+- **排期**：P3，待 L3 节点数 >50K 后评估必要性。
+- **工作量预估**：1–2 天。
+
+#### 4.14.3 不值得采纳（与 MVA 约束冲突或 ROI 为负）
+
+**① LLM-based Utility 预测**
+- **原因**：A-MAC 中的 `Utility` 项要求 LLM 预测"该记忆未来 30 天被需要的概率"，在日均万级 Token 配额下每次写入增加 1 次 LLM 调用，成本过高且预测可靠性低（LLM 不擅长时间跨度预测）。
+- **结论**：舍弃。以规则型 `TypePrior` 硬编码权重替代，满足 MVA 准入需求。
+
+**② 128K Token Rigid 预算分配**
+- **原因**：项目实际约束为"万级 Token 配额"，128K 的假设与 MVA 现实严重脱节。盲目套用会导致 over-engineering 与虚假的容量安全感。
+- **结论**：仅采纳"分层预算"思想，数值按实际 4K–8K 预算重新缩放。
+
+**③ 每轮强制输出 Full Engram Schema**
+- **原因**：完整 Schema（含 relation_graph triples、retrieval_hints、provenance、logical_cluster）要求 LLM 每轮对话后输出大段结构化 JSON，Token 消耗高、延迟大、schema 校验失败风险高，且会挤压对话生成预算。
+- **结论**：改为异步 Reflection Agent 提取核心字段，主链路保持轻量。
+
+**④ Dominance 维度用于记忆调制**
+- **原因**：VAD 中的 Dominance（支配/服从）在 AI Companion 场景缺乏稳定提取信号（用户极少明确表达控制/服从意图），与现有 5 状态情感机重叠度高，且对检索排序与行为调制的增益不明确。
+- **结论**：记录为远期研究点，MVA 阶段不实现。
+
+**⑤ Neo4j 作为 L3 存储**
+- **原因**：新想法提及 Neo4j 作为知识图谱存储。但 MVA 已明确决策移除 Neo4j（见 2.1 MVA 裁剪原则），使用 PostgreSQL CTE + 内存 BFS。引入 Neo4j 会增加 Docker 依赖，与 MVA 零依赖启动目标冲突。
+- **结论**：维持现有 PostgreSQL + 内存 BFS 路线，Neo4j 不采纳。
+
+**⑥ FadeMem 复杂衰减公式**
+- **原因**：新想法提议 `RecencyDecay = exp(-base_decay * Δt / (1 + 0.5 * access_count))`，通过 access_count 减缓衰减。当前 `effective_access = access_count * exp(-days/30)` 已足够表达"高频记忆衰减更慢"的语义，且计算更简单。
+- **结论**：维持现有公式，不引入分母复杂度。
+
 ## 5. 数据模型设计
 
 ### 5.1 PostgreSQL Schema

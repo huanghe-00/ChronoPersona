@@ -206,6 +206,12 @@
 3. 启动 W8 文档：`README.md` 架构图刷新（含 L3 Prompt 注入、情感时序、跨本体映射的新设计）。
 4. 完成 Beyond MVA 优化项在 `docs/requirements.md` 第12节与 `docs/schedule.md` 第7节的交叉 Review，确保设计描述、依赖条件与工时排期一致；**删除**已归并的 `docs/beyond_mva.md` 独立文件，避免三份数据源。
 5. 评估 `serve_mva.py` 是否需要引入真实 WebSocket 依赖（`websockets` / `fastapi`）或保持 MVA 占位。
+6. **（新增）新想法评估结论的立刻执行任务（W7 穿插执行）**：
+   - **A-MAC 简化版**：整合现有 `importance`/`access_count`/`ttl_hours` 为 `AdmissionScore`，增加 `TypePrior` 权重（procedural=1.0, preference=0.9, fact=0.6, chitchat=0.1）与两级阈值（<0.40 丢弃，0.40–0.65 仅 L2，≥0.65 L2+L3）。修改 `MemoryEntry` 与 `SimpleEpisodicStore.add()` 入口。
+   - **L1 Budget 显式分层**：按 MVA 实际 token 预算（4K–8K）设定 `session_history=40%` / `retrieved_memories=30%` / `persona_anchor=20%` / `scratchpad=10%`，在 `WorkingMemoryWindow` 实现硬截断。
+   - **Engram Schema 简化扩展**：为 `MemoryEntry` 增加 `abstracted_fact`、`affective_valence`、`source_turn_index`；`relation_graph` 保留为 Reflection Agent 异步产物，不阻塞主链路。
+   - **Spindle Gating**：在 `InsightScheduler` 中增加 `importance_score` 硬门槛（≥0.7），低价值记忆不进入 Insight 处理队列。
+   - **Affective VAD 轻量扩展**：`EmotionState` 增加 `valence`/`arousal`，映射到 `ActionPlanner` 调制表；舍弃 Dominance 维度。
 
 ---
 
@@ -232,6 +238,13 @@
 | P2 | **IntentGraph 持久化（PostgreSQL + CTE）** | MVA 纯内存结构，进程重启丢失图谱；无数据库执行计划优化与索引加速 | PostgreSQL 14+，`(source_id, edge_type)` 复合索引，`MATERIALIZED` CTE hint | 4d |
 | P2 | **Episodic Store 分布式化（Qdrant）** | 本地 FAISS `IndexFlatIP` 无法横向扩展，重启需重建索引 | Qdrant HNSW 服务端，多副本、动态扩缩容、快照恢复 | 3d |
 | P3 | **HybridRetriever Intent-Aware 融合** | `SimpleEpisodicStore` 层 `intent` 参数未消费，意图过滤仅在 `MemoryNode` 层粗略执行 | `HybridRetriever` 层实现 `intent` 与 `IntentPattern` 精确匹配过滤；支持 intent 相似度降级 | 1d |
+| P1 | **L4 Procedural Memory 层** | 将 ActionPlanner + Skill 升级为显式程序记忆，支持 BehavioralRule 自动晋升（freq≥3, valence>0.5, 无负向经历） | L3 积累足够规则数据 | 4d |
+| P1 | **Dream Phase T2–T6** | T2 冲突消解 LLM 仲裁、T3 模式分离/重嵌入、T4 系统巩固（L2→L3 抽象）、T5 程序结晶（L4 晋升）、T6 元记忆更新 | T1 去重稳定运行 | 12d（分批） |
+| P2 | **L5 Meta-Memory 层** | Memory Worth + 自适应检索策略权重动态调整 + Meta-Dream | 多轮检索 outcome 数据积累 | 5d |
+| P2 | **DynamicImportance（基于 outcome）** | 追踪 successful_uses/failed_uses 动态调整重要性分数 | L5 Meta-Memory 基础设施 | 3d |
+| P3 | **Engram Cascade Update** | 图边传播局部向量 delta，避免全局重嵌入 | 数据量 >100K 或 Qdrant 迁移后 | 4d |
+| P3 | **Stochastic Replay / Counterfactuals** | 随机反事实回放压力测试因果结构 | 实验性分支 | 4d |
+| P3 | **语义边类型扩展** | 新增 supports / generalizes / specializes / co_occurs 等边类型 | L3 节点数 >50K 后评估 | 2d |
 
 **明确不采纳项（MVA 设计取舍）**：
 
