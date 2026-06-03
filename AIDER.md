@@ -10,6 +10,7 @@
 - 日志统一使用 `loguru`，关键路径 INFO，错误路径 ERROR
 - 注释和 docstring 使用英文，用户交互文本用中文
 - 遵循 Google Python Style Guide
+- 严格禁止任何'面试'字眼
 
 ## 2. 接口契约（强制）
 - 任何新模块必须先定义抽象接口（放在 `contracts/interfaces/`）

@@ -8,7 +8,7 @@
 
 ## 2. 技术亮点与数据支撑
 
-| 面试官问题 | 关键数据 | 可展开点 |
+| 问题 | 关键数据 | 可展开点 |
 |-----------|---------|---------|
 | "你们的测试覆盖率怎么样？" | **39 个测试文件，400+ passed，94% 语句覆盖率** | A1-A11 对抗评估全自动化，`make test` 唯一入口 |
 | "多端同步怎么做？" | 自研 LWWMap + HLC（500ms skew 检测），1,000 节点 P99 < 2ms | add-wins 语义；clock-skew 时保留双版本 + `CONTRADICTS` 边 |
@@ -28,7 +28,6 @@
 2. **MockBGEEmbedder 的局限性**：当前基于文本长度生成确定性向量，无法检测语义近重复（如"short" vs "short version"）。生产环境必须替换为 sentence-transformers。
 3. **WebSocket 实时联调未完成**：`serve_mva.py` 已提供零依赖 HTTP API（`POST /chat` 返回结构化 JSON），但 WebSocket 双向实时推送与 Canvas 前端数据联动仍待 W8+。
 
-**禁忌**：不要试图掩盖缺陷；面试官更欣赏对边界的清醒认知。
 
 ---
 
