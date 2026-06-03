@@ -1602,7 +1602,7 @@ effective_score = vector_similarity × importance × exp(-elapsed_hours / (ttl_b
 - **MVA 落地方式**：在 `EmotionState` 中增加 `valence`（-1.0 ~ +1.0）和 `arousal`（0.0 ~ 1.0）字段；T0 规则引擎按状态映射初始 VAD 值（如 CONCERNED → valence=-0.7, arousal=0.6）。将 VAD 接入 `ActionPlanner.EMOTION_BEHAVIOR_MODULATION` 表（如高 arousal 增加移动速度基准）。**舍弃 Dominance 维度的记忆调制**（Companion 场景缺乏稳定提取信号，与现有 5 状态机重叠度高，ROI 低）。
 - **工作量**：1 天。
 
-#### 4.14.2 适合排入远期计划（W8+ / Beyond MVA）
+#### 4.14.2 适合排入远期计划（post-v1.0.0 / Beyond MVA）
 
 **① L4 Procedural Memory（程序记忆层）**
 - **评估**：新想法将 Skill/Rule 固化上升为独立层级。当前 MVA 已有 `ActionPlanner` + `ISkill` 接口骨架，但缺少从 L3 `BehavioralRule` 到 L4 可执行规则的自动晋升机制（频率 ≥3、正向反馈、无负向经历）。
