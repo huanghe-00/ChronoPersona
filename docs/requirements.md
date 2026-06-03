@@ -669,7 +669,7 @@ class SyncManager:
 | **L2** | session_id 分区 | 不同 session 间无交集 | 分区即隔离，session_id 作为物理分片键 |
 | **L3** | concept_id / edge_id | **禁止对同一 entity_id 并发写入不同属性** | 写入前检查 entity 锁（W2 实现） |
 
-**架构契约（W2 落地）**：
+**架构契约（v0.2.0 落地）**：
 ```python
 class WriteDomainLock:
     """显式化无冲突域划分，确保同 entity 不被并发修改。"""
@@ -1833,7 +1833,7 @@ INSERT INTO intent_patterns (intent_type, trigger_keywords, entry_edge_types, ma
 
 ### 6.1 核心抽象接口
 
-**W1 冻结范围（硬阻塞）**: `AbstractMemoryStore`、`AbstractAgentCore`、`AbstractVersionManager`、`EmbodiedAdapter`、`ModelRouter`  
+**v0.1.0 冻结范围（硬阻塞）**: `AbstractMemoryStore`、`AbstractAgentCore`、`AbstractVersionManager`、`EmbodiedAdapter`、`ModelRouter`  
 **[FUTURE] 预留接口（v0.4.0+ 启用）**: `IPersonaInjector`、`IMemoryMigrationService`、`ICostTracker`、`ISkillRegistry`、`ISkill` —— v0.1.0 仅冻结空接口签名，Mock 实现返回 `NotImplementedError` 或空值，确保编译与 `test_mock_pipeline.py` 通过。
 
 ```

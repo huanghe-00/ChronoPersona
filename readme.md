@@ -112,7 +112,7 @@ graph TD
     E --> F[Output<br/>Text + 2D Command]
     F --> G[Async Reflection<br/>Entity Link → Graph Update]
     G --> H[(Intent Graph<br/>MVA: Python 内存 dict + deque BFS<br/>W8+: PostgreSQL + Recursive CTE)]
-    C --> I[(Episodic Store<br/>MVA: Simple/Faiss 内存索引<br/>W8+: Qdrant/Milvus 分布式)]
+    C --> I[(Episodic Store<br/>MVA: Simple/Faiss 内存索引<br/>post-v1.0.0: Qdrant/Milvus 分布式)]
     G --> J[(LWW-CRDT<br/>Multi-device Sync)]
 ```
 
@@ -156,7 +156,7 @@ graph TD
 - **双轨评估**：pytest 断言驱动（PASS/FAIL）+ `evaluation/runner.py` 量化指标（Recall@5 / MRR）
 - **测试语义红线**：AIDER.md 5.1/5.2 条硬化，识别并回退"测试迁就实现"
 
-### 7. Prompt 全层注入（W7 交付）
+### 7. Prompt 全层注入（v0.7.0 交付）
 
 - **L1 工作记忆**：最近 N 轮对话压缩后注入 `[Recent Conversation]`
 - **L2 情景记忆**：FAISS/向量检索 Top-K 结果注入 `[Retrieved Memories]`
@@ -167,7 +167,7 @@ graph TD
 
 ---
 
-## 📊 评估框架（W6 完整交付）
+## 📊 评估框架（v0.6.0 完整交付）
 
 | 场景 | 传统 RAG 基线 | ChronoPersona | 提升 |
 |------|--------------|---------------|------|
