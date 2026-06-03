@@ -625,7 +625,7 @@ class SyncManager:
         """
 ```
 
-**W1 实现状态**：`LWWMap`、`HybridTimestamp`、`L0SyncLayer`、`SyncManager` 已全部真实实现并单元测试覆盖。支持 multi-device add-wins、HLC 逻辑时钟、500ms clock-skew 检测与冲突标记。`MockL0SyncLayer` 保留用于快速测试。
+**v0.1.0 实现状态**：`LWWMap`、`HybridTimestamp`、`L0SyncLayer`、`SyncManager` 已全部真实实现并单元测试覆盖。支持 multi-device add-wins、HLC 逻辑时钟、500ms clock-skew 检测与冲突标记。`MockL0SyncLayer` 保留用于快速测试。
 
 **MVA 防御状态（已落地）**：
 - `LWWMap` + `HybridTimestamp` + `SyncManager` 已全部真实实现并单元测试覆盖。
@@ -810,9 +810,9 @@ effective_access = access_count * exp(-days_since_last_access / 30.0)
 
 #### 4.5.3 CAUSED 边三阶策略
 
-**W1 实现状态**：Tier 1（模板匹配）已在 `SimpleInsightEngine` / `memory_system/insight/` 中 MVA 实现，准确率目标 > 95%，召回率 ~40%。不匹配模板时降级为 `CORRELATED` 边。
+**v0.1.0 实现状态**：Tier 1（模板匹配）已在 `SimpleInsightEngine` / `memory_system/insight/` 中 MVA 实现，准确率目标 > 95%，召回率 ~40%。不匹配模板时降级为 `CORRELATED` 边。
 
-Tier 2（统计共现评估）和 Tier 3（LLM 深度因果推理）标记为 `[FUTURE]`，W1 测试文件 `test_caused_tier2.py` 已按规范 `pytest.skip`。
+Tier 2（统计共现评估）和 Tier 3（LLM 深度因果推理）标记为 `[FUTURE]`，v0.1.0 测试文件 `test_caused_tier2.py` 已按规范 `pytest.skip`。
 
 **注意**：当前代码示例仅实现 Tier 1 模板匹配；Tier 2/3 为 `[FUTURE]` 占位，不在 MVA 范围内。
 
@@ -1044,7 +1044,7 @@ ORDER BY path_weight DESC, hop ASC LIMIT 20;
 2. 分层查询（hop_limit 1→2→3，召回足够提前返回）
 3. 对 `semantic_edges(source_id, edge_type, branch_id)` 建立复合索引
 
-**性能验证计划（Week 3 执行）**：
+**性能验证计划（v0.3.0 阶段执行）**：
 - 使用 `EXPLAIN (ANALYZE, BUFFERS)` 在 10,000 节点 / 50,000 边数据集上执行标准 CTE 查询（见 4.5.7 模板），目标 Planning Time < 5ms、Execution Time < 150ms。
 - 若 Execution Time > 200ms，触发优化：增加 `(target_id, edge_type)` 反向索引、或启用 `MATERIALIZED` CTE 缓存中间结果。
 - 性能基线数据写入 `reports/perf_baseline.json`，作为后续回归测试基准。
@@ -1053,9 +1053,9 @@ ORDER BY path_weight DESC, hop ASC LIMIT 20;
 
 | 阶段 | 时间 | 内容 |
 |------|------|------|
-| **Phase 1** | Week 1-2 | 种子注入：200 概念 + 6 条硬编码策略 |
-| **Phase 2** | Week 2-4 | 对话驱动：前 50 轮产 MENTIONS + TEMPORAL_NEXT；50-200 轮积累 IS_A |
-| **Phase 3** | Week 4+ | Insight 驱动：周期性主动反思优化图谱 |
+| **Phase 1** | v0.1.0–v0.2.0 | 种子注入：200 概念 + 6 条硬编码策略 |
+| **Phase 2** | v0.2.0–v0.4.0 | 对话驱动：前 50 轮产 MENTIONS + TEMPORAL_NEXT；50-200 轮积累 IS_A |
+| **Phase 3** | v0.4.0+ | Insight 驱动：周期性主动反思优化图谱 |
 
 **MVO 种子扩展接口**：
 - 配置文件：`configs/mvo_extensions/{domain_name}.yaml`，包含 `concepts` 列表和 `intent_patterns` 列表。
@@ -1182,7 +1182,7 @@ Cost 统计是生产环境必需的可观测性模块，必须在 **Model Router
 - `ICostTracker.record(request: ModelRequest, response: ModelResponse, latency_ms: float, branch_id: str) -> None`
 - `ICostTracker.get_summary(scope: CostScope, branch_id: str, start: datetime, end: datetime) -> CostSummary`
 
-**排期**: W1 冻结接口签名（Mock 实现为空 pass）；W5 与 Model Router 同步实现，作为 Agent 核心循环的可观测性基础。
+**排期**: v0.1.0 冻结接口签名（Mock 实现为空 pass）；v0.5.0 与 Model Router 同步实现，作为 Agent 核心循环的可观测性基础。
 
 ### 4.9 Emotion Engine（双层实现）
 
@@ -1230,7 +1230,7 @@ trainable_emotion_model.py
 - T0 规则引擎：关键词匹配成功 → `confidence = 0.9`；无匹配 → `confidence = 0.5`。
 - `_build_prompt` 仅当 `confidence >= 0.7` 且 `current_state != NEUTRAL` 时注入 `[Emotion State]` 文本段，避免模糊输入触发错误状态转移。
 
-**训练数据规范（Week 5 补充）**：
+**训练数据规范（v0.5.0 阶段补充）**：
 - **数据来源**：从 L2 Episodic Memory 中按 session 采样对话轮次，优先选取情感极性明显的片段（用户明确表达喜怒哀乐）。
 - **标注 schema**：每条样本包含 `(context_text, emotion_label, intensity)`。
   - `emotion_label`: NEUTRAL / CURIOUS / EMPATHETIC / CONCERNED / REFLECTIVE
@@ -1291,7 +1291,7 @@ trainable_emotion_model.py
 
 ### 4.10 2D Virtual Environment（Token→Action Bridge 架构）
 
-**W1 实现状态**：`GridWorldAdapter` 已真实实现（非 Mock），支持 20×20 网格坐标、FOV 锥形视野计算、边界钳制、`action_token` → `LowLevelCommand` 映射。MVA 阶段纯文本描述感知输出，无 Canvas 渲染。Week 7 补极简 HTML 前端。
+**v0.1.0 实现状态**：`GridWorldAdapter` 已真实实现（非 Mock），支持 20×20 网格坐标、FOV 锥形视野计算、边界钳制、`action_token` → `LowLevelCommand` 映射。MVA 阶段纯文本描述感知输出，无 Canvas 渲染。v0.7.0 阶段补极简 HTML 前端。
 
 **核心定位**：不为机器人训练"身体"（VLA），而是构建可跨本体移植的"人格灵魂"。
 
@@ -1368,7 +1368,7 @@ EmbodiedAdapter (ABC)
     └── 映射字典翻译，实现人格-身体解耦
 ```
 
-**MVA 阶段**：纯文本描述，无 Canvas 渲染。Week 7 补极简 HTML 前端。
+**MVA 阶段**：纯文本描述，无 Canvas 渲染。v0.7.0 阶段补极简 HTML 前端。
 
 ### 4.11 Skills System
 
@@ -1530,11 +1530,11 @@ class SkillPermissionDenied(Exception):
 
 **与 RAG 的本质区别**：RAG 是"外部知识注入"（读文档），Dreaming 是"经验学习"（从自身操作历史中提炼启发式规则）。模型权重不变，但系统行为持续进化。
 
-**W1 实现状态**：`SimpleInsightEngine` 已实现 Tier 1 关键词共现（Phase A 骨架）。Phase B 模式提取标记为 `[FUTURE]`，W2 启动轻量级骨架。
+**v0.1.0 实现状态**：`SimpleInsightEngine` 已实现 Tier 1 关键词共现（Phase A 骨架）。Phase B 模式提取标记为 `[FUTURE]`，v0.2.0 启动轻量级骨架。
 
 **MVA 防御状态（已落地）**：
 - `SimpleInsightEngine` 已实现 Tier 1 关键词共现（Phase A 骨架）。
-- Phase B 模式提取标记为 `[FUTURE]`，W2 启动轻量级骨架。
+- Phase B 模式提取标记为 `[FUTURE]`，v0.2.0 启动轻量级骨架。
 - `BehavioralRule` Schema 已预留（`trigger` / `action` / `confidence` / `source_memory_ids` / `branch_id`）。
 
 ### 4.13 差异化遗忘与重要性评分（借鉴行业实践 "Pull on demand, never fill up"）
@@ -1562,7 +1562,7 @@ effective_score = vector_similarity × importance × exp(-elapsed_hours / (ttl_b
 
 **Schema 落地**：`MemoryEntry` 已包含 `importance` / `access_count` / `ttl_hours` / `entropy_gain` / `last_accessed` 字段。`SimpleEpisodicStore.retrieve()` 已按 `importance × freq_boost` 加权排序。
 
-**W1 实现状态**：Schema 与检索加权已落地；指数衰减 `gc()` 与 `entropy_gain` 计算标记为 `[FUTURE]`，W2 实现。
+**v0.1.0 实现状态**：Schema 与检索加权已落地；指数衰减 `gc()` 与 `entropy_gain` 计算标记为 `[FUTURE]`，v0.2.0 实现。
 
 ### 4.14 记忆架构新想法对比评估
 
@@ -1834,7 +1834,7 @@ INSERT INTO intent_patterns (intent_type, trigger_keywords, entry_edge_types, ma
 ### 6.1 核心抽象接口
 
 **W1 冻结范围（硬阻塞）**: `AbstractMemoryStore`、`AbstractAgentCore`、`AbstractVersionManager`、`EmbodiedAdapter`、`ModelRouter`  
-**[FUTURE] 预留接口（W4+ 启用）**: `IPersonaInjector`、`IMemoryMigrationService`、`ICostTracker`、`ISkillRegistry`、`ISkill` —— W1 仅冻结空接口签名，Mock 实现返回 `NotImplementedError` 或空值，确保编译与 `test_mock_pipeline.py` 通过。
+**[FUTURE] 预留接口（v0.4.0+ 启用）**: `IPersonaInjector`、`IMemoryMigrationService`、`ICostTracker`、`ISkillRegistry`、`ISkill` —— v0.1.0 仅冻结空接口签名，Mock 实现返回 `NotImplementedError` 或空值，确保编译与 `test_mock_pipeline.py` 通过。
 
 ```
 AbstractMemoryStore (ABC)
@@ -2086,7 +2086,7 @@ MigrationResult
 - 认证缺失 → `401 Unauthorized`
 - 分支无权限 → `403 Forbidden` + `{"error": "branch_access_denied", "branch_id": "xxx"}`
 
-**排期**: MVA 阶段采用单租户单 Key，权限系统为 `[FUTURE]`；W1 冻结 REST 路径规范，认证中间件留空接口 `IAuthMiddleware`。
+**排期**: MVA 阶段采用单租户单 Key，权限系统为 `[FUTURE]`；v0.1.0 冻结 REST 路径规范，认证中间件留空接口 `IAuthMiddleware`。
 
 ### 6.3 API 契约（REST + WebSocket）
 
@@ -2268,7 +2268,7 @@ WebSocket 传输采用 JSON 序列化，心跳间隔 30s，超时 60s 自动断�
 | A6 | 意图图谱导航 | 结构化检索优于纯向量 | 同一问题分别用"纯向量"和"意图图谱"检索，对比召回 |
 | A6b | CORRELATED 边召回 | 弱相关关系辅助检索 | 查询"和...有关吗"时，CORRELATED 边是否贡献额外召回 |
 
-**W1 已完成的基础测试**：
+**v0.1.0 阶段已完成的基础测试**：
 - `test_intent_graph.py` / `test_intent_navigator.py`：验证 Intent Graph BFS 导航、max_hops 限制、分支隔离、意图模式匹配。为 A6 意图导航精度提供单元级基线。
 - `test_grid_world.py`：验证 FOV 检测、边界钳制、动作 Token 翻译，为 A8/A9 具身感知提供基线。
 - `test_l0_crdt.py`：验证 HLC add-wins、clock-skew 冲突解决、分支隔离，为 A5 多端冲突提供单元级基线。
@@ -2599,17 +2599,17 @@ CONTRADICTS 检测
 | **忽略引用完整性** | 变量重命名 vs 新引用断裂 | L3 边操作使用 Stable ID，而非文本匹配 |
 | **无域划分的并行写入** | 同一文件多 Agent 修改必冲突 | 同层同 entity_id 禁止并发写入（架构契约） |
 
-### 10.4 与当前 W2 排期的对齐建议
+### 10.4 与当前版本排期的对齐建议
 
 基于 `docs/schedule.md` 的 Week 2-4 规划，建议将 Cursor 借鉴点嵌入以下任务：
 
 | 排期任务 | Cursor 借鉴点 | 具体动作 |
 |---------|--------------|---------|
-| **W2: Dreaming 骨架** | Best-of-N Insight 选择 | `MemoryConsolidationAgent` 生成 3 个候选 BehavioralRule，选最优写入 |
-| **W2: L2 指数衰减 GC** | 无冲突域划分 | 明确 `session_id` 作为 L2 物理分区键，session 间永不冲突 |
-| **W3: L3 CTE 导航** | 依赖感知刷盘顺序 | `SyncManager.checkpoint()` 按 IS_A → MENTIONS → CAUSED 拓扑排序 |
-| **W4: Insight 完整实现** | Semantic Merge Agent | `CONTRADICTS` 边触发 LLM 三路仲裁，产出融合洞察 |
-| **W5: Agent 核心循环** | Branch 级 Best-of-N | `StateMachineAgentCore` 支持 `explore_branch(n=3)` 临时分支探索 |
+| **v0.2.0: Dreaming 骨架** | Best-of-N Insight 选择 | `MemoryConsolidationAgent` 生成 3 个候选 BehavioralRule，选最优写入 |
+| **v0.2.0: L2 指数衰减 GC** | 无冲突域划分 | 明确 `session_id` 作为 L2 物理分区键，session 间永不冲突 |
+| **v0.3.0: L3 CTE 导航** | 依赖感知刷盘顺序 | `SyncManager.checkpoint()` 按 IS_A → MENTIONS → CAUSED 拓扑排序 |
+| **v0.4.0: Insight 完整实现** | Semantic Merge Agent | `CONTRADICTS` 边触发 LLM 三路仲裁，产出融合洞察 |
+| **v0.5.0: Agent 核心循环** | Branch 级 Best-of-N | `StateMachineAgentCore` 支持 `explore_branch(n=3)` 临时分支探索 |
 
 ### 10.5 结论
 
@@ -2640,7 +2640,7 @@ ChronoPersona 的当前设计已无意中遵循了此原则：
 | **API 成本超预算** | DS-V4-pro 调用过多 | Model Router 缓存命中率监控，超阈值时切换 Kimi |
 | **PostgreSQL CTE 性能差** | 意图图谱导航慢 | 限制 max_hops ≤ 3，预计算高频路径 |
 | **CRDT 同步复杂度高** | 多端演示难以构建 | MVA 阶段仅演示单端 + 模拟冲突，真实多端放到第二月 |
-| **8周做不完** | 项目无法成型 | Week 4 设置 checkpoint，若 L3 未完成则砍掉 Insight 模块，保核心记忆+评估 |
+| **排期风险** | 项目无法成型 | v0.4.0 设置 checkpoint，若 L3 未完成则砍掉 Insight 模块，保核心记忆+评估 |
 | **外部评审质疑" toy 项目"** | 印象分降低 | 强调架构设计的生产级考量（CRDT、MVCC、量化压缩、模型路由），而非功能堆砌 |
 
 ### 11.1 MVA 设计取舍（明确不采纳项）
