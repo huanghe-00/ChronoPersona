@@ -27,7 +27,7 @@
 | **ActionPlanner** | ✅ 真实实现 | 情感调制表 + `ActionPlan` 可审计 reasoning，NEUTRAL 基准不降速 |
 | **Embodied** | ✅ 真实实现 | `GridWorldAdapter`（20×20 网格、FOV、边界钳制、5 动作真实跨本体映射） |
 | **HTTP API** | ✅ 可用 | `serve_mva.py` 零依赖 HTTP 服务器（`GET /health` + `POST /chat`），返回结构化 JSON |
-| **WebSocket** | 🟡 Stub | `WebSocketGateway` 骨架已就绪，双向实时推送与 Canvas 联动待 W8+ |
+| **WebSocket** | 🟡 Stub | `WebSocketGateway` 骨架已就绪，双向实时推送与 Canvas 联动待 post-v1.0.0 |
 
 ---
 
