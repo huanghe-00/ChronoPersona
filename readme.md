@@ -51,7 +51,7 @@
 
 | 借鉴点 | 行业标杆设计 | ChronoPersona 实现 |
 |--------|----------------|-------------------|
-| **记忆蒸馏** | L2→L3 是密度跃迁（去噪+结构化） | `ReflectionAgent` 两阶段：Phase A 实体链接 + Phase B 模式提取（W2 骨架） |
+| **记忆蒸馏** | L2→L3 是密度跃迁（去噪+结构化） | `ReflectionAgent` 两阶段：Phase A 实体链接 + Phase B 模式提取（v0.2.0 骨架） |
 | **Dreaming** | 空闲时段 Consolidation Agent 固化经验 | `MemoryConsolidationAgent` 每 5 session / 每日凌晨触发，提取 BehavioralRule |
 | **重要性评分** | 信息熵 × 任务关联 × 访问频率 | `MemoryEntry.importance × entropy_gain × log1p(access_count)` 已落地 Schema |
 | **差异化遗忘** | 工作/情景/语义三层不同衰减函数 | L1 会话结束清空、L2 指数衰减 `R=e^(-t/S)`、L3 `deprecated` 反学习 |
@@ -111,7 +111,7 @@ graph TD
     D --> E[ActionPlanner<br/>Token → Action + Emotion Modulation]
     E --> F[Output<br/>Text + 2D Command]
     F --> G[Async Reflection<br/>Entity Link → Graph Update]
-    G --> H[(Intent Graph<br/>MVA: Python 内存 dict + deque BFS<br/>W8+: PostgreSQL + Recursive CTE)]
+    G --> H[(Intent Graph<br/>MVA: Python 内存 dict + deque BFS<br/>post-v1.0.0: PostgreSQL + Recursive CTE)]
     C --> I[(Episodic Store<br/>MVA: Simple/Faiss 内存索引<br/>post-v1.0.0: Qdrant/Milvus 分布式)]
     G --> J[(LWW-CRDT<br/>Multi-device Sync)]
 ```
@@ -150,7 +150,7 @@ graph TD
 - **情感调制**：CONCERNED 状态 → 速度降低 50%、音量降低 20%、社交距离缩短
 - **可审计**：每个动作附带 `reasoning` 字段，追溯"为什么"
 
-### 6. 评估框架（W6 交付）
+### 6. 评估框架（v0.6.0 交付）
 
 - **A1-A11 对抗测试集**：覆盖记忆召回、跨会话关联、角色隔离、多端冲突、意图图谱导航、情感一致性、具身感知、跨本体迁移、动作可审计、人格漂移检测
 - **双轨评估**：pytest 断言驱动（PASS/FAIL）+ `evaluation/runner.py` 量化指标（Recall@5 / MRR）

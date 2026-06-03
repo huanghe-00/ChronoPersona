@@ -250,6 +250,6 @@
 
 | 项 | 不采纳理由 |
 |----|-----------|
-| **Causal Tier 1.5 启发式规则** | 当前 Tier 1 召回率 ~40% 是已知设计取舍（`requirements.md` 4.5.2）。增加启发式规则会引入新的测试负担与误标风险，W6 排期无法收敛。生产环境建议直接上 Tier 2 统计验证或 Tier 3 LLM 验证。 |
+| **Causal Tier 1.5 启发式规则** | 当前 Tier 1 召回率 ~40% 是已知设计取舍（`requirements.md` 4.5.2）。增加启发式规则会引入新的测试负担与误标风险，v0.6.0 阶段排期无法收敛。生产环境建议直接上 Tier 2 统计验证或 Tier 3 LLM 验证。 |
 | **近因偏见显式修正** | 与 `access_count` 时间衰减（P1 已落地）存在耦合，独立 `recency` 项需大量调参。MVA 阶段 `effective_access = access_count * exp(-days/30)` 已足够覆盖。 |
 | **L1 分层保留原始轮次** | 已有 `CompressedSummary.source_turn_ids` 记录被压缩的原始索引。全量"归档区"需 `WorkingMemoryWindow` 存储结构重构（`_turns` + `_archive` 双区），MVA 收益不足以支持风险。 |
