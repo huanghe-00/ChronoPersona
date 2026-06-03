@@ -2,7 +2,7 @@
 
 **版本**: v2.0  
 **基线日期**: 2026-05-22 (周五)  
-**总工期**: 8 个迭代（v0.1.0 ~ v1.0.0）  
+**总工期**: v0.1.0 ~ v2.0.0（MVA + 5 个生产迭代 + 架构换代）  
 **当前状态**: v0.6.0 评估框架已完成，v0.7.0 2D 世界 + 前端进行中，v1.0.0 文档与发布准备启动
 
 ---
@@ -19,6 +19,12 @@
 | **v0.6.0** | 06-15 ~ 06-21 | `embodied`：评估框架 | A1-A11 对抗测试集（**39 文件/400+ 用例**）、量化对比表、**测试语义红线** | ✅ 已完成 |
 | **v0.7.0** | 06-22 ~ 06-28 | `frontend`：2D 世界 + 前端 | GridWorldAdapter **5 动作真实跨本体映射**、WebSocket Gateway Stub、Canvas 骨架、`[Emotion State]` + `[Semantic Facts]` Prompt 注入 | 🟡 进行中 |
 | **v1.0.0** | 06-29 ~ 07-05 | `mva`：文档与发布准备 | README、技术博客、Slide Deck、Demo 脚本、**记忆系统生产优化文档化** | ⚪ 未开始 |
+| **v1.1.0** | 07-06 ~ 07-26 | `production-baseline`：生产基线硬化 | 认证权限、硬预算截断、跨分支隐私过滤、记忆溯源链、WebSocket 真实实现、全链路日志 trace | ⚪ 未开始 |
+| **v1.2.0** | 07-27 ~ 08-16 | `memory-quality`：记忆质量跃迁 | 条件感知蒸馏器、动态重要性重算、检索结果可解释性、边类型纠错、动态 max_hops | ⚪ 未开始 |
+| **v1.3.0** | 08-17 ~ 09-13 | `graph-production`：图谱与检索生产化 | IntentGraph PostgreSQL 持久化、Episodic Store Qdrant 分布式、Intent-Aware 融合、级联更新 | ⚪ 未开始 |
+| **v1.4.0** | 09-14 ~ 10-18 | `cognitive-deepening`：认知仿生深化 | L4 程序记忆、Dream T2–T6 全周期、L5 元记忆、DynamicImportance、动作反馈闭环 | ⚪ 未开始 |
+| **v1.5.0** | 10-19 ~ 11-08 | `agent-autonomy`：智能体自治增强 | 反事实回放、评估 CI 集成、VLA 真实实现、Persona Drift 自动修复、ContextualBias 检索 | ⚪ 未开始 |
+| **v2.0.0** | 11-09 ~ 12-20 | `architecture-refresh`：架构换代 | LangGraph 状态机迁移、真实多端 CRDT 同步、多模态感知、Semantic Merge Agent | ⚪ 未开始 |
 
 ---
 
@@ -171,6 +177,90 @@
 
 ---
 
+### v1.1.0 `production-baseline`：生产基线硬化（3 周）
+
+**目标**：让 MVA 从"能跑 demo"变成"可上线单租户"。
+
+| 阶段 | 重点任务 | 产出物 | 检查标准 |
+|------|---------|--------|---------|
+| 第 1 周 | 认证与权限完整实现 | `IAuthMiddleware` 真实实现 + 多租户 API Key + Branch 级 RBAC | 渗透测试基线：未授权访问 401/403 100% 拦截 |
+| 第 2 周 | 硬预算截断 + 跨分支记忆继承过滤器 | `ICostTracker` 实时累加 + 80% 降级/100% 熔断；`IPrivacyFilter` + `IRelevanceFilter` | 单 session 成本告警准确率 100%，熔断无漏触发 |
+| 第 3 周 | 记忆溯源链 + WebSocket 真实实现 + 全链路日志 trace | `MemoryEntry` / `Fact` `source_memory_ids` 落地；`WebSocketGateway` 双向推送；`loguru` 结构化 trace | 检索结果 100% 可溯源；WebSocket 与 Canvas 联动可用 |
+
+**准入标准**：`make test` 保持 400+ passed，覆盖率不下降；渗透测试与预算告警同时通过。
+
+---
+
+### v1.2.0 `memory-quality`：记忆质量跃迁（3 周）
+
+**目标**：解决"条件丢失"、"幻觉注入"、"重要性僵化"。
+
+| 阶段 | 重点任务 | 产出物 | 检查标准 |
+|------|---------|--------|---------|
+| 第 1 周 | 条件感知蒸馏器 + 动态重要性重算 | `ReflectionAgent` Phase B NLP 条件句识别（`spacy` 依存解析）；月度批量重要性审计任务 | Dreaming 条件句保留率 ≥ 90%（人工抽检 100 条） |
+| 第 2 周 | Spindle Gating 完整版 + 检索结果可解释性 | `InsightScheduler` `importance_score` + `confidence` 双门槛；`RetrievedContext.navigation_path` 详细溯源 | 检索结果 100% 附带 `navigation_path` |
+| 第 3 周 | 边类型纠错 + 动态 max_hops | `EdgeBuilder` 置信度追踪与自动升级；按边类型配置 `max_hops` | `CORRELATED` → `CAUSED` 升级准确率 ≥ 80% |
+
+**准入标准**：重要性重算后，用户核心偏好零误删；A6 Recall@5 保持 ≥ 0.8。
+
+---
+
+### v1.3.0 `graph-production`：图谱与检索生产化（4 周）
+
+**目标**：IntentGraph 从"内存 dict"走向生产级持久化与分布式。
+
+| 阶段 | 重点任务 | 产出物 | 检查标准 |
+|------|---------|--------|---------|
+| 第 1-2 周 | IntentGraph 持久化 + Episodic Store 分布式化 | PostgreSQL Recursive CTE 替换内存 BFS；`FaissEpisodicStore` → `QdrantEpisodicStore` | 10 万节点/50 万边 CTE P99 < 200ms；Qdrant 单节点降级不丢数据 |
+| 第 3 周 | HybridRetriever Intent-Aware 融合 + 级联更新 | `HybridRetriever` `intent` 精确匹配 + 相似度降级；图边传播局部向量 delta | Intent-Aware 融合后 A6 Recall@5 ≥ 0.85 |
+| 第 4 周 | 语义边类型扩展评估 | 按需新增 `supports` / `generalizes` / `specializes` / `co_occurs` | 节点数 >50K 后评估必要性，不强制引入 |
+
+**准入标准**：图谱持久化后 A1-A11 评估集无回归；Qdrant 集群故障时降级读取可用。
+
+---
+
+### v1.4.0 `cognitive-deepening`：认知仿生深化（5 周）
+
+**目标**：补齐 L4/L5 层级，实现 Dream 完整周期与元记忆。
+
+| 阶段 | 重点任务 | 产出物 | 检查标准 |
+|------|---------|--------|---------|
+| 第 1-2 周 | L4 Procedural Memory 层 + Dream T2–T4 | `ActionPlanner` + `ISkill` 显式程序记忆；`BehavioralRule` 自动晋升；T2 冲突消解、T3 模式分离、T4 系统巩固 | L4 规则自动晋升准确率 ≥ 80%（人工审核） |
+| 第 3-4 周 | Dream T5–T6 + L5 Meta-Memory 层 | T5 程序结晶（L4 晋升）、T6 元记忆更新；`Memory Worth` + 自适应检索策略权重 + Meta-Dream | Meta-Memory 动态权重调整后 A6 召回波动 < 5% |
+| 第 5 周 | DynamicImportance + 动作执行后感知反馈闭环 | `successful_uses` / `failed_uses` 追踪；`GridWorldAdapter.execute()` 环境 diff 回写 L2 | Dream 完整周期端到端可用 |
+
+**准入标准**：Dream 完整周期端到端可用（触发 → 提取 → 仲裁 → 巩固 → 结晶 → 元更新）。
+
+---
+
+### v1.5.0 `agent-autonomy`：智能体自治增强（3 周）
+
+**目标**：自学习、自审计、复杂推理。
+
+| 阶段 | 重点任务 | 产出物 | 检查标准 |
+|------|---------|--------|---------|
+| 第 1 周 | 评估框架 CI 集成 + Stochastic Replay | nightly 自动化评估流水线 + `locust` 性能回归；LLM 生成反事实变体压力测试因果结构 | 反事实回放不破坏图谱一致性 |
+| 第 2 周 | VLA 可插拔接口真实实现 + Persona Drift 自动修复 | `predict_action()` 接入微调 VLA 模型（替换 LLM default）；相似度 < 0.75 自动强化注入 Persona Anchor | VLA 模型 grid_2d 动作预测准确率 ≥ 85% |
+| 第 3 周 | ContextualBias / Cluster 感知检索 | 基于话题聚类的上下文检索偏置 | 全量评估 nightly 运行，失败自动告警 |
+
+**准入标准**：VLA 动作预测 ≥ 85%；全量评估 nightly 自动化通过。
+
+---
+
+### v2.0.0 `architecture-refresh`：架构换代（6 周）
+
+**目标**：解决手写状态机维护瓶颈，引入多模态。
+
+| 阶段 | 重点任务 | 产出物 | 检查标准 |
+|------|---------|--------|---------|
+| 第 1-2 周 | LangGraph 状态机迁移 | `StateMachineAgentCore` → `StateGraph`，节点化 + 条件边路由 + 循环回退 | LangGraph 状态机 100% 兼容 A1-A11 评估集 |
+| 第 3-4 周 | 真实多设备 CRDT 同步 + 多模态感知 | 手机/车机/音箱三端真实 WebSocket 组网；FOV 视觉+文本（CLIP 编码图像特征注入 L1） | 三端 CRDT 冲突收敛时间 < 3 秒；多模态端到端延迟增加 < 200ms |
+| 第 5-6 周 | Semantic Merge Agent + 架构固化 | `CONTRADICTS` 高价值冲突触发 LLM 三路仲裁（Base/Left/Right），产出融合洞察 | 仲裁产出融合洞察准确率 ≥ 80%（人工抽检） |
+
+**准入标准**：A1-A11 评估集 100% 通过；三端真实组网同步可用。
+
+---
+
 ## 4. 关键里程碑与 Go/No-Go Checkpoint
 
 | 检查点 | 日期 | 通过标准 | 未通过兜底 |
@@ -219,37 +309,75 @@
 
 ---
 
-## 7. Beyond MVA：记忆系统生产级优化路线图（post-v1.0.0）
+## 7. v1.1.0+ 生产级优化路线图
 
-以下优化项在 MVA 阶段已识别并文档化，但因排期/复杂度原因推迟至生产环境实施：
+以下优化项按版本号分组，从生产基线硬化到架构换代，共 5 个生产迭代 + 1 次架构换代。
 
-| 优先级 | 优化项 | 解决的问题 | 依赖条件 | 预估工时 |
-|:------:|--------|-----------|---------|---------|
-| P1 | **条件感知蒸馏器** | 归纳遗漏（条件剥离） | NLP 条件句识别模块 | 3d |
-| P1 | **记忆溯源链** | 幻觉注入、评估脱节 | `MemoryEntry`/`Fact` Schema 扩展 | 2d |
-| P2 | **动态重要性重算** | 短期波动固化、遗忘曲线僵化 | 定时任务 + 全表扫描基础设施 | 4d |
-| P2 | **硬预算截断** | 成本失控 | 实时 token 计数器 | 2d |
-| P2 | **跨分支记忆继承过滤器** | 跨分支污染 | `IPrivacyFilter` + `IRelevanceFilter` 接口 | 3d |
-| P3 | **边类型纠错机制** | 错误分类（边类型误标） | EdgeBuilder 置信度追踪增强 | 2d |
-| P3 | **动态 max_hops** | 多跳推理断裂 | 按边类型配置 max_hops | 1d |
-| P3 | **动作执行后感知反馈闭环** | 动作-结果记忆对缺失 | 2D 环境状态变化回写 L2 | 2d |
-| P3 | **检索结果可解释性** | "Recall@5 高但用户感觉健忘" | `navigation_path` 详细填充 | 2d |
-| P1 | **LangGraph 状态机迁移** | 手写状态机难以维护复杂分支（条件跳转、循环、中断恢复） | 引入 `langgraph` 库，将 `StateMachineAgentCore` 重构为 `StateGraph`；定义 Input/Intent/Memory/LLM/Action/Output 节点，条件边路由 + 循环回退机制 | 3d |
-| P2 | **IntentGraph 持久化（PostgreSQL + CTE）** | MVA 纯内存结构，进程重启丢失图谱；无数据库执行计划优化与索引加速 | PostgreSQL 14+，`(source_id, edge_type)` 复合索引，`MATERIALIZED` CTE hint | 4d |
-| P2 | **Episodic Store 分布式化（Qdrant）** | 本地 FAISS `IndexFlatIP` 无法横向扩展，重启需重建索引 | Qdrant HNSW 服务端，多副本、动态扩缩容、快照恢复 | 3d |
-| P3 | **HybridRetriever Intent-Aware 融合** | `SimpleEpisodicStore` 层 `intent` 参数未消费，意图过滤仅在 `MemoryNode` 层粗略执行 | `HybridRetriever` 层实现 `intent` 与 `IntentPattern` 精确匹配过滤；支持 intent 相似度降级 | 1d |
-| P1 | **L4 Procedural Memory 层** | 将 ActionPlanner + Skill 升级为显式程序记忆，支持 BehavioralRule 自动晋升（freq≥3, valence>0.5, 无负向经历） | L3 积累足够规则数据 | 4d |
-| P1 | **Dream Phase T2–T6** | T2 冲突消解 LLM 仲裁、T3 模式分离/重嵌入、T4 系统巩固（L2→L3 抽象）、T5 程序结晶（L4 晋升）、T6 元记忆更新 | T1 去重稳定运行 | 12d（分批） |
-| P2 | **L5 Meta-Memory 层** | Memory Worth + 自适应检索策略权重动态调整 + Meta-Dream | 多轮检索 outcome 数据积累 | 5d |
-| P2 | **DynamicImportance（基于 outcome）** | 追踪 successful_uses/failed_uses 动态调整重要性分数 | L5 Meta-Memory 基础设施 | 3d |
-| P3 | **Engram Cascade Update** | 图边传播局部向量 delta，避免全局重嵌入 | 数据量 >100K 或 Qdrant 迁移后 | 4d |
-| P3 | **Stochastic Replay / Counterfactuals** | 随机反事实回放压力测试因果结构 | 实验性分支 | 4d |
-| P3 | **语义边类型扩展** | 新增 supports / generalizes / specializes / co_occurs 等边类型 | L3 节点数 >50K 后评估 | 2d |
+### v1.1.0 `production-baseline`：生产基线硬化（3 周）
 
-**明确不采纳项（MVA 设计取舍）**：
+| 优化项 | 解决的问题 | 依赖条件 | 预估工时 |
+|--------|-----------|---------|---------|
+| **认证与权限完整实现** | MVA 单 Key 无隔离 | 多租户 API Key + Branch 级 RBAC | 3d |
+| **硬预算截断** | 成本失控 | 实时 token 计数器 + 80%/100% 阈值 | 2d |
+| **跨分支记忆继承过滤器** | 跨分支污染 | `IPrivacyFilter` + `IRelevanceFilter` | 3d |
+| **记忆溯源链** | 幻觉注入、评估脱节 | `MemoryEntry`/`Fact` Schema 扩展 | 2d |
+| **WebSocket 真实实现** | 前端联动不可用 | `WebSocketGateway` 双向推送 + Canvas | 2d |
+| **全链路日志 trace** | 可观测性不足 | `loguru` 结构化 + 请求链 ID | 1d |
+
+### v1.2.0 `memory-quality`：记忆质量跃迁（3 周）
+
+| 优化项 | 解决的问题 | 依赖条件 | 预估工时 |
+|--------|-----------|---------|---------|
+| **条件感知蒸馏器** | 归纳遗漏（条件剥离） | NLP 条件句识别模块 | 3d |
+| **动态重要性重算** | 短期波动固化、遗忘曲线僵化 | 定时任务 + 全表扫描基础设施 | 4d |
+| **Spindle Gating 完整版** | 低价值 Insight 堆积 | `importance_score` + `confidence` 双门槛 | 1d |
+| **检索结果可解释性** | "Recall@5 高但用户感觉健忘" | `navigation_path` 详细填充 | 2d |
+| **边类型纠错机制** | 错误分类（边类型误标） | EdgeBuilder 置信度追踪增强 | 2d |
+| **动态 max_hops** | 多跳推理断裂 | 按边类型配置 max_hops | 1d |
+
+### v1.3.0 `graph-production`：图谱与检索生产化（4 周）
+
+| 优化项 | 解决的问题 | 依赖条件 | 预估工时 |
+|--------|-----------|---------|---------|
+| **IntentGraph 持久化** | MVA 纯内存，进程重启丢失 | PostgreSQL 14+ + Recursive CTE | 4d |
+| **Episodic Store 分布式化** | FAISS 无法横向扩展 | Qdrant HNSW + 多副本 + 快照恢复 | 3d |
+| **HybridRetriever Intent-Aware 融合** | `intent` 参数未消费 | `HybridRetriever` 精确匹配 + 降级 | 1d |
+| **Engram Cascade Update** | 全局重嵌入成本高 | 数据量 >100K 或 Qdrant 迁移后 | 4d |
+| **语义边类型扩展** | 关系表达不足 | L3 节点数 >50K 后评估 | 2d |
+
+### v1.4.0 `cognitive-deepening`：认知仿生深化（5 周）
+
+| 优化项 | 解决的问题 | 依赖条件 | 预估工时 |
+|--------|-----------|---------|---------|
+| **L4 Procedural Memory 层** | Skill/Rule 未显式固化 | L3 积累足够 `BehavioralRule` 数据 | 4d |
+| **Dream Phase T2–T6** | Dream 仅 T1，缺少完整周期 | T1 去重稳定运行 | 12d（分批） |
+| **L5 Meta-Memory 层** | 无自监控层 | 多轮检索 outcome 数据积累 | 5d |
+| **DynamicImportance（基于 outcome）** | 重要性无反馈闭环 | L5 Meta-Memory 基础设施 | 3d |
+| **动作执行后感知反馈闭环** | 动作-结果记忆对缺失 | 2D 环境状态变化回写 L2 | 2d |
+
+### v1.5.0 `agent-autonomy`：智能体自治增强（3 周）
+
+| 优化项 | 解决的问题 | 依赖条件 | 预估工时 |
+|--------|-----------|---------|---------|
+| **Stochastic Replay / Counterfactuals** | 因果结构压力测试不足 | 实验性分支 | 4d |
+| **评估框架 CI 集成** | 评估无法自动化回归 | nightly 流水线 + `locust` 基准 | 2d |
+| **VLA 可插拔接口真实实现** | `[VLA-PLACEHOLDER]` 未解禁 | 微调 VLA 模型（替换 LLM default） | 3d |
+| **Persona Drift 自动修复** | 漂移需人工干预 | 检测相似度 < 0.75 自动强化 Anchor | 1d |
+| **ContextualBias / Cluster 感知检索** | 检索缺乏话题感知 | 话题聚类模块 | 2d |
+
+### v2.0.0 `architecture-refresh`：架构换代（6 周）
+
+| 优化项 | 解决的问题 | 依赖条件 | 预估工时 |
+|--------|-----------|---------|---------|
+| **LangGraph 状态机迁移** | 手写状态机维护瓶颈 | `langgraph` 库 + `StateGraph` 重构 | 3d |
+| **真实多设备 CRDT 同步** | MVA 仅单端模拟 | 手机/车机/音箱三端 WebSocket 组网 | 3d |
+| **多模态感知** | FOV 仅文本描述 | CLIP 编码图像特征注入 L1 | 4d |
+| **Semantic Merge Agent** | CONTRADICTS 无智能仲裁 | LLM 三路仲裁（Base/Left/Right） | 3d |
+
+**明确不采纳项（MVA 设计取舍，v1.1.0+ 仍不采纳）**：
 
 | 项 | 不采纳理由 |
 |----|-----------|
-| **Causal Tier 1.5 启发式规则** | 当前 Tier 1 召回率 ~40% 是已知设计取舍（`requirements.md` 4.5.2）。增加启发式规则会引入新的测试负担与误标风险，v0.6.0 阶段排期无法收敛。生产环境建议直接上 Tier 2 统计验证或 Tier 3 LLM 验证。 |
-| **近因偏见显式修正** | 与 `access_count` 时间衰减（P1 已落地）存在耦合，独立 `recency` 项需大量调参。MVA 阶段 `effective_access = access_count * exp(-days/30)` 已足够覆盖。 |
-| **L1 分层保留原始轮次** | 已有 `CompressedSummary.source_turn_ids` 记录被压缩的原始索引。全量"归档区"需 `WorkingMemoryWindow` 存储结构重构（`_turns` + `_archive` 双区），MVA 收益不足以支持风险。 |
+| **Causal Tier 1.5 启发式规则** | 当前 Tier 1 召回率 ~40% 是已知设计取舍。增加启发式规则会引入新的测试负担与误标风险，生产环境建议直接上 Tier 2 统计验证或 Tier 3 LLM 验证。 |
+| **近因偏见显式修正** | 与 `access_count` 时间衰减（已落地）存在耦合，独立 `recency` 项需大量调参。`effective_access = access_count * exp(-days/30)` 已足够覆盖。 |
+| **L1 分层保留原始轮次** | 已有 `CompressedSummary.source_turn_ids` 记录被压缩的原始索引。全量归档区需存储结构重构，收益不足以支持风险。 |
