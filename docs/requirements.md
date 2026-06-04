@@ -1956,6 +1956,10 @@ MemoryEntry
 ├── ttl_hours: Optional[float]  -- 指数衰减参数
 ├── entropy_gain: Optional[float]  -- 信息熵增益
 ├── last_accessed: Optional[str]   -- 最近访问时间
+├── admission_score: Optional[float]  -- A-MAC 准入评分 (v0.7.0)
+├── abstracted_fact: Optional[str]  -- Reflection Agent 异步生成的抽象事实 (v0.7.0)
+├── affective_valence: Optional[float]  -- T0 情感引擎映射 (-1.0~+1.0) (v0.7.0)
+├── source_turn_index: Optional[int]  -- 来源对话轮次索引 (v0.7.0)
 └── metadata: Dict
 
 RetrievedContext

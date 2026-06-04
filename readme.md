@@ -11,7 +11,7 @@
 **ChronoPersona** 是一个**技术探索项目**，专注于将**人格工程（Persona Engineering）**与**长期记忆架构（Long-term Memory）**的前沿理念进行模块化融合与系统验证。我们通过可插拔的组件设计——包括 MVCC 版本化记忆分支、CRDT 多端同步、意图图谱导航、认知仿生记忆蒸馏与情感调制——构建一个可组合、可观测、可评估的 Agent 实验平台。项目核心目标在于**验证人格与记忆的跨上下文迁移机制**：同一套人格锚点（Persona Anchor）与记忆图谱可在不同角色分支、多设备环境乃至异构机器人本体间实现一致性迁移与隔离，探索"灵魂"与"身体"解耦后的 Agent 架构边界。
 
 **定位**：技术探索项目 | **周期**：8 个迭代（MVA） | **核心语言**：Python  
-**当前状态**：v0.7.0 2D 世界 + 前端骨架 80% 就位 — **400+ passed, 1 skipped, 94% coverage**
+**当前状态**：v0.7.0 穿插改进与前端骨架已落地 — **432 passed, 1 skipped, 94% coverage**，准备进入 v1.0.0 MVA 冻结
 
 ## 🚀 项目状态
 
@@ -29,7 +29,7 @@
 | **ActionPlanner** | ✅ 真实实现 | 情感调制表 + `ActionPlan` 可审计 reasoning，NEUTRAL 基准不降速 |
 | **Embodied** | ✅ 真实实现 | `GridWorldAdapter`（20×20 网格、FOV、边界钳制、5 动作真实跨本体映射） |
 | **HTTP API** | ✅ 可用 | `serve_mva.py` 零依赖 HTTP 服务器（`GET /health` + `POST /chat`），返回结构化 JSON |
-| **WebSocket** | 🟡 骨架已完成 | `WebSocketGateway` 双向推送已落地，`serve_mva.py` + `canvas.js` 联调可用（运行前需 `pip install websockets`） |
+| **WebSocket** | ✅ 骨架已完成 | `WebSocketGateway` 双向推送已落地，`serve_mva.py` + `canvas.js` 联调可用（运行前需 `pip install websockets`） |
 
 ---
 
@@ -100,7 +100,7 @@ curl -X POST http://localhost:8765/chat \
 - **v0.4.0** ✅ Insight 完整实现 + CAUSED Tier 2 + A1/A2 召回测试
 - **v0.5.0** ✅ Agent 核心循环 + ActionPlanner + H1 情感时序修复 + LSTM 监督骨架 + `[Emotion State]` Prompt 注入
 - **v0.6.0** ✅ A1-A11 对抗测试集（39 文件/400+ 用例）+ `evaluation/runner.py` 自动化报告 + 测试语义红线硬化
-- **v0.7.0** 🟡 2D Canvas 前端 + WebSocket 联调骨架已完成，穿插改进已落地（`GridWorldAdapter` 5 动作真实跨本体映射已落地）
+- **v0.7.0** ✅ 2D Canvas 前端 + WebSocket 联调骨架已完成，穿插改进已落地（A-MAC / L1 Budget / Engram Schema / Spindle Gating / Affective VAD）
 - **v1.0.0** ⚪ 技术博客 + Slide Deck + 演示准备
 
 ## 系统架构
