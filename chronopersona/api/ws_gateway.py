@@ -71,8 +71,34 @@ class WebSocketGateway:
     def broadcast_state(self, state: Dict[str, Any]) -> int:
         """Broadcast embodied state to all connected clients.
 
+        MVA: Synchronous broadcast for simple servers.
         Returns:
             Number of clients broadcasted to.
         """
-        logger.info("Broadcast embodied state to {} clients", len(self._clients))
-        return len(self._clients)
+        import json
+
+        sent = 0
+        for client_id, socket in list(self._clients.items()):
+            try:
+                if hasattr(socket, "send"):
+                    socket.send(json.dumps({"event": "embodied.state", "data": state}))
+                    sent += 1
+            except Exception as e:
+                logger.warning("Failed to broadcast to {}: {}", client_id, e)
+                self.unregister_client(client_id)
+        logger.info("Broadcast embodied state to {}/{} clients", sent, len(self._clients))
+        return sent
+
+    async def broadcast_state_async(self, state: Dict[str, Any]) -> int:
+        """Async broadcast for asyncio-based servers."""
+        import json
+
+        sent = 0
+        for client_id, socket in list(self._clients.items()):
+            try:
+                await socket.send(json.dumps({"event": "embodied.state", "data": state}))
+                sent += 1
+            except Exception as e:
+                logger.warning("Failed to broadcast to {}: {}", client_id, e)
+                self.unregister_client(client_id)
+        return sent

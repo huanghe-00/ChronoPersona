@@ -49,15 +49,63 @@ function log(msg) {
     div.scrollTop = div.scrollHeight;
 }
 
+const WS_URL = 'ws://localhost:8765/ws';
+let ws = null;
+let agentState = { x: 3, y: 4, theta: 0 };
+
+function connectWebSocket() {
+    ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+        log('WebSocket connected');
+    };
+
+    ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.event === 'chat.reply') {
+            log(`Agent: ${msg.data.reply_text || '(no text)'}`);
+            if (msg.data.action_plan && msg.data.action_plan.reasoning) {
+                log(`Reasoning: ${msg.data.action_plan.reasoning}`);
+            }
+        } else if (msg.event === 'embodied.state') {
+            const s = msg.data;
+            agentState = { x: s.x, y: s.y, theta: s.theta || 0 };
+            // Redraw canvas with new state
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            drawObject(2, 3, 'sofa');
+            drawObject(3, 2, 'table');
+            if (s.fov_objects) {
+                s.fov_objects.forEach((obj, idx) => {
+                    drawObject(2 + idx, 3 - idx, obj);
+                });
+            }
+            drawAgent(agentState.x, agentState.y, agentState.theta);
+            log(`State update: (${s.x}, ${s.y}) θ=${s.theta}`);
+        }
+    };
+
+    ws.onclose = () => {
+        log('WebSocket disconnected, retrying in 3s...');
+        setTimeout(connectWebSocket, 3000);
+    };
+
+    ws.onerror = (err) => {
+        log('WebSocket error');
+        console.error(err);
+    };
+}
+
 function sendMsg() {
     const input = document.getElementById('msg');
     const text = input.value.trim();
     if (!text) return;
     log(`User: ${text}`);
-    // MVA: simulate async response; W7+ integrates real WebSocket
-    setTimeout(() => {
-        log('Agent: (MVA stub — WebSocket integration pending)');
-    }, 300);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ message: text, branch_id: 'main' }));
+    } else {
+        log('WebSocket not connected, message queued');
+    }
     input.value = '';
 }
 
@@ -65,5 +113,6 @@ function sendMsg() {
 drawGrid();
 drawObject(2, 3, 'sofa');
 drawObject(3, 2, 'table');
-drawAgent(3, 4, 0);
+drawAgent(agentState.x, agentState.y, agentState.theta);
 log('MVA: 2D world initialized. Grid 20x20, Agent at (3,4).');
+connectWebSocket();
