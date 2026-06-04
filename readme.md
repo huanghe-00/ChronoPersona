@@ -17,6 +17,8 @@
 
 **v0.6.0 评估框架已完成**：`make test` **400+ passed, 1 skipped, 0 failed** | 语句覆盖率 **94%**
 
+**v0.7.0 穿插改进进行中**：A-MAC 准入评分、L1 Budget 硬截断、Engram Schema 扩展、Spindle Gating、Affective VAD 轻量扩展（详见下方架构亮点）。
+
 | 层级 | 状态 | 关键交付 |
 |------|------|---------|
 | **L0 CRDT** | ✅ 真实实现 | `LWWMap` + `HybridTimestamp` + `SyncManager`，支持多设备 add-wins 与 clock-skew 检测 |
@@ -98,7 +100,7 @@ curl -X POST http://localhost:8765/chat \
 - **v0.4.0** ✅ Insight 完整实现 + CAUSED Tier 2 + A1/A2 召回测试
 - **v0.5.0** ✅ Agent 核心循环 + ActionPlanner + H1 情感时序修复 + LSTM 监督骨架 + `[Emotion State]` Prompt 注入
 - **v0.6.0** ✅ A1-A11 对抗测试集（39 文件/400+ 用例）+ `evaluation/runner.py` 自动化报告 + 测试语义红线硬化
-- **v0.7.0** 🟡 2D Canvas 前端 + WebSocket 联调 + MVA 启动脚本（`GridWorldAdapter` 5 动作真实跨本体映射已落地）
+- **v0.7.0** 🟡 2D Canvas 前端 + WebSocket 联调 + A-MAC / L1 Budget / Engram Schema / Spindle Gating / Affective VAD 穿插改进 + MVA 启动脚本（`GridWorldAdapter` 5 动作真实跨本体映射已落地）
 - **v1.0.0** ⚪ 技术博客 + Slide Deck + 演示准备
 
 ## 系统架构
@@ -164,6 +166,18 @@ graph TD
 - **Insight 洞察**：`ReflectionAgent` 提取的模式与冲突注入 `[Insights]`
 - **Emotion 状态**：T0 规则引擎动态更新的情感状态注入 `[Emotion State]`（`confidence >= 0.7` 且非 NEUTRAL 时触发）
 - **具身感知**：2D 环境 FOV 物体列表注入 `[Embodied State]`
+
+### 8. MVA 穿插改进（v0.7.0 落地）
+
+基于 `docs/interview/ChronaPersona_Memory_System_some_new_ideas.md` 评估后**立刻采纳**的 5 项生产级增强：
+
+| 改进项 | 核心设计 | 解决的问题 |
+|--------|---------|-----------|
+| **A-MAC 准入评分** | 整合 `importance/access_count/ttl_hours` 为 `AdmissionScore`，增加 `TypePrior` 硬编码权重（procedural=1.0, preference=0.9, fact=0.6, chitchat=0.1）；`SimpleEpisodicStore.add()` 入口两级阈值拦截：<0.40 丢弃、0.40–0.65 仅 L2、≥0.65 L2+L3 | 低价值闲聊噪声污染向量库 |
+| **L1 Budget 显式分层** | 按实际 4K–8K token 预算硬分配：`session_history=40%` / `retrieved_memories=30%` / `persona_anchor=20%` / `scratchpad=10%`，`WorkingMemoryWindow` 超限层硬截断 | Persona Anchor 挤占用户对话历史 |
+| **Engram Schema 简化扩展** | `MemoryEntry` 新增 `abstracted_fact`（Reflection 异步生成）、`affective_valence`（T0 情感映射）、`source_turn_index`；`relation_graph` 保留为 Reflection Agent 异步产物，不阻塞主链路 | 反射提取时信息不足，主链路延迟大 |
+| **Spindle Gating** | `InsightScheduler` 增加 `importance_score ≥ 0.7` 硬门槛，低于门槛的记忆标记为 `latent`，不进入 `SimpleInsightEngine` 处理队列 | 低价值 Insight 堆积，Dream 噪声高 |
+| **Affective VAD 轻量扩展** | `EmotionState` 新增 `valence`（-1.0~+1.0）与 `arousal`（0.0~1.0），T0 规则引擎按状态映射初始值，接入 `ActionPlanner.EMOTION_BEHAVIOR_MODULATION` 表；**舍弃 Dominance 维度**（Companion 场景 ROI 低） | 情感调制粒度不足，物理行为参数僵化 |
 
 ---
 
