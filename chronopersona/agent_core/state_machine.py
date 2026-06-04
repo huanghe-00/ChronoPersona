@@ -230,6 +230,8 @@ class StateMachineAgentCore(AbstractAgentCore):
                 intensity=0.7,
                 trigger_reason="User expressed negative emotion",
                 confidence=0.9,
+                valence=-0.7,
+                arousal=0.6,
             )
         if any(w in text for w in positive_words):
             return EmotionState(
@@ -237,11 +239,15 @@ class StateMachineAgentCore(AbstractAgentCore):
                 intensity=0.5,
                 trigger_reason="User expressed positive emotion",
                 confidence=0.9,
+                valence=0.6,
+                arousal=0.4,
             )
         return EmotionState(
             current_state=EmotionLabel.NEUTRAL,
             intensity=0.0,
             confidence=0.5,
+            valence=0.0,
+            arousal=0.0,
         )
 
     def get_memory_summary(self, branch_id: str) -> str:

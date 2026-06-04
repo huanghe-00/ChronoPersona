@@ -17,7 +17,7 @@
 
 **v0.6.0 评估框架已完成**：`make test` **400+ passed, 1 skipped, 0 failed** | 语句覆盖率 **94%**
 
-**v0.7.0 穿插改进进行中**：A-MAC 准入评分、L1 Budget 硬截断、Engram Schema 扩展、Spindle Gating、Affective VAD 轻量扩展（详见下方架构亮点）。
+**v0.7.0 穿插改进已落地**：A-MAC 准入评分、L1 Budget 硬截断、Engram Schema 扩展、Spindle Gating、Affective VAD 轻量扩展（详见下方架构亮点）。前端 Canvas + WebSocket 联调骨架已完成。
 
 | 层级 | 状态 | 关键交付 |
 |------|------|---------|
@@ -29,7 +29,7 @@
 | **ActionPlanner** | ✅ 真实实现 | 情感调制表 + `ActionPlan` 可审计 reasoning，NEUTRAL 基准不降速 |
 | **Embodied** | ✅ 真实实现 | `GridWorldAdapter`（20×20 网格、FOV、边界钳制、5 动作真实跨本体映射） |
 | **HTTP API** | ✅ 可用 | `serve_mva.py` 零依赖 HTTP 服务器（`GET /health` + `POST /chat`），返回结构化 JSON |
-| **WebSocket** | 🟡 Stub | `WebSocketGateway` 骨架已就绪，双向实时推送与 Canvas 联动待 post-v1.0.0 |
+| **WebSocket** | 🟡 骨架已完成 | `WebSocketGateway` 双向推送已落地，`serve_mva.py` + `canvas.js` 联调可用（运行前需 `pip install websockets`） |
 
 ---
 
@@ -100,7 +100,7 @@ curl -X POST http://localhost:8765/chat \
 - **v0.4.0** ✅ Insight 完整实现 + CAUSED Tier 2 + A1/A2 召回测试
 - **v0.5.0** ✅ Agent 核心循环 + ActionPlanner + H1 情感时序修复 + LSTM 监督骨架 + `[Emotion State]` Prompt 注入
 - **v0.6.0** ✅ A1-A11 对抗测试集（39 文件/400+ 用例）+ `evaluation/runner.py` 自动化报告 + 测试语义红线硬化
-- **v0.7.0** 🟡 2D Canvas 前端 + WebSocket 联调 + A-MAC / L1 Budget / Engram Schema / Spindle Gating / Affective VAD 穿插改进 + MVA 启动脚本（`GridWorldAdapter` 5 动作真实跨本体映射已落地）
+- **v0.7.0** 🟡 2D Canvas 前端 + WebSocket 联调骨架已完成，穿插改进已落地（`GridWorldAdapter` 5 动作真实跨本体映射已落地）
 - **v1.0.0** ⚪ 技术博客 + Slide Deck + 演示准备
 
 ## 系统架构
