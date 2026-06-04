@@ -1,4 +1,9 @@
-"""ActionPlanner implementation."""
+"""ActionPlanner implementation with VAD-aware modulation.
+
+v0.7.0: Integrates EmotionState.valence and .arousal into
+the EMOTION_BEHAVIOR_MODULATION table for fine-grained
+speed/volume/proximity adjustments.
+"""
 
 import re
 from typing import Dict
