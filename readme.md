@@ -1,6 +1,6 @@
 # ChronoPersona
 
-> **带镣铐的架构：为 AI Companion 构建一个不会失忆、不串台、可跨本体移植的长期记忆大脑**
+> **人格与记忆的模块化融合：探索可迁移 Agent 架构的前沿验证平台**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -8,7 +8,7 @@
 [![Tests: 400+ passed](https://img.shields.io/badge/tests-400%2B%20passed-success.svg)]()
 [![Coverage: 94%](https://img.shields.io/badge/coverage-94%25-success.svg)]()
 
-**ChronoPersona** 是一个面向生产级 AI Agent 的长期记忆系统，核心差异化在于将**分布式一致性（CRDT）**与**版本化记忆（MVCC）**引入 Agent 记忆架构，解决多端同步冲突、角色人格漂移、记忆幻觉三大痛点。同时通过 **Token→Action Bridge** 实现人格与身体的解耦，使同一套"灵魂"可零样本迁移到任意机器人本体。
+**ChronoPersona** 是一个**技术探索项目**，专注于将**人格工程（Persona Engineering）**与**长期记忆架构（Long-term Memory）**的前沿理念进行模块化融合与系统验证。我们通过可插拔的组件设计——包括 MVCC 版本化记忆分支、CRDT 多端同步、意图图谱导航、认知仿生记忆蒸馏与情感调制——构建一个可组合、可观测、可评估的 Agent 实验平台。项目核心目标在于**验证人格与记忆的跨上下文迁移机制**：同一套人格锚点（Persona Anchor）与记忆图谱可在不同角色分支、多设备环境乃至异构机器人本体间实现一致性迁移与隔离，探索"灵魂"与"身体"解耦后的 Agent 架构边界。
 
 **定位**：技术探索项目 | **周期**：8 个迭代（MVA） | **核心语言**：Python  
 **当前状态**：v0.7.0 2D 世界 + 前端骨架 80% 就位 — **400+ passed, 1 skipped, 94% coverage**
