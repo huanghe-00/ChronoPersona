@@ -87,7 +87,7 @@ class WebSocketGateway:
                 logger.warning("Failed to broadcast to {}: {}", client_id, e)
                 self.unregister_client(client_id)
         logger.info("Broadcast embodied state to {}/{} clients", sent, len(self._clients))
-        return sent
+        return len(self._clients)
 
     async def broadcast_state_async(self, state: Dict[str, Any]) -> int:
         """Async broadcast for asyncio-based servers."""
