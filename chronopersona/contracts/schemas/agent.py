@@ -31,6 +31,8 @@ class EmotionState:
         intensity: Continuous intensity value in [0.0, 1.0].
         trigger_reason: Human-readable reason for the current state.
         state_since: ISO-8601 timestamp when this state was entered.
+        valence: Valence dimension (-1.0 negative to +1.0 positive).
+        arousal: Arousal dimension (0.0 calm to 1.0 excited/urgent).
     """
 
     current_state: EmotionLabel = EmotionLabel.NEUTRAL
@@ -38,6 +40,8 @@ class EmotionState:
     trigger_reason: str = ""
     state_since: str = ""
     confidence: float = 1.0  # T0 rule: match=0.9, no-match=0.5
+    valence: float = 0.0
+    arousal: float = 0.0
 
 
 @dataclass
