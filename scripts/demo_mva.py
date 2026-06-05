@@ -10,6 +10,13 @@ Zero external dependencies — uses Mock implementations.
 """
 
 import sys
+from pathlib import Path
+
+# Allow running script directly without pip install -e .
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
 from chronopersona.agent_core.state_machine import StateMachineAgentCore
 from chronopersona.agent_core.action_planner import ActionPlanner
 from chronopersona.mocks.mock_memory_store import MockMemoryStore
