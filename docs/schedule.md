@@ -18,7 +18,7 @@
 | **v0.5.0** | 06-08 ~ 06-14 | `evaluation`：Agent 核心循环 | StateMachineAgentCore 端到端、ActionPlanner、LSTM 监督骨架、RL-PLACEHOLDER 合规、**H1 情感时序修复** | ✅ 已完成 |
 | **v0.6.0** | 06-15 ~ 06-21 | `embodied`：评估框架 | A1-A11 对抗测试集（**39 文件/400+ 用例**）、量化对比表、**测试语义红线** | ✅ 已完成 |
 | **v0.7.0** | 06-22 ~ 06-28 | `frontend`：2D 世界 + 前端 | GridWorldAdapter **5 动作真实跨本体映射**、WebSocket Gateway 双向推送、Canvas 联调、`[Emotion State]` + `[Semantic Facts]` Prompt 注入、5 项穿插改进落地 | ✅ 已完成 |
-| **v1.0.0** | 06-29 ~ 07-05 | `mva`：文档与发布准备 | README 量化数据刷新、技术博客定稿、Slide Deck 定稿、`scripts/demo_mva.py`、**记忆系统生产优化文档化** | 🟡 进行中 |
+| **v1.0.0** | 06-29 ~ 07-05 | `mva`：文档与发布准备 | README 量化数据刷新、技术博客定稿、Slide Deck 定稿、`scripts/demo_mva.py`、**记忆系统生产优化文档化** | ✅ 已完成 |
 | **v1.1.0** | 07-06 ~ 07-26 | `production-baseline`：生产基线硬化 | 认证权限、硬预算截断、跨分支隐私过滤、记忆溯源链、WebSocket 真实实现、全链路日志 trace | ⚪ 未开始 |
 | **v1.2.0** | 07-27 ~ 08-16 | `memory-quality`：记忆质量跃迁 | 条件感知蒸馏器、动态重要性重算、检索结果可解释性、边类型纠错、动态 max_hops | ⚪ 未开始 |
 | **v1.3.0** | 08-17 ~ 09-13 | `graph-production`：图谱与检索生产化 | IntentGraph PostgreSQL 持久化、Episodic Store Qdrant 分布式、Intent-Aware 融合、级联更新 | ⚪ 未开始 |
