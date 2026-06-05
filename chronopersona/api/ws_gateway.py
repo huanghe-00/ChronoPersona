@@ -54,6 +54,14 @@ class WebSocketGateway:
         if not branch_id:
             raise ValueError("branch_id must not be empty")
 
+        # v1.1.0: Branch access audit hook (skeleton for RBAC)
+        logger.info(
+            "Access audit: client={} branch={} message_len={}",
+            client_id,
+            branch_id,
+            len(user_input),
+        )
+
         out = self._agent_core.run_turn(user_input, branch_id=branch_id)
         return {
             "reply_text": out.reply_text,

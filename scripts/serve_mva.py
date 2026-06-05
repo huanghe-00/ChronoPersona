@@ -126,6 +126,16 @@ def start_http_server(port: int = 8765):
 
 async def websocket_handler(websocket, path):
     """Handle WebSocket connections."""
+    # v1.1.0: API Key authentication skeleton (production baseline)
+    api_key = os.environ.get("MVA_API_KEY")
+    if api_key:
+        auth_header = websocket.request_headers.get("Authorization", "")
+        expected = f"Bearer {api_key}"
+        if auth_header != expected:
+            print(f"[Auth] Failed: expected {expected}, got {auth_header}")
+            await websocket.close(1008, "Invalid API key")
+            return
+
     agent_core = StateMachineAgentCore(
         memory_store=MockMemoryStore(),
         model_router=MockModelRouter(),
