@@ -1,7 +1,28 @@
-model: deepseek/deepseek-v4-pro
-weak-model: deepseek/deepseek-v4-flash
+# ============================================
+# [历史默认模型] DeepSeek 配置（已注释，供回滚参考）
+# ============================================
+# model: deepseek/deepseek-v4-pro
+# weak-model: deepseek/deepseek-v4-flash
+# edit-format: diff
+
+# ============================================
+# [新默认模型] Kimi K2.6 + GLM-5.1 架构
+# ============================================
+
+# 主模型：Kimi K2.6（Architect 模式）
+# 详细参数（api_key, api_base, editor_model 等）在 .aider.model.settings.yml 中定义
+model: openai/kimi-for-coding
+
+# 弱模型：GLM-5.1（统一使用，不区分 flash/pro）
+weak-model: openai/GLM-5.1
+
+# 模型设置文件路径（包含 API 密钥、base_url、editor_model 等详细配置）
 model-settings-file: .aider.model.settings.yml
-edit-format: diff
+
+# 编辑格式：由 model settings 文件根据模型自动分配
+# architect 模型自动使用 architect 格式，此处强制指定 diff 会覆盖双模型架构
+# edit-format: diff
+
 map-tokens: 4096
 auto-lint: true
 auto-test: true
