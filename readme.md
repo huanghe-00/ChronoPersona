@@ -183,15 +183,17 @@ graph TD
 
 ## 📊 评估框架（v0.6.0 完整交付）
 
-| 场景 | 传统 RAG 基线 | ChronoPersona | 提升 |
-|------|--------------|---------------|------|
-| A1 记忆召回 | Recall@5 = ? | Recall@5 = ? | +?% |
-| A2 跨 session 关联 | MRR = ? | MRR = ? | +?% |
-| A3 角色隔离 | 串台率 = ? | 串台率 = 0% | 100% |
-| A5 多端冲突 | 信息丢失率 = ? | 信息保有率 = 100% | +?% |
-| A6 意图导航 | 召回精度 = ? | 召回精度 = ? | +?% |
-| A7 情感一致性 | 状态漂移 = ? | 状态机严格按规则转移 | 可控 |
-| A10 动作可审计 | reasoning 缺失 | 100% action_plan 含 reasoning | 100% |
+| 场景 | 验证方式 | ChronoPersona MVA 基线 |
+|------|---------|----------------------|
+| A1 记忆召回 | `pytest tests/test_a1*.py` | Recall@5 ≥ 0.8（MockBGE 确定性向量） |
+| A2 跨 session 关联 | `pytest tests/test_a2*.py` | MRR ≥ 0.7（时序链 TEMPORAL_NEXT） |
+| A3 角色隔离 | `pytest tests/test_a3*.py` | 串台率 = 0%（MVCC Branch 物理隔离） |
+| A5 多端冲突 | `pytest tests/test_a5*.py` | 信息保有率 = 100%（LWW-CRDT add-wins） |
+| A6 意图导航 | `pytest tests/test_a6*.py` | CTE Recall@5 ≥ 0.6（v0.3.0 基线） |
+| A7 情感一致性 | `pytest tests/test_a7*.py` | T0 规则引擎状态转移准确率 100% |
+| A10 动作可审计 | `pytest tests/test_a10*.py` | 100% action_plan 含 reasoning 字段 |
+
+> 运行 `python -m evaluation.runner` 生成完整量化报告 `reports/eval_report_*.json`
 
 > 完整评估结果：`python -m evaluation.runner` 生成 `reports/eval_report_*.json`
 
