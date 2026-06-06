@@ -291,20 +291,46 @@ MVA 阶段的核心目标是**验证架构分层与接口契约的正确性**，
 
 ---
 
-## 5. 未实现 / W8+ 规划内容
+## 5. W8+ 演进路线与优先级排期
 
-以下模块在 MVA 阶段已识别并文档化，但因排期或复杂度原因推迟：
+MVA 之后的生产迭代分为 **5 个功能版本 + 1 次架构换代**（详见 `docs/schedule.md`）。以下按优先级分组列出核心演进项，状态标签与第 4.9 节保持一致。
 
-| 模块 | MVA 状态 | W8+ 规划 | 备注 |
-|------|---------|---------|------|
-| **PostgreSQL CTE 持久化** | 纯内存 BFS | Recursive CTE + 复合索引 | Schema 与 CTE 模板已设计 |
-| **LangGraph 迁移** | 手写纯 Python 状态机 | `StateGraph` 条件边路由 | P2 级优化，接口预留 |
-| **真实模型路由** | MockModelRouter | Qwen3.5-9B 本地 + DS-V4-pro 云端 | 当前为 Mock，成本追踪接口已冻结 |
-| **WebSocket 实时同步** | Stub | FastAPI + SocketIO 多端广播 | LWW-CRDT 操作日志格式已定义 |
-| **Canvas 前端** | 无 | 极简 HTML Canvas 20×20 渲染 | W7 骨架，W8 联调 |
-| **LSTM 训练闭环** | 骨架 + 训练脚本 | 100-200 条标注数据微调 | 监督学习，CPU 可跑；**RL 严格 PLACEHOLDER** |
-| **Qdrant 分布式向量库** | FAISS 内存索引 | HNSW + 多副本 + 快照恢复 | P2 级优化 |
-| **条件感知蒸馏器** | 无 | NLP 条件句识别 + `BehavioralRule.trigger` | P1 级，解决 Dreaming 条件剥离 |
+### P1 级：生产基线必选项（v1.1.0–v1.2.0）
+
+| 模块 | 当前状态 | 生产目标 | 依赖条件 | 预估工时 |
+|------|---------|---------|---------|---------|
+| **条件感知蒸馏器** | [远期规划] | NLP 条件句识别 + `BehavioralRule.trigger` 提取 | `spacy` 依存解析或轻量规则引擎 | 3 天 |
+| **记忆溯源链** | [远期规划] | `MemoryEntry` / `Fact` 增加 `source_memory_ids` + `extraction_model` | Schema 扩展（非破坏性） | 2 天 |
+| **硬预算截断** | [远期规划] | 实时 token 计数器 + 80% 降级/100% 熔断 | `ICostTracker` 实时累加逻辑 | 2 天 |
+| **跨分支隐私过滤器** | [远期规划] | `IPrivacyFilter` + `IRelevanceFilter` 双重过滤落地 | PII 识别模块（`presidio` 或规则引擎） | 3 天 |
+
+### P2 级：质量与性能跃迁（v1.2.0–v1.3.0）
+
+| 模块 | 当前状态 | 生产目标 | 依赖条件 | 预估工时 |
+|------|---------|---------|---------|---------|
+| **PostgreSQL CTE 持久化** | [接口冻结] | 内存 BFS 迁移至 Recursive CTE，支持进程重启不丢图谱 | PostgreSQL 14+，复合索引 | 4 天 |
+| **IntentGraph 生产优化** | [接口冻结] | `(source_id, edge_type)` 复合索引 + `MATERIALIZED` CTE hint | PostgreSQL 执行计划调优 | 2 天 |
+| **WebSocket 真实多端组网** | [接口冻结] | FastAPI + SocketIO 三端广播，冲突收敛 < 3s | TLS + 心跳 + ACK 重试机制 | 3 天 |
+| **Qdrant 分布式向量库** | [远期规划] | 替换 FAISS `IndexFlatIP`，支持 HNSW + 多副本 | Qdrant HNSW 服务端 | 3 天 |
+| **动态重要性重算** | [远期规划] | 月度批量审计，基于 `CONTRADICTS` 覆盖与访问衰减重新评分 | 定时任务基础设施 | 4 天 |
+
+### P3 级：架构深化与自治（v1.4.0–v2.0.0）
+
+| 模块 | 当前状态 | 生产目标 | 依赖条件 | 预估工时 |
+|------|---------|---------|---------|---------|
+| **LangGraph 状态机迁移** | [远期规划] | `StateMachineAgentCore` → `StateGraph` 条件边路由 | `langgraph` 库 | 3 天 |
+| **L4 Procedural Memory** | [远期规划] | `BehavioralRule` 自动晋升至可执行 Skill 固化 | L3 积累足够规则数据 | 4 天 |
+| **L5 Meta-Memory** | [远期规划] | 自适应检索策略权重 + Meta-Dream | 多轮检索 outcome 数据 | 5 天 |
+| **VLA 可插拔接口解禁** | [远期规划] | `[VLA-PLACEHOLDER]` 替换为微调 VLA 模型 | 标注数据 + 训练管线 | 3 天 |
+| **真实多端 CRDT 同步** | [远期规划] | 手机/车机/音箱三端 WebSocket 组网 | v1.3.0 基础设施 | 3 天 |
+
+### 明确不采纳项（MVA 设计取舍，W8+ 仍不采纳）
+
+| 项 | 不采纳理由 |
+|----|-----------|
+| **Causal Tier 1.5 启发式规则** | 当前 Tier 1 召回率 ~40% 是已知设计取舍。增加启发式规则会引入误标风险，生产环境建议直接上 Tier 2 统计验证或 Tier 3 LLM 验证。 |
+| **近因偏见显式修正** | 与 `access_count` 时间衰减（已落地）存在耦合，独立 `recency` 项需大量调参。现有 `effective_access` 公式已足够覆盖。 |
+| **Neo4j 作为 L3 存储** | MVA 已明确决策移除 Neo4j，使用 PostgreSQL CTE + 内存 BFS。引入 Neo4j 会增加 Docker 依赖，与零依赖启动目标冲突。 |
 
 ---
 
