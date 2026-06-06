@@ -465,13 +465,29 @@ MVA 的核心目标是**验证意图图谱的检索语义正确性**（A6 场景
 
 ### 11.2 Cursor 多 Agent 架构的借鉴与规避
 
-Cursor 的真实架构采用 **Git Worktree 物理隔离 + Best-of-N 选择**，而非社区误解的"CRDT 自动合并多 Agent 结果"。ChronoPersona 从中吸收了三项关键原则：
+Cursor 的真实架构采用 **Git Worktree 物理隔离 + Best-of-N 选择**，而非社区误解的"CRDT 自动合并多 Agent 结果"。ChronoPersona 从中吸收了三项关键原则，并明确规避了文本级 CRDT 陷阱：
 
-1. **物理隔离优先**：Cursor 指出"代码是高度结构化的 AST，文本级 CRDT 会导致语法崩溃"。ChronoPersona 的 L3 语义记忆强制使用节点+边+属性的图操作原语，禁止文本级 diff/merge，与 Cursor 的"结构化操作原语"理念一致。
-2. **无冲突域划分**：Cursor 要求"同文件不并发写入"。ChronoPersona 显式化为分层写入域锁定——L0 key 级、L1 session 级、L2 session_id 分区、L3 entity_id 级，规避隐式冲突。
-3. **启发式选择优于盲目合并**：Cursor 对 N 个 Agent 结果不做自动合并，而是人工/启发式选最优。ChronoPersona 的 L0 冲突保留双版本 + `CONTRADICTS` 边，同样拒绝"自动消解语义矛盾"，将仲裁权交还 LLM 或用户。
+#### 借鉴一：物理隔离优先
 
-**规避的陷阱**：Cursor 明确警告"文本级 CRDT 合并结构化数据"不可行，ChronoPersona 因此完全放弃文本级 CRDT，自研 KV 级 `LWWMap`。
+- **Cursor 原则**："代码是高度结构化的 AST，文本级 CRDT 合并结构化数据会导致语法崩溃"。
+- **ChronoPersona 落地**：L3 语义记忆强制使用节点+边+属性的图操作原语（`AddConcept` / `LinkEntities` / `DeprecateConcept`），禁止文本级 diff/merge，与 Cursor 的"结构化操作原语"理念一致。
+- **落地状态**：[已实现]
+
+#### 借鉴二：无冲突域划分
+
+- **Cursor 原则**："同文件不并发写入"。
+- **ChronoPersona 落地**：显式化为分层写入域锁定——L0 key 级、L1 session 级、L2 session_id 分区、L3 entity_id 级，规避隐式冲突。`WriteDomainLock` 已真实实现。
+- **落地状态**：[已实现]
+
+#### 借鉴三：启发式选择优于盲目合并
+
+- **Cursor 原则**：对 N 个 Agent 结果不做自动合并，而是人工/启发式选最优。
+- **ChronoPersona 落地**：L0 冲突保留双版本 + `CONTRADICTS` 边，同样拒绝"自动消解语义矛盾"，将仲裁权交还 LLM 或用户。
+- **落地状态**：[已实现]
+
+#### 规避的陷阱
+
+Cursor 明确警告"文本级 CRDT 合并结构化数据"不可行，ChronoPersona 因此**完全放弃文本级 CRDT**，自研 KV 级 `LWWMap`。这是与 Cursor 架构精神一致但实现路径不同的选择。
 
 ### 11.3 酒馆（SillyTavern）社区的人格工程验证
 
