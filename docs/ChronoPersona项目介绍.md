@@ -194,9 +194,9 @@ MVA 阶段的核心目标是**验证架构分层与接口契约的正确性**，
 
 ---
 
-## 4. 核心模块已实现内容（MVA 真实落地）
+## 4. 核心模块实现状态详述
 
-### 4.1 L0 自研 CRDT：LWWMap + HybridTimestamp
+### 4.1 L0 自研 CRDT：LWWMap + HybridTimestamp [已实现]
 
 **代码位置**：`chronopersona/memory_system/l0_crdt/`
 
@@ -207,7 +207,7 @@ MVA 阶段的核心目标是**验证架构分层与接口契约的正确性**，
 
 **工程验证**：`tests/test_l0_crdt.py` 覆盖 HLC 比较、分支隔离、merge、checkpoint 与 delta 同步。
 
-### 4.2 L1 工作记忆：滑动窗口与动态压缩
+### 4.2 L1 工作记忆：滑动窗口与动态压缩 [已实现]
 
 **代码位置**：`chronopersona/memory_system/l1_working/sliding_window.py`
 
@@ -215,7 +215,7 @@ MVA 阶段的核心目标是**验证架构分层与接口契约的正确性**，
 - **压缩策略**：调用摘要节点（MVA 阶段以规则/模板模拟，接口预留 LLM 接入点）生成 `CompressedSummary`，替换原始轮次。摘要包含 `source_turn_ids` 追溯索引，原始内容仍可在 L2 反查。
 - **Session 隔离**：所有数据绑定 `branch_id`，Session 结束即物理清空，绝不进入向量库。
 
-### 4.3 L2 情景记忆：向量检索与差异化遗忘
+### 4.3 L2 情景记忆：向量检索与差异化遗忘 [已实现]
 
 **代码位置**：`chronopersona/memory_system/l2_episodic/`
 
@@ -226,7 +226,7 @@ MVA 阶段的核心目标是**验证架构分层与接口契约的正确性**，
 - **差异化遗忘**：检索排序引入 `importance × freq_boost` 权重，其中 `effective_access = access_count × exp(-days/30)`，防止高频旧记忆永久压制新信号。
 - **幽灵记忆防御**：`FaissEpisodicStore` 维护 `_deleted_indices` 集合，被删除记忆的索引 ID 永久屏蔽，禁止通过旧 ID 召回。
 
-### 4.4 L3 意图图谱：语义导航与反学习
+### 4.4 L3 意图图谱：语义导航与反学习（内存实现） [已实现]
 
 **代码位置**：`chronopersona/memory_system/l3_semantic/intent_graph.py`
 
@@ -235,7 +235,7 @@ MVA 阶段的核心目标是**验证架构分层与接口契约的正确性**，
 - **反学习 (Unlearning)**：`SemanticEdge` 包含 `status` 字段（`active` / `deprecated` / `archived`）。`deprecate_edge()` 即时将边加入 `_deprecated_edges` 集合，`navigate()` 与 `get_edges()` 均过滤该集合，无需物理删除即可实现知识过时处理。
 - **MVA 边界**：当前为纯内存 Python BFS（`deque`）。PostgreSQL + Recursive CTE 持久化是 W8+ 生产级优化项，Schema 与 CTE 查询模板已设计完毕。
 
-### 4.5 Agent Core：端到端状态机
+### 4.5 Agent Core：端到端状态机（纯 Python） [已实现]
 
 **代码位置**：`chronopersona/agent_core/state_machine.py`
 
@@ -243,7 +243,7 @@ MVA 阶段的核心目标是**验证架构分层与接口契约的正确性**，
 - **Persona Anchor 注入**：支持人格切换 (`switch_persona`)，Persona 配置包含 W++ 风格锚点、自然语言叙事、Ali:Chat 风格示例与结构化权限四层混合格式。
 - **MVCC 分支隔离**：`run_turn` 与 `switch_persona` 均强制要求 `branch_id`，L1/L2/L3 按分支物理隔离。
 
-### 4.6 情感引擎与 ActionPlanner
+### 4.6 情感引擎与 ActionPlanner [已实现]
 
 **代码位置**：`chronopersona/agent_core/action_planner.py`, `contracts/schemas/agent.py`
 
@@ -254,7 +254,7 @@ MVA 阶段的核心目标是**验证架构分层与接口契约的正确性**，
 - **H1 时序修复**：`_update_emotion` 已前置于 `ActionPlanner.plan()` 调用之前，确保动作调制参数基于当前轮次最新情感状态。
 - **Token→Action Bridge**：`ActionPlanner` 解析 LLM 输出为结构化 `ActionPlan`（`action_token` + `action_params` + `reasoning`），并查询 `EMOTION_BEHAVIOR_MODULATION` 表将情感状态翻译为物理行为参数（如 CONCERNED → `speed_multiplier=0.5`）。
 
-### 4.7 具身智能：GridWorldAdapter
+### 4.7 具身智能：GridWorldAdapter [已实现]
 
 **代码位置**：`chronopersona/embodied/grid_world_adapter.py`
 
@@ -262,7 +262,7 @@ MVA 阶段的核心目标是**验证架构分层与接口契约的正确性**，
 - **文本化感知**：视野内物体列表 + 相对位置 + 环境描述 → 文本化注入 L1 Working Memory。
 - **跨本体映射字典**：`action_token`（如 `approach_gently`）通过 `translate_action_token` 映射为 `grid_2d` / `ros2_mobile` 低层指令。`grid_2d` 已真实实现；ROS2 / MuJoCo 映射字典已定义，适配器为 W8+ 预留。
 
-### 4.8 评估框架
+### 4.8 评估框架 [已实现]
 
 **代码位置**：`evaluation/`
 
@@ -271,6 +271,23 @@ MVA 阶段的核心目标是**验证架构分层与接口契约的正确性**，
   - 轨道 A：pytest 语义断言（PASS/FAIL）。
   - 轨道 B：`evaluation/runner.py` 输出量化 JSON（Recall@5 / MRR / Persona Drift Score）。
 - **PersonaDriftChecker**：基于 `MockBGEEmbedder` 计算 Agent 回复与 `style_examples` 的 embedding 均值相似度，< 0.75 触发漂移告警。
+
+### 4.9 接口冻结层与远期规划模块
+
+以下模块在 MVA 阶段已完成接口设计与 Mock 实现，支撑了端到端流程验证，但尚未接入真实生产后端：
+
+| 模块 | 状态 | 说明 |
+|------|------|------|
+| **Model Router（T0–T7）** | [接口冻结] | 路由策略与降级链已设计冻结（`docs/requirements.md` 4.8/7.1），`MockModelRouter` 支撑 Agent Core 端到端测试。真实 Qwen3.5-9B 本地部署与 DeepSeek/Kimi 云端 API 未接入。 |
+| **PostgreSQL CTE 持久化** | [接口冻结] | `IntentGraph` Schema 与 Recursive CTE 查询模板已设计（`docs/requirements.md` 4.5.7），但当前仍为纯内存 BFS。 |
+| **WebSocket 实时同步** | [接口冻结] | `WebSocketGateway` 双向推送骨架已落地，但真实多设备 WebSocket 组网未实现。 |
+| **PersonaInjector 权限执行** | [接口冻结] | `skill_permissions` / `memory_access_policy` Schema 已冻结，但执行层校验当前为 Mock。 |
+| **SQLite 缓存层** | [接口冻结] | 缓存策略（TTL 24h、分支隔离键规则）已文档化，但无真实 SQLite 连接与 `cache_entries` 表。 |
+| **硬预算截断** | [远期规划] | `ICostTracker` 实时累加逻辑、80%/100% 阈值降级策略已设计（`docs/requirements.md` 12.1.2），未实现。 |
+| **跨分支隐私过滤器** | [远期规划] | `IPrivacyFilter` + `IRelevanceFilter` 接口已冻结，真实 PII 识别（`presidio` 或规则引擎）未接入。 |
+| **LSTM 训练闭环** | [接口冻结] | 训练脚本骨架 + 数据规范已就绪，监督学习循环（MSELoss + AdamW）可实现，但生产级标注数据未准备。 |
+| **VLA 可插拔接口** | [远期规划] | `[VLA-PLACEHOLDER]` 已预留，`predict_action()` 默认 LLM 实现，微调 VLA 模型未接入。 |
+| **LangGraph 状态机迁移** | [远期规划] | `StateMachineAgentCore` → `StateGraph` 重构方案已设计（`docs/schedule.md` v2.0.0），当前为纯 Python 手写状态机。 |
 
 ---
 
