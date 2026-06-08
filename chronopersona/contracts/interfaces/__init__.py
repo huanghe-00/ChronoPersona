@@ -36,6 +36,11 @@ from chronopersona.contracts.interfaces.abstract_consolidation_agent import (
 )
 from chronopersona.contracts.interfaces.abstract_edge_builder import IEdgeBuilder
 from chronopersona.contracts.interfaces.abstract_write_domain_lock import IWriteDomainLock
+from chronopersona.contracts.interfaces.abstract_auth_middleware import (
+    AuthenticationError,
+    AuthorizationError,
+    IAuthMiddleware,
+)
 from chronopersona.contracts.interfaces.abstract_correlation_miner import ICorrelationMiner
 from chronopersona.contracts.interfaces.model_router import AbstractModelRouter
 
@@ -62,6 +67,9 @@ __all__ = [
     "IEdgeBuilder",
     "IWriteDomainLock",
     "ICorrelationMiner",
+    "AuthenticationError",
+    "AuthorizationError",
+    "IAuthMiddleware",
     "ICredentialProvider",
     "IModelClient",
 ]
