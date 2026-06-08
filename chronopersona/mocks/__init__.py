@@ -1,5 +1,7 @@
 """Mock implementations for testing and MVA development."""
 
+from chronopersona.mocks.mock_credential_provider import MockCredentialProvider
+from chronopersona.mocks.mock_model_client import MockModelClient
 from chronopersona.mocks.mock_action_planner import MockActionPlanner
 from chronopersona.mocks.mock_agent_core import MockAgentCore
 from chronopersona.mocks.mock_cost_tracker import MockCostTracker
@@ -40,4 +42,6 @@ __all__ = [
     "MockEdgeBuilder",
     "MockWriteDomainLock",
     "MockCorrelationMiner",
+    "MockCredentialProvider",
+    "MockModelClient",
 ]

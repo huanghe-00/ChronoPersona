@@ -1,5 +1,9 @@
 """Public interface exports."""
 
+from chronopersona.contracts.interfaces.abstract_credential_provider import (
+    ICredentialProvider,
+)
+from chronopersona.contracts.interfaces.abstract_model_client import IModelClient
 from chronopersona.contracts.interfaces.abstract_action_planner import (
     AbstractActionPlanner,
 )
@@ -58,4 +62,6 @@ __all__ = [
     "IEdgeBuilder",
     "IWriteDomainLock",
     "ICorrelationMiner",
+    "ICredentialProvider",
+    "IModelClient",
 ]
