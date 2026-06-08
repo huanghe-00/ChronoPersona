@@ -6,6 +6,7 @@ from chronopersona.contracts.interfaces.abstract_model_client import (
     IModelClient,
     ModelClientError,
 )
+from chronopersona.contracts.schemas.model import ModelRequest
 
 
 class MockModelClient(IModelClient):
@@ -49,15 +50,7 @@ class MockModelClient(IModelClient):
 
     def complete(
         self,
-        prompt: str,
-        task_type: str,
-        branch_id: str,
-        *,
-        persona_id: Optional[str] = None,
-        max_tokens: int = 4096,
-        temperature: float = 0.7,
-        model_name: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        request: ModelRequest,
     ) -> Dict[str, Any]:
         """Return a mock completion response.
 
@@ -65,26 +58,22 @@ class MockModelClient(IModelClient):
         Unmapped prompts return "Mock response for: {prompt[:50]}".
 
         Args:
-            prompt: Prompt text (used for deterministic response lookup).
-            task_type: Task tier identifier.
-            branch_id: Branch identifier.
-            persona_id: Persona identifier.
-            max_tokens: Max tokens (reflected in output_tokens estimate).
-            temperature: Temperature (not used in mock).
-            model_name: Override model name.
-            metadata: Additional metadata.
+            request: ModelRequest object containing prompt, task_type,
+                context, max_tokens, temperature, and metadata.
 
         Returns:
             Mock response dictionary.
         """
         self._call_count += 1
+        prompt = request.prompt
+        max_tokens = getattr(request, "max_tokens", 4096)
 
         # Look up deterministic response
         content = self._responses.get(
             prompt, f"Mock response for: {prompt[:50]}"
         )
 
-        resolved_model = model_name or self._default_model
+        resolved_model = getattr(request, "model_name", None) or self._default_model
         # Rough token estimate (2 tokens per word, per English avg)
         input_tokens = max(1, len(prompt.split()) * 2)
         output_tokens = max(1, len(content.split()) * 2)
@@ -100,14 +89,7 @@ class MockModelClient(IModelClient):
 
     def stream_complete(
         self,
-        prompt: str,
-        task_type: str,
-        branch_id: str,
-        *,
-        persona_id: Optional[str] = None,
-        max_tokens: int = 4096,
-        temperature: float = 0.7,
-        model_name: Optional[str] = None,
+        request: ModelRequest,
     ) -> Iterator[Dict[str, Any]]:
         """Return mock streaming response chunks.
 
@@ -115,16 +97,18 @@ class MockModelClient(IModelClient):
         prefix, body, and final (with finish_reason="stop").
 
         Args:
-            Same as complete().
+            request: ModelRequest object containing prompt, task_type,
+                context, max_tokens, temperature, and metadata.
 
         Returns:
             Iterator yielding 3 chunks.
         """
         self._stream_call_count += 1
+        prompt = request.prompt
         content = self._responses.get(
             prompt, f"Mock stream response for: {prompt[:50]}"
         )
-        resolved_model = model_name or self._default_model
+        resolved_model = getattr(request, "model_name", None) or self._default_model
 
         # Yield 3 chunks
         words = content.split()

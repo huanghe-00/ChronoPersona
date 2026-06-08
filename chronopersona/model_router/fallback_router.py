@@ -14,6 +14,7 @@ from chronopersona.contracts.interfaces.abstract_model_client import (
     ModelClientError,
     RateLimitError,
 )
+from chronopersona.contracts.schemas.model import ModelRequest
 from chronopersona.model_router.api_mode_switch import APIMode, APIModeSwitch
 from chronopersona.model_router.kimi_client import KimiClient
 from chronopersona.model_router.deepseek_client import DeepSeekClient
@@ -207,15 +208,15 @@ class FallbackRouter:
                     current_key,
                     branch_id,
                 )
-                response = client.complete(
+                model_request = ModelRequest(
                     prompt=prompt,
                     task_type=task_type,
-                    branch_id=branch_id,
-                    persona_id=persona_id,
+                    context={},
                     max_tokens=max_tokens,
                     temperature=temperature,
-                    metadata=metadata,
+                    metadata=metadata or {},
                 )
+                response = client.complete(model_request)
 
                 # Track cost per branch
                 self._record_cost(current_key, branch_id, response)
@@ -295,14 +296,14 @@ class FallbackRouter:
         logger.info(
             "Stream routing task {} to client {}", task_type, client_key
         )
-        return client.stream_complete(
+        stream_request = ModelRequest(
             prompt=prompt,
             task_type=task_type,
-            branch_id=branch_id,
-            persona_id=persona_id,
+            context={},
             max_tokens=max_tokens,
             temperature=temperature,
         )
+        return client.stream_complete(stream_request)
 
     def get_cost_summary(self, branch_id: str) -> Dict[str, Any]:
         """Get cost summary for a specific branch.

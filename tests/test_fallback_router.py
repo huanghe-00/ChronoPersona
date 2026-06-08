@@ -137,8 +137,8 @@ class TestFallbackRouterRouting:
         for key in ["deepseek", "kimi"]:
             client = MockModelClient(provider=key)
 
-            def make_error(provider_name: str) -> None:
-                raise ModelClientError(provider_name, "Failed")
+            def make_error(request: object, _provider: str = key) -> None:
+                raise ModelClientError(_provider, "Failed")
 
             client.complete = make_error  # type: ignore[assignment]
             router._clients[key] = client
