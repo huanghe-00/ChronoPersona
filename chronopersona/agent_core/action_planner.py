@@ -31,6 +31,7 @@ class ActionPlanner(AbstractActionPlanner):
         (r"(?:转身|转向).*(?:用户|人)", "turn_to_user", {}),
         (r"(?:互动|交互|操作)", "interact", {}),
         (r"(?:环顾|看看|观察)", "look_around", {}),
+        (r"(?:到|去|导航).*(?:沙发|床|桌子|椅子|冰箱|茶几)", "navigate_to_object", {"target": ""}),
     ]
 
     def plan(
@@ -44,6 +45,18 @@ class ActionPlanner(AbstractActionPlanner):
 
         action_token, params, reasoning = self._parse_action(llm_output_text)
         modulation = self._get_modulation(emotion_state)
+
+        # Semantic navigation goal extraction for embodied intelligence project
+        if action_token == "navigate_to_object":
+            import re as _re
+            _nav_match = _re.search(r"(?:到|去|导航).*(?:沙发|床|桌子|椅子|冰箱|茶几)", llm_output_text)
+            if _nav_match:
+                _known = {"沙发", "床", "桌子", "椅子", "冰箱", "茶几"}
+                for obj in _known:
+                    if obj in _nav_match.group():
+                        params["target"] = obj
+                        reasoning += f"; extracted nav target={obj}"
+                        break
 
         logger.info(
             "ActionPlanner: token={} emotion={} branch={}",

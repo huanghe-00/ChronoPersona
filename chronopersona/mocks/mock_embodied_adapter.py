@@ -6,8 +6,12 @@ from chronopersona.contracts.interfaces import AbstractEmbodiedAdapter
 from chronopersona.contracts.schemas import (
     EmbodiedState,
     LowLevelCommand,
+    NavigationResult,
     PerceptionResult,
+    RobotState3D,
+    SemanticNavigationGoal,
     SpatialRecord,
+    VisualObservation,
 )
 
 
@@ -46,4 +50,18 @@ class MockEmbodiedAdapter(AbstractEmbodiedAdapter):
             robot_type=robot_type,
             command=f"mock_{action_token}",
             params=params,
+        )
+
+    def get_visual_observation(self) -> VisualObservation:
+        return VisualObservation()
+
+    def get_robot_state_3d(self) -> RobotState3D:
+        return RobotState3D(position=(0.0, 0.0, 0.0), rotation=None)
+
+    def navigate_to_object(self, goal: SemanticNavigationGoal) -> NavigationResult:
+        return NavigationResult(
+            success=True,
+            final_position=(1.0, 0.0, 1.0),
+            collision_count=0,
+            steps_taken=5,
         )

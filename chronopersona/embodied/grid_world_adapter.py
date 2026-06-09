@@ -9,8 +9,12 @@ from chronopersona.contracts.interfaces import AbstractEmbodiedAdapter
 from chronopersona.contracts.schemas import (
     EmbodiedState,
     LowLevelCommand,
+    NavigationResult,
     PerceptionResult,
+    RobotState3D,
+    SemanticNavigationGoal,
     SpatialRecord,
+    VisualObservation,
 )
 
 DEFAULT_GRID_WIDTH: int = 100
@@ -241,6 +245,24 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
                 params={"range": params.get("range", 5.0)},
             )
         raise ValueError(f"Unsupported robot_type: {robot_type}")
+
+    def get_visual_observation(self) -> VisualObservation:
+        """Not supported in 2D grid world."""
+        raise NotImplementedError(
+            "GridWorldAdapter does not support 3D visual observation"
+        )
+
+    def get_robot_state_3d(self) -> RobotState3D:
+        """Not supported in 2D grid world."""
+        raise NotImplementedError(
+            "GridWorldAdapter does not support 3D robot state"
+        )
+
+    def navigate_to_object(self, goal: SemanticNavigationGoal) -> NavigationResult:
+        """Not supported in 2D grid world."""
+        raise NotImplementedError(
+            "GridWorldAdapter does not support semantic object navigation"
+        )
 
     def add_object(self, agent_id: str, object_id: str, x: float, y: float) -> None:
         """Add an object to the agent's spatial memory."""

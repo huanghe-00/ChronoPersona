@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -49,3 +49,63 @@ class PerceptionResult:
 
     success: bool = False
     message: str = ""
+
+
+@dataclass
+class VisualObservation:
+    """First-person visual perception from embodied sensor suite.
+
+    Attributes:
+        rgb: RGB image array or None if unavailable.
+        depth: Depth map or None.
+        semantic_mask: Semantic segmentation mask or None.
+    """
+
+    rgb: Optional[Any] = None
+    depth: Optional[Any] = None
+    semantic_mask: Optional[Any] = None
+
+
+@dataclass
+class RobotState3D:
+    """Proprioceptive state in 3D continuous space.
+
+    Attributes:
+        position: (x, y, z) coordinates.
+        rotation: Rotation representation (e.g., quaternion or matrix).
+        joint_positions: Optional joint angles for manipulators.
+    """
+
+    position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    rotation: Optional[Any] = None
+    joint_positions: Optional[List[float]] = None
+
+
+@dataclass
+class SemanticNavigationGoal:
+    """Natural-language navigation target resolved to semantic object.
+
+    Attributes:
+        target_object: Target object name (e.g., "sofa", "床").
+        target_room: Optional room constraint (e.g., "living_room").
+    """
+
+    target_object: str = ""
+    target_room: Optional[str] = None
+
+
+@dataclass
+class NavigationResult:
+    """Outcome of a semantic navigation episode.
+
+    Attributes:
+        success: Whether the robot reached the target.
+        final_position: Final (x, y, z).
+        collision_count: Number of collisions during navigation.
+        steps_taken: Number of simulation steps consumed.
+    """
+
+    success: bool = False
+    final_position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    collision_count: int = 0
+    steps_taken: int = 0

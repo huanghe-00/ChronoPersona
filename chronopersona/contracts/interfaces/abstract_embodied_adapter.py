@@ -6,8 +6,12 @@ from typing import Any, Dict, List
 from chronopersona.contracts.schemas import (
     EmbodiedState,
     LowLevelCommand,
+    NavigationResult,
     PerceptionResult,
+    RobotState3D,
+    SemanticNavigationGoal,
     SpatialRecord,
+    VisualObservation,
 )
 
 
@@ -91,4 +95,34 @@ class AbstractEmbodiedAdapter(ABC):
 
         Raises:
             ValueError: If action_token or robot_type is empty.
+        """
+
+    @abstractmethod
+    def get_visual_observation(self) -> VisualObservation:
+        """Acquire first-person visual observation from the simulator.
+
+        Returns:
+            VisualObservation containing rgb, depth, semantic_mask.
+        """
+
+    @abstractmethod
+    def get_robot_state_3d(self) -> RobotState3D:
+        """Acquire 3D robot pose and proprioception.
+
+        Returns:
+            RobotState3D with position, rotation, and optional joints.
+        """
+
+    @abstractmethod
+    def navigate_to_object(self, goal: SemanticNavigationGoal) -> NavigationResult:
+        """Execute semantic object navigation without privileged coordinates.
+
+        Implementations must rely only on onboard sensors (RGB-D, semantic,
+        GPS/Compass) and must not query simulator ground-truth object poses.
+
+        Args:
+            goal: Semantic navigation target.
+
+        Returns:
+            NavigationResult describing the episode outcome.
         """
