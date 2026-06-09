@@ -14,8 +14,12 @@ from chronopersona.contracts.schemas.base import (
 )
 from chronopersona.contracts.schemas.embodied import (
     LowLevelCommand,
+    NavigationResult,
     PerceptionResult,
+    RobotState3D,
+    SemanticNavigationGoal,
     SpatialRecord,
+    VisualObservation,
 )
 from chronopersona.contracts.schemas.insight import Insight
 from chronopersona.contracts.schemas.model import (
@@ -45,13 +49,17 @@ __all__ = [
     "Fact",
     "Insight",
     "LowLevelCommand",
+    "NavigationResult",
     "MemoryEntry",
     "MergeResult",
     "ModelRequest",
     "ModelResponse",
     "PerceptionResult",
     "RetrievedContext",
+    "RobotState3D",
+    "SemanticNavigationGoal",
     "Snapshot",
     "SpatialRecord",
+    "VisualObservation",
     "Version",
 ]
