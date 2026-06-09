@@ -110,3 +110,138 @@ class TestHabitatAdapterObjectMapping:
         for cn, en in _OBJECT_SEMANTIC_MAP.items():
             assert en.islower()
             assert en.replace("_", "").isalpha()
+"""Tests for HabitatAdapter: contract compliance and 3D method validation.
+
+Covers:
+- 2D legacy method NotImplementedError
+- Input validation (empty agent_id, empty goal)
+- 3D method NotImplementedError (simulator not wired)
+- Unknown target graceful failure (no simulator init)
+- Spatial memory operations
+"""
+
+import pytest
+
+from chronopersona.contracts.schemas import (
+    EmbodiedState,
+    NavigationResult,
+    SemanticNavigationGoal,
+    SpatialRecord,
+)
+from chronopersona.embodied.habitat_adapter import HabitatAdapter
+
+
+class TestHabitatAdapter2DLegacy:
+    """Verify 2D legacy methods raise NotImplementedError."""
+
+    def setup_method(self) -> None:
+        self.adapter = HabitatAdapter()
+
+    def test_get_perception_raises(self):
+        """2D get_perception raises NotImplementedError."""
+        with pytest.raises(NotImplementedError, match="2D EmbodiedState"):
+            self.adapter.get_perception("agent_0")
+
+    def test_execute_action_raises(self):
+        """2D execute_action raises NotImplementedError."""
+        with pytest.raises(NotImplementedError, match="2D action execution"):
+            self.adapter.execute_action("agent_0", {"dx": 1.0})
+
+    def test_predict_action_raises(self):
+        """2D predict_action raises NotImplementedError."""
+        state = EmbodiedState(agent_id="agent_0")
+        with pytest.raises(NotImplementedError, match="2D predict_action"):
+            self.adapter.predict_action(state, "go to sofa")
+
+    def test_translate_action_token_raises(self):
+        """2D translate_action_token raises NotImplementedError."""
+        with pytest.raises(NotImplementedError, match="2D action token translation"):
+            self.adapter.translate_action_token("approach", {}, "grid_2d")
+
+
+class TestHabitatAdapter3DMethods:
+    """Verify 3D methods raise NotImplementedError (simulator not wired)."""
+
+    def setup_method(self) -> None:
+        self.adapter = HabitatAdapter()
+
+    def test_get_visual_observation_raises(self):
+        """get_visual_observation raises NotImplementedError (sim not wired)."""
+        with pytest.raises(NotImplementedError, match="pending simulator wiring"):
+            self.adapter.get_visual_observation()
+
+    def test_get_robot_state_3d_raises(self):
+        """get_robot_state_3d raises NotImplementedError (sim not wired)."""
+        with pytest.raises(NotImplementedError, match="pending simulator wiring"):
+            self.adapter.get_robot_state_3d()
+
+    def test_navigate_known_target_sim_not_available(self):
+        """Known target attempts simulator init; fails because sim not available.
+
+        In test environments without habitat_sim installed, this raises
+        RuntimeError. If habitat_sim is installed but not wired, it raises
+        NotImplementedError. Both are acceptable: the contract guarantees
+        that navigation cannot complete without a working simulator.
+        """
+        goal = SemanticNavigationGoal(target_object="沙发")
+        with pytest.raises((RuntimeError, NotImplementedError)):
+            self.adapter.navigate_to_object(goal)
+
+
+class TestHabitatAdapterInputValidation:
+    """Verify input validation for supported methods."""
+
+    def setup_method(self) -> None:
+        self.adapter = HabitatAdapter()
+
+    def test_spatial_memory_empty_agent_raises(self):
+        """Empty agent_id raises ValueError."""
+        with pytest.raises(ValueError, match="agent_id must not be empty"):
+            self.adapter.get_spatial_memory("")
+
+    def test_navigate_empty_target_raises(self):
+        """Empty goal.target_object raises ValueError."""
+        goal = SemanticNavigationGoal(target_object="")
+        with pytest.raises(ValueError, match="goal.target_object must not be empty"):
+            self.adapter.navigate_to_object(goal)
+
+    def test_navigate_unknown_target_returns_failure(self):
+        """Unknown target object returns failed NavigationResult.
+
+        Verifies the early-return path: unknown objects fail gracefully
+        without attempting simulator initialization, avoiding unnecessary
+        RuntimeError/NotImplementedError for invalid inputs.
+        """
+        goal = SemanticNavigationGoal(target_object="飞船")
+        result = self.adapter.navigate_to_object(goal)
+        assert result.success is False
+        assert result.steps_taken == 0
+
+
+class TestHabitatAdapterSpatialMemory:
+    """Verify spatial memory read operations."""
+
+    def setup_method(self) -> None:
+        self.adapter = HabitatAdapter()
+
+    def test_spatial_memory_default_empty(self):
+        """Default spatial memory is empty for new agent."""
+        records = self.adapter.get_spatial_memory("agent_0")
+        assert records == []
+
+    def test_spatial_memory_after_internal_add(self):
+        """Spatial memory records can be retrieved after internal insertion.
+
+        NOTE: HabitatAdapter does not expose a public add_object method
+        (object insertion is handled by the simulator). This test verifies
+        the get_spatial_memory read path by directly populating the
+        internal _spatial_memory dict.
+        """
+        self.adapter._spatial_memory["agent_0"] = [
+            SpatialRecord(object_id="sofa", x=1.0, y=2.0),
+        ]
+        records = self.adapter.get_spatial_memory("agent_0")
+        assert len(records) == 1
+        assert records[0].object_id == "sofa"
+        assert records[0].x == 1.0
+        assert records[0].y == 2.0
