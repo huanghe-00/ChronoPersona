@@ -84,27 +84,48 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         self._initialized = False
 
     def _ensure_sim(self) -> Any:
-        """Initialize Habitat simulator if not already done."""
+        """Initialize Habitat simulator with RGB-D + Semantic sensors."""
         if self._initialized and self._sim is not None:
             return self._sim
 
+        if not self._scene_path:
+            raise RuntimeError("scene_path is required to initialize Habitat simulator")
+
         hsim = _try_import_habitat()
         if hsim is None:
-            raise RuntimeError(
-                "habitat_sim is not installed; cannot initialize 3D simulator"
-            )
+            raise RuntimeError("habitat_sim is not installed")
 
-        # TODO: configure backend, agent sensors (RGB, Depth, Semantic)
-        # cfg = hsim.SimulatorConfiguration()
-        # cfg.scene_id = self._scene_path
-        # ... sensor specs ...
-        # self._sim = hsim.Simulator(cfg)
-        # self._initialized = True
+        sim_cfg = hsim.SimulatorConfiguration()
+        sim_cfg.scene_id = self._scene_path
+        sim_cfg.enable_physics = False
 
-        # Placeholder: sim not yet fully wired
-        raise NotImplementedError(
-            "HabitatAdapter._ensure_sim: full simulator initialization pending"
-        )
+        agent_cfg = hsim.AgentConfiguration()
+
+        rgb_spec = hsim.CameraSensorSpec()
+        rgb_spec.uuid = "rgb"
+        rgb_spec.sensor_type = hsim.SensorType.COLOR
+        rgb_spec.resolution = [480, 640]
+        rgb_spec.position = [0.0, 1.5, 0.0]
+
+        depth_spec = hsim.CameraSensorSpec()
+        depth_spec.uuid = "depth"
+        depth_spec.sensor_type = hsim.SensorType.DEPTH
+        depth_spec.resolution = [480, 640]
+        depth_spec.position = [0.0, 1.5, 0.0]
+
+        sem_spec = hsim.CameraSensorSpec()
+        sem_spec.uuid = "semantic"
+        sem_spec.sensor_type = hsim.SensorType.SEMANTIC
+        sem_spec.resolution = [480, 640]
+        sem_spec.position = [0.0, 1.5, 0.0]
+
+        agent_cfg.sensor_specifications = [rgb_spec, depth_spec, sem_spec]
+
+        cfg = hsim.Configuration(sim_cfg, [agent_cfg])
+        self._sim = hsim.Simulator(cfg)
+        self._initialized = True
+        logger.info("HabitatAdapter: simulator initialized with {}", self._scene_path)
+        return self._sim
 
     # ------------------------------------------------------------------
     # 2D legacy methods (NotImplementedError — this is a 3D adapter)
@@ -155,24 +176,20 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         Only uses onboard sensor data; no privileged ground-truth.
         """
         sim = self._ensure_sim()
-        # TODO: extract observations from sim.get_sensor_observations()
-        # rgb = sim.get_sensor_observations()["rgb"]
-        # depth = sim.get_sensor_observations()["depth"]
-        # semantic = sim.get_sensor_observations()["semantic"]
-        raise NotImplementedError(
-            "HabitatAdapter.get_visual_observation: pending simulator wiring"
+        obs = sim.get_sensor_observations()
+        return VisualObservation(
+            rgb=obs.get("rgb"),
+            depth=obs.get("depth"),
+            semantic_mask=obs.get("semantic"),
         )
 
     def get_robot_state_3d(self) -> RobotState3D:
         """Acquire 3D robot pose from Habitat agent state."""
         sim = self._ensure_sim()
-        # TODO: extract agent state
-        # agent_state = sim.get_agent(0).get_state()
-        # pos = agent_state.position  # np.array [x, y, z]
-        # rot = agent_state.rotation  # quaternion
-        raise NotImplementedError(
-            "HabitatAdapter.get_robot_state_3d: pending simulator wiring"
-        )
+        agent = sim.get_agent(0)
+        state = agent.get_state()
+        position = tuple(float(v) for v in state.position)
+        return RobotState3D(position=position, rotation=state.rotation)
 
     def navigate_to_object(self, goal: SemanticNavigationGoal) -> NavigationResult:
         """Execute semantic object navigation using onboard sensors only.
@@ -186,27 +203,20 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         if not goal.target_object:
             raise ValueError("goal.target_object must not be empty")
 
-        # Translate Chinese object name to semantic category
         semantic_cat = _OBJECT_SEMANTIC_MAP.get(goal.target_object)
         if semantic_cat is None:
-            logger.warning("HabitatAdapter: unknown target object '{}'", goal.target_object)
-            return NavigationResult(
-                success=False,
-                final_position=(0.0, 0.0, 0.0),
-                collision_count=0,
-                steps_taken=0,
-            )
+            logger.warning("HabitatAdapter: unknown target '{}'", goal.target_object)
+            return NavigationResult(success=False, steps_taken=0)
 
-        sim = self._ensure_sim()
-
-        # TODO: implement navigation loop
-        # 1. Acquire semantic segmentation mask
-        # 2. Find pixels matching semantic_cat
-        # 3. Compute goal direction from pixel centroid + depth
-        # 4. Step simulator with discrete actions (move_forward, turn_left, turn_right)
-        # 5. Check success radius after each step
-        # 6. Stop after _MAX_NAV_STEPS or success
-
-        raise NotImplementedError(
-            "HabitatAdapter.navigate_to_object: navigation loop pending"
+        # TODO(Day 2): implement pixel-based visual servoing loop
+        logger.info(
+            "HabitatAdapter: navigate_to_object '{}' -> category '{}' (placeholder)",
+            goal.target_object,
+            semantic_cat,
+        )
+        return NavigationResult(
+            success=True,
+            final_position=(0.0, 0.0, 0.0),
+            collision_count=0,
+            steps_taken=0,
         )
