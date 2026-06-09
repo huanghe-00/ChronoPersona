@@ -1,3 +1,9 @@
+# === Python Version Constraint ===
+# Habitat-sim 0.2.4 requires Python >=3.9,<3.10
+# Please use conda env with python=3.9 if you need embodied simulation:
+#   conda create -n chrono-embodied python=3.9
+#   conda install habitat-sim=0.2.4 headless -c conda-forge -c aihabitat
+
 # === Core Framework ===
 langgraph>=0.0.50
 pydantic>=2.0.0
