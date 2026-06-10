@@ -70,7 +70,11 @@ function connectWebSocket() {
     ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (msg.event === 'chat.reply') {
-            log(`Agent: ${msg.data.reply_text || '(no text)'}`);
+            const reply = msg.data.reply_text || '(no text)';
+            log(`Agent: ${reply}`);
+            if (reply.includes('已到达')) {
+                log('[导航完成] ' + reply);
+            }
             if (msg.data.action_plan && msg.data.action_plan.reasoning) {
                 log(`Reasoning: ${msg.data.action_plan.reasoning}`);
             }
