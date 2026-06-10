@@ -10,10 +10,11 @@ import asyncio
 import functools
 import json
 import os
-
-import websockets
 import threading
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+import websockets
+from loguru import logger
 
 from chronopersona.agent_core.state_machine import StateMachineAgentCore
 from chronopersona.api.ws_gateway import WebSocketGateway
@@ -36,14 +37,14 @@ async def websocket_handler(websocket, path, gateway, adapter):
         auth_header = websocket.request_headers.get("Authorization", "")
         expected = f"Bearer {api_key}"
         if auth_header != expected:
-            print(f"[Auth] Failed: expected {expected}, got {auth_header}")
+            logger.warning("[Auth] Failed: expected {}, got {}", expected, auth_header)
             await websocket.close(1008, "Invalid API key")
             return
 
     client_id = str(id(websocket))
     gateway.register_client(client_id, websocket)
 
-    print(f"Client connected: {client_id}")
+    logger.info("Client connected: {}", client_id)
     try:
         async for message in websocket:
             payload = json.loads(message)
@@ -68,7 +69,7 @@ async def websocket_handler(websocket, path, gateway, adapter):
         pass
     finally:
         gateway.unregister_client(client_id)
-        print(f"Client disconnected: {client_id}")
+        logger.info("Client disconnected: {}", client_id)
 
 
 def main():
@@ -86,7 +87,7 @@ def main():
 
     def start_static_server() -> None:
         server = HTTPServer(("0.0.0.0", static_port), FrontendHandler)
-        print(f"Frontend static server running on http://0.0.0.0:{static_port}")
+        logger.info("Frontend static server running on http://0.0.0.0:{}", static_port)
         server.serve_forever()
 
     static_thread = threading.Thread(target=start_static_server, daemon=True)
@@ -110,8 +111,8 @@ def main():
         handler, "0.0.0.0", port, process_request=process_request
     )
     asyncio.get_event_loop().run_until_complete(start_server)
-    print(f"Server running on ws://0.0.0.0:{port}/ws (health: http://0.0.0.0:{port}/health)")
-    print(f"Frontend: http://0.0.0.0:{static_port}")
+    logger.info("Server running on ws://0.0.0.0:{}/ws (health: http://0.0.0.0:{}/health)", port, port)
+    logger.info("Frontend: http://0.0.0.0:{}", static_port)
     asyncio.get_event_loop().run_forever()
 
 

@@ -63,6 +63,8 @@ class StateMachineAgentCore(AbstractAgentCore):
         self._working_windows: Dict[str, WorkingMemoryWindow] = {}
         self._insight_scheduler: Optional[Any] = None
         self._turn_count: Dict[str, int] = {}
+        self._token_budget: int = 8000  # MVA context budget (4K-8K upper bound)
+        self._tokens_used: Dict[str, int] = {}
 
     def run_turn(
         self,
@@ -119,6 +121,21 @@ class StateMachineAgentCore(AbstractAgentCore):
                 branch_id=branch_id,
             )
 
+        # v1.1.0: Hard budget throttle (production baseline skeleton)
+        used = self._tokens_used.get(branch_id, 0)
+        if used >= self._token_budget:
+            logger.warning(
+                "Token budget exceeded for branch {}: {}/{}",
+                branch_id, used, self._token_budget,
+            )
+            return AgentOutput(
+                reply_text="当前会话 token 预算已用尽，请开启新会话。",
+                emotion_state=self._emotion_state,
+                action_plan=None,
+                used_memories=[],
+                branch_id=branch_id,
+            )
+
         context = self._memory_node.retrieve(user_input, branch_id, intent=intent.value)
 
         # H1: Update emotion state BEFORE building prompt so LLM sees latest emotion
@@ -126,6 +143,20 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         prompt = self._build_prompt(user_input, context, branch_id, embodied_state)
         response = self._llm_node.generate(prompt, branch_id)
+
+        # v1.1.0: Budget accumulation and tiered alerting
+        turn_tokens = response.input_tokens + response.output_tokens
+        self._tokens_used[branch_id] = used + turn_tokens
+        if self._tokens_used[branch_id] >= self._token_budget:
+            logger.error(
+                "Token budget exhausted after this turn: {}/{}",
+                self._tokens_used[branch_id], self._token_budget,
+            )
+        elif self._tokens_used[branch_id] >= int(self._token_budget * 0.8):
+            logger.warning(
+                "Token budget warning: {}/{} (80% threshold)",
+                self._tokens_used[branch_id], self._token_budget,
+            )
 
         # W5: ActionPlanner parses action intent and applies emotion modulation
         action_plan = None
