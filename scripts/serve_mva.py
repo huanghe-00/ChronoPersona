@@ -2,15 +2,13 @@
 #!/usr/bin/env python3
 """MVA WebSocket server for ChronoPersona.
 
-Zero-dependency HTTP health check on port 8765.
-WebSocket endpoint on ws://localhost:8765/ws.
+WebSocket endpoint on ws://localhost:8765/ws
+HTTP health check on http://localhost:8765/health
 """
 
 import asyncio
 import json
 import os
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from threading import Thread
 
 import websockets
 
@@ -20,26 +18,11 @@ from chronopersona.mocks.mock_memory_store import MockMemoryStore
 from chronopersona.mocks.mock_model_router import MockModelRouter
 
 
-class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == "/health":
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            self.wfile.write(b'{"status":"ok"}')
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-    def log_message(self, format, *args):
-        pass  # suppress default logging
-
-
-def start_http_server(port: int = 8765):
-    server = HTTPServer(("0.0.0.0", port), HealthHandler)
-    thread = Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    print(f"HTTP health check running on http://0.0.0.0:{port}/health")
+async def process_request(path, request_headers):
+    """Handle HTTP health check before WebSocket upgrade."""
+    if path == "/health":
+        return (200, [("Content-type", "application/json")], b'{"status":"ok"}')
+    return None
 
 
 async def websocket_handler(websocket, path):
@@ -99,10 +82,11 @@ async def websocket_handler(websocket, path):
 
 def main():
     port = int(os.environ.get("PORT", "8765"))
-    start_http_server(port)
-    start_server = websockets.serve(websocket_handler, "0.0.0.0", port)
+    start_server = websockets.serve(
+        websocket_handler, "0.0.0.0", port, process_request=process_request
+    )
     asyncio.get_event_loop().run_until_complete(start_server)
-    print(f"WebSocket server running on ws://0.0.0.0:{port}/ws")
+    print(f"Server running on ws://0.0.0.0:{port}/ws (health: http://0.0.0.0:{port}/health)")
     asyncio.get_event_loop().run_forever()
 
 
