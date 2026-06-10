@@ -23,7 +23,8 @@ class TestSimplePrivacyFilterL0:
 
     def test_phone_detection_and_replacement(self):
         """T01: Chinese mobile phone number detection and redaction."""
-        content = "我的手机号是13812345678，请记住"
+        # Use longer text to keep sensitive ratio below 0.3 threshold
+        content = "我的手机号是13812345678，请记住，这是非常重要的联系方式，请妥善保管"
         result = self.filter.apply(content, FilterLevel.L0, branch_id="main")
         assert result.filtered_content != content
         assert "<REDACTED:phone:" in result.filtered_content
