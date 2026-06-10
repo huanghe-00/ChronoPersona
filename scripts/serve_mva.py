@@ -12,6 +12,8 @@ import json
 import os
 
 import websockets
+import threading
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 from chronopersona.agent_core.state_machine import StateMachineAgentCore
 from chronopersona.api.ws_gateway import WebSocketGateway
@@ -71,6 +73,24 @@ async def websocket_handler(websocket, path, gateway, adapter):
 
 def main():
     port = int(os.environ.get("PORT", "8765"))
+    static_port = int(os.environ.get("STATIC_PORT", "8080"))
+
+    # MVA: single-threaded HTTP is sufficient for frontend static files
+    frontend_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "frontend"
+    )
+
+    class FrontendHandler(SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=frontend_dir, **kwargs)
+
+    def start_static_server() -> None:
+        server = HTTPServer(("0.0.0.0", static_port), FrontendHandler)
+        print(f"Frontend static server running on http://0.0.0.0:{static_port}")
+        server.serve_forever()
+
+    static_thread = threading.Thread(target=start_static_server, daemon=True)
+    static_thread.start()
 
     from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
 
@@ -91,6 +111,7 @@ def main():
     )
     asyncio.get_event_loop().run_until_complete(start_server)
     print(f"Server running on ws://0.0.0.0:{port}/ws (health: http://0.0.0.0:{port}/health)")
+    print(f"Frontend: http://0.0.0.0:{static_port}")
     asyncio.get_event_loop().run_forever()
 
 
