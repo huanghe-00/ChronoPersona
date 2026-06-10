@@ -19,6 +19,7 @@ from chronopersona.contracts.schemas import (
     EmbodiedState,
     EmotionLabel,
     EmotionState,
+    MemoryEntry,
     RetrievedContext,
     Version,
 )
@@ -89,6 +90,20 @@ class StateMachineAgentCore(AbstractAgentCore):
             # Persist to L1 working memory
             window = self._get_or_create_window(branch_id)
             window.add_turn(user_input, reply, branch_id)
+
+            # Persist navigation event to L2 episodic memory
+            memory_entry = MemoryEntry(
+                content=f"[导航] 用户指令：'{user_input}' → 结果：{'成功' if nav_result.success else '失败'}，最终位置 {nav_result.final_position}",
+                branch_id=branch_id,
+                memory_type="episodic",
+                session_id="embodied_nav",
+                entities=[nav_target] if nav_result.success else [],
+            )
+            try:
+                self._memory_store.add(memory_entry, branch_id=branch_id)
+            except (ValueError, RuntimeError) as e:
+                logger.warning("Failed to persist navigation memory for branch {}: {}", branch_id, e)
+
             return AgentOutput(
                 reply_text=reply,
                 emotion_state=self._emotion_state,
