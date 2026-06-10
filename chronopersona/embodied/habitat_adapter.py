@@ -89,11 +89,11 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
             return self._sim
 
         if not self._scene_path:
-            raise NotImplementedError("scene_path is required to initialize Habitat simulator")
+            raise NotImplementedError("pending simulator wiring: scene_path is required")
 
         hsim = _try_import_habitat()
         if hsim is None:
-            raise NotImplementedError("habitat_sim is not installed")
+            raise NotImplementedError("pending simulator wiring: habitat_sim is not installed")
 
         sim_cfg = hsim.SimulatorConfiguration()
         sim_cfg.scene_id = self._scene_path
@@ -200,8 +200,6 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
 
         Must NOT use simulator ground-truth object poses.
         """
-        self._ensure_sim()
-
         if not goal.target_object:
             raise ValueError("goal.target_object must not be empty")
 

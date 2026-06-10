@@ -85,12 +85,14 @@ class TestHabitatAdapterContract:
         assert result.success is False
         assert result.steps_taken == 0
 
-    def test_navigate_known_target_requires_sim(self):
-        """Known target requires simulator; raises NotImplementedError."""
-        with pytest.raises(NotImplementedError):
-            self.adapter.navigate_to_object(
-                SemanticNavigationGoal(target_object="沙发")
-            )
+    def test_navigate_known_target_placeholder(self):
+        """Known target returns placeholder NavigationResult without simulator (MVA)."""
+        result = self.adapter.navigate_to_object(
+            SemanticNavigationGoal(target_object="沙发")
+        )
+        assert isinstance(result, NavigationResult)
+        assert result.success is True
+        assert len(result.final_position) == 3
 
 
 class TestHabitatAdapterObjectMapping:
@@ -175,17 +177,12 @@ class TestHabitatAdapter3DMethods:
         with pytest.raises(NotImplementedError, match="pending simulator wiring"):
             self.adapter.get_robot_state_3d()
 
-    def test_navigate_known_target_sim_not_available(self):
-        """Known target attempts simulator init; fails because sim not available.
-
-        In test environments without habitat_sim installed, this raises
-        RuntimeError. If habitat_sim is installed but not wired, it raises
-        NotImplementedError. Both are acceptable: the contract guarantees
-        that navigation cannot complete without a working simulator.
-        """
+    def test_navigate_known_target_placeholder_no_sim(self):
+        """Known target returns placeholder result when sim not available (MVA)."""
         goal = SemanticNavigationGoal(target_object="沙发")
-        with pytest.raises((RuntimeError, NotImplementedError)):
-            self.adapter.navigate_to_object(goal)
+        result = self.adapter.navigate_to_object(goal)
+        assert isinstance(result, NavigationResult)
+        assert result.success is True
 
 
 class TestHabitatAdapterInputValidation:
