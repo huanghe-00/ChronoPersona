@@ -1,6 +1,7 @@
 """Interface for hybrid retrieval (vector + graph + keyword)."""
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from chronopersona.contracts.schemas import RetrievedContext
 
@@ -16,7 +17,7 @@ class IHybridRetriever(ABC):
         self,
         query: str,
         branch_id: str,
-        intent: str | None = None,
+        intent: Optional[str] = None,
         top_k: int = 5,
     ) -> RetrievedContext:
         """Execute hybrid retrieval and return fused context.
