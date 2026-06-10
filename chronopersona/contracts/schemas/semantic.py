@@ -1,4 +1,4 @@
-Z"""Semantic memory schemas for L3."""
+"""Semantic memory schemas for L3."""
 
 from __future__ import annotations
 
