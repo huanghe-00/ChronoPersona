@@ -62,7 +62,19 @@ class WebSocketGateway:
             len(user_input),
         )
 
-        out = self._agent_core.run_turn(user_input, branch_id=branch_id)
+        # v1.1.0: Inject embodied state if adapter is available
+        embodied_state = None
+        if hasattr(self._agent_core, "get_embodied_state"):
+            try:
+                embodied_state = self._agent_core.get_embodied_state()
+            except Exception as e:
+                logger.warning("Failed to get embodied state: {}", e)
+
+        out = self._agent_core.run_turn(
+            user_input,
+            branch_id=branch_id,
+            embodied_state=embodied_state,
+        )
         return {
             "reply_text": out.reply_text,
             "emotion_state": {

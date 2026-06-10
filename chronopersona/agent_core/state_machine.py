@@ -248,6 +248,16 @@ class StateMachineAgentCore(AbstractAgentCore):
         """Return current emotion state."""
         return self._emotion_state
 
+    def get_embodied_state(self) -> Optional[EmbodiedState]:
+        """Return current embodied state from adapter, or None if not configured."""
+        if self._embodied_adapter is None:
+            return None
+        try:
+            return self._embodied_adapter.get_perception("default")
+        except (ValueError, RuntimeError) as e:
+            logger.warning("Failed to get embodied state: {}", e)
+            return None
+
     def set_insight_scheduler(self, scheduler: Any) -> None:
         """Attach InsightScheduler for periodic consolidation."""
         self._insight_scheduler = scheduler
