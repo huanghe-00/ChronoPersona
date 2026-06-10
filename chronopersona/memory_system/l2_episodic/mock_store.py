@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Optional
 
 from chronopersona.contracts.interfaces.abstract_episodic_store import AbstractEpisodicStore
 from chronopersona.contracts.schemas import MemoryEntry, RetrievedContext
@@ -34,7 +35,7 @@ class MockEpisodicStore(AbstractEpisodicStore):
         query: str,
         branch_id: str,
         top_k: int = 5,
-        intent: str | None = None,
+        intent: Optional[str] = None,
     ) -> RetrievedContext:
         """Retrieve relevant memories using mock similarity."""
         if branch_id not in self._store:

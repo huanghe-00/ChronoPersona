@@ -1,5 +1,7 @@
 """Mock hybrid retriever for testing."""
 
+from typing import Optional
+
 from chronopersona.contracts.interfaces import IHybridRetriever
 from chronopersona.contracts.schemas import MemoryEntry, RetrievedContext
 
@@ -11,7 +13,7 @@ class MockHybridRetriever(IHybridRetriever):
         self,
         query: str,
         branch_id: str,
-        intent: str | None = None,
+        intent: Optional[str] = None,
         top_k: int = 5,
     ) -> RetrievedContext:
         if not branch_id:

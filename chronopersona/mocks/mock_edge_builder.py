@@ -1,6 +1,6 @@
 """Mock edge builder for testing."""
 
-from typing import List
+from typing import List, Optional
 
 from chronopersona.contracts.interfaces import IEdgeBuilder
 from chronopersona.contracts.schemas.semantic import SemanticEdge
@@ -19,7 +19,7 @@ class MockEdgeBuilder(IEdgeBuilder):
         branch_id: str,
         content: str,
         entities: List[str],
-        prev_turn_id: str | None = None,
+        prev_turn_id: Optional[str] = None,
     ) -> List[SemanticEdge]:
         if not branch_id or not turn_id:
             raise ValueError("branch_id and turn_id must not be empty")

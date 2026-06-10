@@ -1,7 +1,7 @@
 """Interface for semantic edge builders."""
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 from chronopersona.contracts.schemas.semantic import SemanticEdge
 
@@ -20,7 +20,7 @@ class IEdgeBuilder(ABC):
         branch_id: str,
         content: str,
         entities: List[str],
-        prev_turn_id: str | None = None,
+        prev_turn_id: Optional[str] = None,
     ) -> List[SemanticEdge]:
         """Extract and build edges from one turn.
 

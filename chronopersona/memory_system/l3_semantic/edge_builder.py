@@ -1,7 +1,7 @@
 """Tier 1 rule-based edge builder (MENTIONS, TEMPORAL_NEXT, CAUSED, etc.)."""
 
 import re
-from typing import List
+from typing import List, Optional
 
 from loguru import logger
 
@@ -37,7 +37,7 @@ class SimpleEdgeBuilder(IEdgeBuilder):
         branch_id: str,
         content: str,
         entities: List[str],
-        prev_turn_id: str | None = None,
+        prev_turn_id: Optional[str] = None,
     ) -> List[SemanticEdge]:
         if not branch_id or not turn_id:
             raise ValueError("branch_id and turn_id must not be empty")

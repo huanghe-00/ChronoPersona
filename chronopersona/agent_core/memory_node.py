@@ -25,10 +25,10 @@ class MemoryNode:
     def __init__(
         self,
         memory_store: AbstractMemoryStore,
-        intent_graph: IntentGraph | None = None,
+        intent_graph: Optional[IntentGraph] = None,
     ) -> None:
         self._memory_store = memory_store
-        self._navigator: IntentNavigator | None = None
+        self._navigator: Optional[IntentNavigator] = None
         if intent_graph is not None:
             self._navigator = IntentNavigator(intent_graph)
 

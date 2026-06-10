@@ -1,6 +1,6 @@
 """Hybrid retriever: fuses L2 vector, L3 graph, and keyword recall."""
 
-from typing import Any
+from typing import Any, Optional
 
 from loguru import logger
 
@@ -23,7 +23,7 @@ class HybridRetriever(IHybridRetriever):
         self,
         query: str,
         branch_id: str,
-        intent: str | None = None,
+        intent: Optional[str] = None,
         top_k: int = 5,
     ) -> RetrievedContext:
         if not branch_id:

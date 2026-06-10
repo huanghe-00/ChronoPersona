@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from chronopersona.contracts.schemas.semantic import IntentPattern
 from chronopersona.memory_system.l3_semantic.intent_graph import IntentGraph
@@ -14,7 +14,7 @@ class IntentNavigator:
     def __init__(
         self,
         graph: IntentGraph,
-        patterns: List[IntentPattern] | None = None,
+        patterns: Optional[List[IntentPattern]] = None,
     ) -> None:
         self._graph = graph
         self._patterns: Dict[str, IntentPattern] = {}

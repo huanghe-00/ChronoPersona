@@ -1,6 +1,6 @@
 """InsightScheduler implementation."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -12,7 +12,7 @@ class InsightScheduler:
         self,
         consolidation_agent: Any,
         trigger_rounds: int = 10,
-        turn_threshold: int | None = None,
+        turn_threshold: Optional[int] = None,
     ) -> None:
         self._agent = consolidation_agent
         self._trigger_rounds = (
