@@ -56,10 +56,14 @@ async def websocket_handler(websocket, path):
 
     from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
 
+    adapter = GridWorldAdapter()
+    # Align initial pose with frontend hard-coded initial state
+    adapter._agents["default"] = (3.0, 4.0, 0.0)
+
     agent_core = StateMachineAgentCore(
         memory_store=MockMemoryStore(),
         model_router=MockModelRouter(),
-        embodied_adapter=GridWorldAdapter(),
+        embodied_adapter=adapter,
     )
     gateway = WebSocketGateway(agent_core=agent_core)
     client_id = str(id(websocket))
@@ -72,12 +76,13 @@ async def websocket_handler(websocket, path):
             response = gateway.handle_message(client_id, payload)
             await websocket.send(json.dumps({"event": "chat.reply", "data": response}))
 
-            # Push embodied state stub (v0.7.0: static demo state)
+            # Push real embodied state from adapter
+            embodied = adapter.get_perception("default")
             state = {
-                "x": 3,
-                "y": 4,
-                "theta": 0.0,
-                "fov_objects": ["sofa", "table"],
+                "x": embodied.x,
+                "y": embodied.y,
+                "theta": embodied.theta,
+                "fov_objects": embodied.fov_objects,
                 "action_token": (
                     response.get("action_plan", {}).get("action_token")
                     if response.get("action_plan")
