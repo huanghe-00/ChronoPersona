@@ -98,6 +98,10 @@ def main():
     adapter = GridWorldAdapter()
     # Align initial pose with frontend hard-coded initial state
     adapter._agents["default"] = (3.0, 4.0, 0.0)
+    adapter.add_object("default", "沙发", 2.0, 3.0)
+    adapter.add_object("default", "床", 8.0, 12.0)
+    adapter.add_object("default", "桌子", 3.0, 2.0)
+    adapter.add_object("default", "厨房", 15.0, 5.0)
 
     agent_core = StateMachineAgentCore(
         memory_store=MockMemoryStore(),

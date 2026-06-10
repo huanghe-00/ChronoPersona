@@ -21,7 +21,7 @@ from chronopersona.contracts.schemas.embodied import (
     SpatialRecord,
     VisualObservation,
 )
-from chronopersona.contracts.schemas.insight import Insight
+from chronopersona.contracts.schemas.insight import BehavioralRule, Insight
 from chronopersona.contracts.schemas.model import (
     BudgetStatus,
     CostRecord,
@@ -51,6 +51,7 @@ __all__ = [
     "CostRecord",
     "CostReport",
     "EmbodiedState",
+    "BehavioralRule",
     "EmotionLabel",
     "EmotionState",
     "Fact",
