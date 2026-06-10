@@ -7,6 +7,7 @@ HTTP health check on http://localhost:8765/health
 """
 
 import asyncio
+import functools
 import json
 import os
 
@@ -25,8 +26,8 @@ async def process_request(path, request_headers):
     return None
 
 
-async def websocket_handler(websocket, path):
-    """Handle WebSocket connections."""
+async def websocket_handler(websocket, path, gateway, adapter):
+    """Handle WebSocket connections with shared state."""
     # v1.1.0: API Key authentication skeleton (production baseline)
     api_key = os.environ.get("MVA_API_KEY")
     if api_key:
@@ -37,18 +38,6 @@ async def websocket_handler(websocket, path):
             await websocket.close(1008, "Invalid API key")
             return
 
-    from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
-
-    adapter = GridWorldAdapter()
-    # Align initial pose with frontend hard-coded initial state
-    adapter._agents["default"] = (3.0, 4.0, 0.0)
-
-    agent_core = StateMachineAgentCore(
-        memory_store=MockMemoryStore(),
-        model_router=MockModelRouter(),
-        embodied_adapter=adapter,
-    )
-    gateway = WebSocketGateway(agent_core=agent_core)
     client_id = str(id(websocket))
     gateway.register_client(client_id, websocket)
 
@@ -82,8 +71,23 @@ async def websocket_handler(websocket, path):
 
 def main():
     port = int(os.environ.get("PORT", "8765"))
+
+    from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
+
+    adapter = GridWorldAdapter()
+    # Align initial pose with frontend hard-coded initial state
+    adapter._agents["default"] = (3.0, 4.0, 0.0)
+
+    agent_core = StateMachineAgentCore(
+        memory_store=MockMemoryStore(),
+        model_router=MockModelRouter(),
+        embodied_adapter=adapter,
+    )
+    gateway = WebSocketGateway(agent_core=agent_core)
+
+    handler = functools.partial(websocket_handler, gateway=gateway, adapter=adapter)
     start_server = websockets.serve(
-        websocket_handler, "0.0.0.0", port, process_request=process_request
+        handler, "0.0.0.0", port, process_request=process_request
     )
     asyncio.get_event_loop().run_until_complete(start_server)
     print(f"Server running on ws://0.0.0.0:{port}/ws (health: http://0.0.0.0:{port}/health)")
