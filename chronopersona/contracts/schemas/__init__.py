@@ -29,6 +29,13 @@ from chronopersona.contracts.schemas.model import (
     ModelRequest,
     ModelResponse,
 )
+from chronopersona.contracts.schemas.privacy import (
+    FilterLevel,
+    FilteredContent,
+    PiiSpan,
+    PiiType,
+    PrivacyFilterStats,
+)
 from chronopersona.contracts.schemas.version import (
     ChangeSet,
     MergeResult,
@@ -47,6 +54,8 @@ __all__ = [
     "EmotionLabel",
     "EmotionState",
     "Fact",
+    "FilterLevel",
+    "FilteredContent",
     "Insight",
     "LowLevelCommand",
     "NavigationResult",
@@ -55,6 +64,9 @@ __all__ = [
     "ModelRequest",
     "ModelResponse",
     "PerceptionResult",
+    "PiiSpan",
+    "PiiType",
+    "PrivacyFilterStats",
     "RetrievedContext",
     "RobotState3D",
     "SemanticNavigationGoal",

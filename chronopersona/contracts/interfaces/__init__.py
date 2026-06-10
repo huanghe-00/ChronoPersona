@@ -42,6 +42,7 @@ from chronopersona.contracts.interfaces.abstract_auth_middleware import (
     IAuthMiddleware,
 )
 from chronopersona.contracts.interfaces.abstract_correlation_miner import ICorrelationMiner
+from chronopersona.contracts.interfaces.abstract_privacy_filter import IPrivacyFilter
 from chronopersona.contracts.interfaces.model_router import AbstractModelRouter
 
 __all__ = [
@@ -67,6 +68,7 @@ __all__ = [
     "IEdgeBuilder",
     "IWriteDomainLock",
     "ICorrelationMiner",
+    "IPrivacyFilter",
     "AuthenticationError",
     "AuthorizationError",
     "IAuthMiddleware",
