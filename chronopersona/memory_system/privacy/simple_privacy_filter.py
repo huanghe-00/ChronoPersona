@@ -140,8 +140,21 @@ class SimplePrivacyFilter(IPrivacyFilter):
                     confidence=1.0,
                 ))
 
-        spans.sort(key=lambda s: s.start)
-        return spans
+        # Sort by start position, then by length descending (longer first)
+        spans.sort(key=lambda s: (s.start, -(s.end - s.start)))
+        
+        # Deduplicate overlapping spans: keep longer span when overlap occurs
+        deduped: List[PiiSpan] = []
+        for span in spans:
+            if not deduped:
+                deduped.append(span)
+                continue
+            last = deduped[-1]
+            if span.start < last.end:  # Overlaps with last kept span
+                continue  # Skip shorter overlapping span
+            deduped.append(span)
+        
+        return deduped
 
     def get_stats(self, branch_id: str) -> PrivacyFilterStats:
         """Get privacy filter statistics for a branch."""
