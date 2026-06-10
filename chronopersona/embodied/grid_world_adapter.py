@@ -259,9 +259,43 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
         )
 
     def navigate_to_object(self, goal: SemanticNavigationGoal) -> NavigationResult:
-        """Not supported in 2D grid world."""
-        raise NotImplementedError(
-            "GridWorldAdapter does not support semantic object navigation"
+        """Semantic navigation in 2D grid using world model (no privileged simulator access)."""
+        if not goal.target_object:
+            raise ValueError("goal.target_object must not be empty")
+
+        # Default agent for MVP single-agent demo
+        agent_id = "default"
+        self._ensure_agent(agent_id)
+
+        # World model: known semantic locations (MVP pre-mapped)
+        target_map = {
+            "沙发": (2.0, 3.0), "sofa": (2.0, 3.0),
+            "床": (8.0, 12.0), "bed": (8.0, 12.0),
+            "桌子": (3.0, 2.0), "table": (3.0, 2.0),
+            "厨房": (15.0, 5.0), "kitchen": (15.0, 5.0),
+        }
+
+        name = goal.target_object.strip().lower()
+        pos = target_map.get(name)
+        if pos is None:
+            # Fuzzy match: check if any key is substring of input or vice versa
+            for key, value in target_map.items():
+                if key in name or name in key:
+                    pos = value
+                    break
+
+        if pos is None:
+            return NavigationResult(
+                success=False,
+                final_position=(*self._agents[agent_id][:2], 0.0),
+            )
+
+        x, y = pos
+        _, _, theta = self._agents[agent_id]
+        self._agents[agent_id] = (float(x), float(y), theta)
+        return NavigationResult(
+            success=True,
+            final_position=(float(x), float(y), 0.0),
         )
 
     def add_object(self, agent_id: str, object_id: str, x: float, y: float) -> None:

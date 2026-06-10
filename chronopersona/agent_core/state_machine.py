@@ -1,5 +1,6 @@
 """State machine orchestration for Agent Core."""
 
+import re
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
@@ -44,12 +45,14 @@ class StateMachineAgentCore(AbstractAgentCore):
         intent_graph: Optional[IntentGraph] = None,
         persona_injector: Optional[IPersonaInjector] = None,
         action_planner: Optional[AbstractActionPlanner] = None,
+        embodied_adapter: Optional[Any] = None,
     ) -> None:
         self._memory_store = memory_store
         self._model_router = model_router
         self._version_manager = version_manager
         self._persona_injector = persona_injector
         self._action_planner = action_planner
+        self._embodied_adapter = embodied_adapter
         self._intent_node = IntentNode()
         self._memory_node = MemoryNode(memory_store, intent_graph=intent_graph)
         self._llm_node = LLMNode(model_router)
@@ -71,6 +74,29 @@ class StateMachineAgentCore(AbstractAgentCore):
             raise ValueError("branch_id must not be empty")
 
         intent = self._intent_node.classify(user_input)
+
+        # MVP embodied navigation: heuristic bypass for semantic navigation
+        nav_target = self._extract_navigation_target(user_input)
+        if nav_target and self._embodied_adapter is not None:
+            from chronopersona.contracts.schemas import SemanticNavigationGoal
+            goal = SemanticNavigationGoal(target_object=nav_target)
+            nav_result = self._embodied_adapter.navigate_to_object(goal)
+            reply = (
+                f"已到达{nav_target}旁边，还需要什么？"
+                if nav_result.success
+                else f"无法找到{nav_target}，请确认目标名称。"
+            )
+            # Persist to L1 working memory
+            window = self._get_or_create_window(branch_id)
+            window.add_turn(user_input, reply, branch_id)
+            return AgentOutput(
+                reply_text=reply,
+                emotion_state=self._emotion_state,
+                action_plan=None,
+                used_memories=[],
+                branch_id=branch_id,
+            )
+
         context = self._memory_node.retrieve(user_input, branch_id, intent=intent.value)
 
         # H1: Update emotion state BEFORE building prompt so LLM sees latest emotion
@@ -259,3 +285,15 @@ class StateMachineAgentCore(AbstractAgentCore):
         parts.append(f"Working: {len(window._turns)} turns")
         parts.append("Episodic: retrieved via memory node")
         return "\n".join(parts)
+
+    def _extract_navigation_target(self, text: str) -> Optional[str]:
+        """Heuristic extraction of navigation target from user input."""
+        patterns = [
+            r"[到去]\s*(\S+?)(?:旁边|附近|那里|去)?[吧]?[？?]?$",
+            r"^(?:请|帮我)?\s*(?:到|去)\s*(\S+)",
+        ]
+        for p in patterns:
+            m = re.search(p, text)
+            if m:
+                return m.group(1).strip()
+        return None

@@ -49,6 +49,13 @@ function log(msg) {
     div.scrollTop = div.scrollHeight;
 }
 
+const TARGETS = {
+    sofa: { x: 2, y: 3, label: '沙发' },
+    bed: { x: 8, y: 12, label: '床' },
+    table: { x: 3, y: 2, label: '桌子' },
+    kitchen: { x: 15, y: 5, label: '厨房' }
+};
+
 const WS_URL = 'ws://localhost:8765/ws';
 let ws = null;
 let agentState = { x: 3, y: 4, theta: 0 };
@@ -73,11 +80,10 @@ function connectWebSocket() {
             // Redraw canvas with new state
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawGrid();
-            drawObject(2, 3, 'sofa');
-            drawObject(3, 2, 'table');
+            Object.values(TARGETS).forEach(t => drawObject(t.x, t.y, t.label));
             if (s.fov_objects) {
                 s.fov_objects.forEach((obj, idx) => {
-                    drawObject(2 + idx, 3 - idx, obj);
+                    // Optional: draw dynamic FOV objects
                 });
             }
             drawAgent(agentState.x, agentState.y, agentState.theta);
@@ -111,8 +117,7 @@ function sendMsg() {
 
 // Initial render
 drawGrid();
-drawObject(2, 3, 'sofa');
-drawObject(3, 2, 'table');
+Object.values(TARGETS).forEach(t => drawObject(t.x, t.y, t.label));
 drawAgent(agentState.x, agentState.y, agentState.theta);
 log('MVA: 2D world initialized. Grid 20x20, Agent at (3,4).');
 connectWebSocket();
