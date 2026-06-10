@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import List, Optional
 
 
@@ -18,4 +18,4 @@ class Insight:
     confidence: float  # 0.0 ~ 1.0
     valid_until: Optional[datetime] = None
     branch_id: str = "main"
-    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
