@@ -58,6 +58,60 @@ class TestActionPlanner:
         )
         assert len(plan.reasoning) > 0
 
+    def test_arousal_increases_speed_reduces_proximity(self) -> None:
+        """T09: High arousal increases speed and reduces proximity."""
+        planner = ActionPlanner()
+        plan = planner.plan(
+            "慢慢靠近",
+            EmotionState(
+                current_state=EmotionLabel.CONCERNED,
+                intensity=1.0,
+                arousal=0.75,
+                valence=0.0,
+            ),
+            "main",
+        )
+        # CONCERNED base: speed_mult=0.5, proximity_mult=0.5
+        # arousal=0.75: factor = 1.0 + (0.75 - 0.5) * 0.4 = 1.1
+        # speed_mult = 0.5 * 1.1 = 0.55
+        # proximity_mult = 0.5 * (1.0 - (0.75 - 0.5) * 0.3) = 0.4625
+        assert plan.action_params["speed_mult"] == pytest.approx(0.55, rel=1e-3)
+        assert plan.action_params["proximity_mult"] == pytest.approx(0.4625, rel=1e-3)
+
+    def test_positive_valence_increases_volume(self) -> None:
+        """T10: Positive valence increases volume multiplier."""
+        planner = ActionPlanner()
+        plan = planner.plan(
+            "观察四周",
+            EmotionState(
+                current_state=EmotionLabel.EMPATHETIC,
+                intensity=0.5,
+                arousal=0.0,
+                valence=0.6,
+            ),
+            "main",
+        )
+        # EMPATHETIC base: volume_mult=0.9
+        # valence=0.6: volume_mult = 0.9 * (1.0 + 0.6 * 0.1) = 0.954
+        assert plan.action_params["volume_mult"] == pytest.approx(0.954, rel=1e-3)
+
+    def test_negative_valence_decreases_volume(self) -> None:
+        """T11: Negative valence decreases volume multiplier."""
+        planner = ActionPlanner()
+        plan = planner.plan(
+            "后退",
+            EmotionState(
+                current_state=EmotionLabel.CONCERNED,
+                intensity=0.5,
+                arousal=0.0,
+                valence=-0.5,
+            ),
+            "main",
+        )
+        # CONCERNED base: volume_mult=0.8
+        # valence=-0.5: volume_mult = 0.8 * (1.0 + (-0.5) * 0.15) = 0.74
+        assert plan.action_params["volume_mult"] == pytest.approx(0.74, rel=1e-3)
+
 
 class TestMockActionPlanner:
     """Tests for MockActionPlanner."""
