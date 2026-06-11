@@ -23,7 +23,7 @@ from chronopersona.contracts.schemas import (
     RetrievedContext,
     Version,
 )
-from chronopersona.agent_core.intent_node import IntentNode
+from chronopersona.agent_core.intent_node import Intent, IntentNode
 from chronopersona.agent_core.llm_node import LLMNode
 from chronopersona.agent_core.memory_node import MemoryNode
 from chronopersona.agent_core.output_node import OutputNode
@@ -78,48 +78,61 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         intent = self._intent_node.classify(user_input)
 
-        # MVP embodied navigation: heuristic bypass for semantic navigation
-        nav_target = self._extract_navigation_target(user_input)
-        if nav_target and self._embodied_adapter is not None:
-            from chronopersona.contracts.schemas import SemanticNavigationGoal
-            goal = SemanticNavigationGoal(target_object=nav_target)
-            nav_result = self._embodied_adapter.navigate_to_object(goal)
-            reply = (
-                f"已到达{nav_target}旁边，还需要什么？"
-                if nav_result.success
-                else f"无法找到{nav_target}，请确认目标名称。"
-            )
-            # Persist to L1 working memory
-            window = self._get_or_create_window(branch_id)
-            window.add_turn(user_input, reply, branch_id)
+        # Embodied navigation: intent-driven bypass for semantic navigation
+        if intent == Intent.NAVIGATION and self._embodied_adapter is not None:
+            nav_target = self._extract_navigation_target(user_input)
+            if nav_target:
+                from chronopersona.contracts.schemas import SemanticNavigationGoal
+                goal = SemanticNavigationGoal(target_object=nav_target)
+                nav_result = self._embodied_adapter.navigate_to_object(goal)
+                reply = (
+                    f"已到达{nav_target}旁边，还需要什么？"
+                    if nav_result.success
+                    else f"无法找到{nav_target}，请确认目标名称。"
+                )
+                # Persist to L1 working memory
+                window = self._get_or_create_window(branch_id)
+                window.add_turn(user_input, reply, branch_id)
 
-            # Persist navigation event to L2 episodic memory
-            memory_entry = MemoryEntry(
-                content=f"[导航] 用户指令：'{user_input}' → 结果：{'成功' if nav_result.success else '失败'}，最终位置 {nav_result.final_position}",
-                branch_id=branch_id,
-                memory_type="episodic",
-                session_id="embodied_nav",
-                entities=[nav_target] if nav_result.success else [],
-                metadata={
-                    "source": "embodied_navigation_bypass",
-                    "nav_target": nav_target,
-                    "final_position": nav_result.final_position,
-                    "extraction_model": "heuristic_rule",
-                    "extraction_confidence": 1.0,
-                },
-            )
-            try:
-                self._memory_store.add(memory_entry, branch_id=branch_id)
-            except (ValueError, RuntimeError) as e:
-                logger.warning("Failed to persist navigation memory for branch {}: {}", branch_id, e)
+                # Persist navigation event to L2 episodic memory
+                memory_entry = MemoryEntry(
+                    content=f"[导航] 用户指令：'{user_input}' → 结果：{'成功' if nav_result.success else '失败'}，最终位置 {nav_result.final_position}",
+                    branch_id=branch_id,
+                    memory_type="episodic",
+                    session_id="embodied_nav",
+                    entities=[nav_target] if nav_result.success else [],
+                    metadata={
+                        "source": "embodied_navigation_bypass",
+                        "nav_target": nav_target,
+                        "final_position": nav_result.final_position,
+                        "extraction_model": "heuristic_rule",
+                        "extraction_confidence": 1.0,
+                    },
+                )
+                try:
+                    self._memory_store.add(memory_entry, branch_id=branch_id)
+                except (ValueError, RuntimeError) as e:
+                    logger.warning("Failed to persist navigation memory for branch {}: {}", branch_id, e)
 
-            return AgentOutput(
-                reply_text=reply,
-                emotion_state=self._emotion_state,
-                action_plan=None,
-                used_memories=[],
-                branch_id=branch_id,
-            )
+                action_plan = None
+                if nav_result.success:
+                    from chronopersona.contracts.schemas import ActionPlan
+                    action_plan = ActionPlan(
+                        action_token="navigate_to_object",
+                        action_params={
+                            "target": nav_target,
+                            "final_position": nav_result.final_position,
+                        },
+                        reasoning=f"Navigation to '{nav_target}' succeeded",
+                    )
+
+                return AgentOutput(
+                    reply_text=reply,
+                    emotion_state=self._emotion_state,
+                    action_plan=action_plan,
+                    used_memories=[],
+                    branch_id=branch_id,
+                )
 
         # v1.1.0: Hard budget throttle (production baseline skeleton)
         used = self._tokens_used.get(branch_id, 0)

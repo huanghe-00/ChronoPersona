@@ -17,7 +17,8 @@ class TestStateMachineAgentCore:
     @patch("chronopersona.agent_core.state_machine.IntentNode")
     def test_run_turn_returns_agent_output(self, mock_intent_cls) -> None:
         """T01: Full turn pipeline returns AgentOutput with branch_id."""
-        mock_intent_cls.return_value.classify.return_value = MagicMock(value="retrieve")
+        from chronopersona.agent_core.intent_node import Intent
+        mock_intent_cls.return_value.classify.return_value = Intent.GENERAL
 
         core = StateMachineAgentCore(
             memory_store=MockMemoryStore(),
@@ -104,8 +105,12 @@ class TestStateMachineAgentCore:
         assert w1.branch_id == "branch-a"
         assert w2.branch_id == "branch-b"
         assert w1 is not w2
-    def test_run_turn_with_action_planner(self) -> None:
+    @patch("chronopersona.agent_core.state_machine.IntentNode")
+    def test_run_turn_with_action_planner(self, mock_intent_cls) -> None:
         """T09: ActionPlanner produces action_plan in AgentOutput."""
+        from chronopersona.agent_core.intent_node import Intent
+        mock_intent_cls.return_value.classify.return_value = Intent.GENERAL
+
         from chronopersona.agent_core.action_planner import ActionPlanner
         
         planner = ActionPlanner()
@@ -171,8 +176,12 @@ class TestStateMachineAgentCore:
         assert out.emotion_state.current_state.value == "CONCERNED"
         assert out.emotion_state.intensity == 0.7
 
-    def test_output_contains_emotion_modulation_with_planner(self) -> None:
+    @patch("chronopersona.agent_core.state_machine.IntentNode")
+    def test_output_contains_emotion_modulation_with_planner(self, mock_intent_cls) -> None:
         """T15: AgentOutput contains emotion_modulation when ActionPlanner active."""
+        from chronopersona.agent_core.intent_node import Intent
+        mock_intent_cls.return_value.classify.return_value = Intent.GENERAL
+
         from chronopersona.agent_core.action_planner import ActionPlanner
         core = StateMachineAgentCore(
             memory_store=MockMemoryStore(),
@@ -212,6 +221,54 @@ class TestStateMachineAgentCore:
         assert "[Emotion State]" in prompt
         assert "CONCERNED" in prompt
         assert "0.7" in prompt
+
+    def test_navigation_intent_success(self) -> None:
+        """T19: Navigation intent drives GridWorldAdapter to target and updates position."""
+        from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
+        adapter = GridWorldAdapter()
+        adapter.add_object("default", "沙发", 2.0, 3.0)
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+            embodied_adapter=adapter,
+        )
+        out = core.run_turn("到沙发旁边", branch_id="main")
+        assert "沙发" in out.reply_text
+        assert "已到达" in out.reply_text
+        assert out.branch_id == "main"
+        assert out.action_plan is not None
+        assert out.action_plan.action_token == "navigate_to_object"
+        # Verify adapter state updated
+        es = adapter.get_perception("default")
+        assert es.x == 2.0
+        assert es.y == 3.0
+
+    def test_navigation_intent_not_found(self) -> None:
+        """T20: Navigation to unknown target returns failure message."""
+        from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
+        adapter = GridWorldAdapter()
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+            embodied_adapter=adapter,
+        )
+        out = core.run_turn("到火星旁边", branch_id="main")
+        assert "无法找到" in out.reply_text
+        assert out.branch_id == "main"
+        # Failure should not produce action_plan
+        assert out.action_plan is None
+
+    def test_navigation_without_adapter_falls_back(self) -> None:
+        """T21: NAVIGATION intent without embodied_adapter falls through to normal LLM flow."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+            embodied_adapter=None,
+        )
+        out = core.run_turn("到沙发旁边", branch_id="main")
+        assert out.branch_id == "main"
+        # Normal flow returns MockModelRouter echo text
+        assert out.reply_text
 
     def test_build_prompt_includes_l3_context(self) -> None:
         """T18: _build_prompt embeds semantic facts and insights from L3."""
