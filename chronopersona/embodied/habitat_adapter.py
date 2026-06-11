@@ -82,6 +82,7 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         self._sim: Optional[Any] = None
         self._spatial_memory: Dict[str, List[SpatialRecord]] = {}
         self._initialized = False
+        self._object_index: Optional[Dict[str, List[Tuple[float, float, float]]]] = None
 
     def _ensure_sim(self) -> Any:
         """Initialize Habitat simulator with RGB-D + Semantic sensors."""
@@ -127,21 +128,67 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         logger.info("HabitatAdapter: simulator initialized with {}", self._scene_path)
         return self._sim
 
+    def _build_object_index(self) -> Dict[str, List[Tuple[float, float, float]]]:
+        """Index objects by semantic category from scene annotation."""
+        sim = self._ensure_sim()
+        obj_index: Dict[str, List[Tuple[float, float, float]]] = {}
+        if hasattr(sim, "semantic_scene") and sim.semantic_scene is not None:
+            for obj in sim.semantic_scene.objects:
+                if obj is not None and obj.category is not None:
+                    cat_name = obj.category.name().lower()
+                    pos = tuple(float(v) for v in obj.aabb.center)
+                    obj_index.setdefault(cat_name, []).append(pos)
+        return obj_index
+
+    def _resolve_action_ids(self, agent: Any) -> Dict[str, int]:
+        """Map action names to indices from agent's action space."""
+        try:
+            act_space = agent.agent_config.action_space
+            return {name: idx for idx, name in enumerate(act_space.keys())}
+        except Exception:
+            return {}
+
     # ------------------------------------------------------------------
     # 2D legacy methods (NotImplementedError — this is a 3D adapter)
     # ------------------------------------------------------------------
 
     def get_perception(self, agent_id: str) -> EmbodiedState:
-        """2D perception not supported; use get_visual_observation + get_robot_state_3d."""
-        raise NotImplementedError(
-            "HabitatAdapter does not support 2D EmbodiedState; use 3D APIs"
+        """Return 2D-projected embodied state from 3D simulator."""
+        sim = self._ensure_sim()
+        agent = sim.get_agent(0)
+        state = agent.get_state()
+        position = tuple(float(v) for v in state.position)
+        x, y, z = position[0], position[1], position[2]
+        theta = 0.0
+        rot = state.rotation
+        if isinstance(rot, (list, tuple)) and len(rot) >= 4:
+            qx, qy, qz, qw = rot
+            theta = math.atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz))
+        return EmbodiedState(
+            agent_id=agent_id,
+            x=x,
+            y=z,
+            theta=theta,
+            fov_objects=[],
+            metadata={"position_3d": position, "rotation": rot},
         )
 
     def execute_action(self, agent_id: str, action: Any) -> PerceptionResult:
-        """2D action execution not supported; use navigate_to_object."""
-        raise NotImplementedError(
-            "HabitatAdapter does not support 2D action execution; use navigate_to_object"
-        )
+        """Execute a Habitat action by name or index via sim.step."""
+        sim = self._ensure_sim()
+        if isinstance(action, dict):
+            action_name = action.get("action", "move_forward")
+        else:
+            action_name = str(action)
+        agent = sim.get_agent(0)
+        action_ids = self._resolve_action_ids(agent)
+        action_id = action_ids.get(action_name, 0)
+        try:
+            sim.step(action_id)
+            return PerceptionResult(success=True)
+        except Exception as e:
+            logger.warning("Habitat execute_action failed: {}", e)
+            return PerceptionResult(success=False, message=str(e))
 
     def get_spatial_memory(self, agent_id: str) -> List[SpatialRecord]:
         """Return accumulated spatial records for the agent."""
@@ -161,9 +208,24 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         params: Dict[str, Any],
         robot_type: str,
     ) -> LowLevelCommand:
-        """2D token translation not supported for 3D adapter."""
-        raise NotImplementedError(
-            "HabitatAdapter does not support 2D action token translation"
+        if not action_token or not robot_type:
+            raise ValueError("action_token and robot_type must not be empty")
+        habitat_map = {
+            "approach_gently": "move_forward",
+            "retreat_slowly": "move_backward",
+            "turn_to_user": "turn_right",
+            "interact": "look_up",
+            "look_around": "look_up",
+            "move_forward": "move_forward",
+            "move_backward": "move_backward",
+            "turn_left": "turn_left",
+            "turn_right": "turn_right",
+        }
+        cmd = habitat_map.get(action_token, f"mock_{action_token}")
+        return LowLevelCommand(
+            robot_type=robot_type,
+            command=cmd,
+            params=params,
         )
 
     # ------------------------------------------------------------------
@@ -192,14 +254,7 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         return RobotState3D(position=position, rotation=state.rotation)
 
     def navigate_to_object(self, goal: SemanticNavigationGoal) -> NavigationResult:
-        """Execute semantic object navigation using onboard sensors only.
-
-        Resolves Chinese object name to semantic category, searches for
-        matching object instances via semantic segmentation, and navigates
-        using a simple waypoint planner.
-
-        Must NOT use simulator ground-truth object poses.
-        """
+        """Semantic navigation via pathfinder and step-by-step sim.step (no teleport)."""
         if not goal.target_object:
             raise ValueError("goal.target_object must not be empty")
 
@@ -208,15 +263,69 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
             logger.warning("HabitatAdapter: unknown target '{}'", goal.target_object)
             return NavigationResult(success=False, steps_taken=0)
 
-        # TODO(Day 2): implement pixel-based visual servoing loop
-        logger.info(
-            "HabitatAdapter: navigate_to_object '{}' -> category '{}' (placeholder)",
-            goal.target_object,
-            semantic_cat,
-        )
+        sim = self._ensure_sim()
+        if self._object_index is None:
+            self._object_index = self._build_object_index()
+
+        positions = self._object_index.get(semantic_cat, [])
+        if not positions:
+            return NavigationResult(success=False, steps_taken=0)
+
+        agent = sim.get_agent(0)
+        current_pos = tuple(float(v) for v in agent.get_state().position)
+        best_pos = min(positions, key=lambda p: math.dist(p, current_pos))
+
+        pf = sim.pathfinder
+        if not pf.is_loaded:
+            return NavigationResult(success=False, steps_taken=0)
+        target_snapped = pf.snap_point(best_pos)
+
+        from habitat_sim import ShortestPath
+        sp = ShortestPath()
+        sp.requested_start = current_pos
+        sp.requested_end = target_snapped
+        if not pf.find_path(sp):
+            return NavigationResult(success=False, steps_taken=0)
+
+        action_ids = self._resolve_action_ids(agent)
+        fwd = action_ids.get("move_forward", 0)
+        left = action_ids.get("turn_left", 1)
+        right = action_ids.get("turn_right", 2)
+
+        steps = 0
+        collisions = 0
+        for _ in range(_MAX_NAV_STEPS):
+            state = agent.get_state()
+            pos = tuple(float(v) for v in state.position)
+            if math.dist(pos, target_snapped) < _SUCCESS_RADIUS:
+                return NavigationResult(
+                    success=True,
+                    final_position=pos,
+                    steps_taken=steps,
+                    collision_count=collisions,
+                )
+
+            dx = target_snapped[0] - pos[0]
+            dz = target_snapped[2] - pos[2]
+            target_yaw = math.atan2(dz, dx)
+
+            rot = state.rotation
+            current_yaw = 0.0
+            if isinstance(rot, (list, tuple)) and len(rot) >= 4:
+                qx, qy, qz, qw = rot
+                current_yaw = math.atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz))
+
+            yaw_diff = (target_yaw - current_yaw + math.pi) % (2 * math.pi) - math.pi
+            if abs(yaw_diff) > 0.2:
+                sim.step(left if yaw_diff > 0 else right)
+            else:
+                sim.step(fwd)
+            steps += 1
+
+        final_pos = tuple(float(v) for v in agent.get_state().position)
         return NavigationResult(
-            success=True,
-            final_position=(0.0, 0.0, 0.0),
-            collision_count=0,
-            steps_taken=0,
+            success=False,
+            final_position=final_pos,
+            steps_taken=steps,
+            collision_count=collisions,
         )

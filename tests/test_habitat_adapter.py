@@ -273,3 +273,50 @@ class TestHabitatAdapter:
         assert isinstance(result.success, bool)
         assert len(result.final_position) == 3
         assert result.steps_taken >= 0
+
+
+"""Additional contract tests for HabitatAdapter command mapping and fallback."""
+
+
+class TestHabitatAdapterFallback:
+    """T23-T26: Fallback and command mapping tests."""
+
+    def test_translate_action_token_maps_habitat_commands(self) -> None:
+        """T23: Action tokens map to Habitat-compatible command names."""
+        adapter = HabitatAdapter(scene_path="")
+        cmd = adapter.translate_action_token(
+            "approach_gently", {"speed": 0.5}, "habitat"
+        )
+        assert isinstance(cmd, LowLevelCommand)
+        assert cmd.robot_type == "habitat"
+        assert cmd.command == "move_forward"
+
+    def test_translate_unknown_token_uses_mock_prefix(self) -> None:
+        """T24: Unknown token falls back to mock_ prefix."""
+        adapter = HabitatAdapter(scene_path="")
+        cmd = adapter.translate_action_token("jump", {}, "habitat")
+        assert cmd.command == "mock_jump"
+
+    def test_navigate_falls_back_when_habitat_unavailable(self) -> None:
+        """T25: Falls back when habitat_sim is missing or scene invalid."""
+        from unittest.mock import patch
+        with patch(
+            "chronopersona.embodied.habitat_adapter._try_import_habitat",
+            return_value=None,
+        ):
+            adapter = HabitatAdapter(scene_path="/fake/scene.glb")
+            with pytest.raises(NotImplementedError):
+                adapter.navigate_to_object(
+                    SemanticNavigationGoal(target_object="沙发")
+                )
+
+    def test_get_perception_falls_back_when_habitat_unavailable(self) -> None:
+        """T26: get_perception raises when simulator cannot be initialized."""
+        from unittest.mock import patch
+        with patch(
+            "chronopersona.embodied.habitat_adapter._try_import_habitat",
+            return_value=None,
+        ):
+            adapter = HabitatAdapter(scene_path="/fake/scene.glb")
+            with pytest.raises(NotImplementedError):
+                adapter.get_perception("default")

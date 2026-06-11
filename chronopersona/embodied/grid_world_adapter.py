@@ -258,57 +258,111 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
             "GridWorldAdapter does not support 3D robot state"
         )
 
+    def _astar_path(
+        self,
+        start: Tuple[float, float],
+        goal: Tuple[float, float],
+        agent_id: str,
+    ) -> Optional[List[Tuple[int, int]]]:
+        """A* pathfinding on integer grid with obstacle avoidance."""
+        import heapq
+
+        start_i = (int(round(start[0])), int(round(start[1])))
+        goal_i = (int(round(goal[0])), int(round(goal[1])))
+        if start_i == goal_i:
+            return [start_i]
+
+        obstacles: set[Tuple[int, int]] = set()
+        for record in self._spatial_memory.get(agent_id, []):
+            rx, ry = int(round(record.x)), int(round(record.y))
+            if (rx, ry) != goal_i:
+                obstacles.add((rx, ry))
+
+        open_set: list[tuple[int, Tuple[int, int]]] = [(0, start_i)]
+        came_from: dict[Tuple[int, int], Tuple[int, int]] = {}
+        g_score: dict[Tuple[int, int], int] = {start_i: 0}
+        f_score: dict[Tuple[int, int], int] = {
+            start_i: abs(goal_i[0] - start_i[0]) + abs(goal_i[1] - start_i[1])
+        }
+
+        while open_set:
+            _, current = heapq.heappop(open_set)
+            if current == goal_i:
+                path: list[Tuple[int, int]] = [current]
+                while current in came_from:
+                    current = came_from[current]
+                    path.append(current)
+                path.reverse()
+                return path
+
+            cx, cy = current
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nxt = (cx + dx, cy + dy)
+                nx, ny = nxt
+                if nx < 0 or nx >= self._grid_width or ny < 0 or ny >= self._grid_height:
+                    continue
+                if nxt in obstacles:
+                    continue
+                tentative_g = g_score[current] + 1
+                if tentative_g < g_score.get(nxt, 10**9):
+                    came_from[nxt] = current
+                    g_score[nxt] = tentative_g
+                    f_score[nxt] = tentative_g + abs(goal_i[0] - nx) + abs(goal_i[1] - ny)
+                    heapq.heappush(open_set, (f_score[nxt], nxt))
+        return None
+
     def navigate_to_object(self, goal: SemanticNavigationGoal) -> NavigationResult:
-        """Semantic navigation in 2D grid using world model (no privileged simulator access)."""
+        """Semantic navigation using A* path planning (no teleport)."""
         if not goal.target_object:
             raise ValueError("goal.target_object must not be empty")
 
-        # Default agent for MVP single-agent demo
         agent_id = "default"
         self._ensure_agent(agent_id)
-
         name = goal.target_object.strip().lower()
 
-        # Priority 1: dynamic objects in spatial memory (embodied perception)
+        target_pos: Optional[Tuple[float, float]] = None
         for record in self._spatial_memory.get(agent_id, []):
             rid = record.object_id.strip().lower()
             if rid == name or name in rid or rid in name:
-                x, y = record.x, record.y
-                _, _, theta = self._agents[agent_id]
-                self._agents[agent_id] = (float(x), float(y), theta)
-                return NavigationResult(
-                    success=True,
-                    final_position=(float(x), float(y), 0.0),
-                )
+                target_pos = (record.x, record.y)
+                break
 
-        # Priority 2: hard-coded semantic map (MVA fallback)
-        target_map = {
-            "沙发": (2.0, 3.0), "sofa": (2.0, 3.0),
-            "床": (8.0, 12.0), "bed": (8.0, 12.0),
-            "桌子": (3.0, 2.0), "table": (3.0, 2.0),
-            "厨房": (15.0, 5.0), "kitchen": (15.0, 5.0),
-        }
+        if target_pos is None:
+            target_map = {
+                "沙发": (2.0, 3.0), "sofa": (2.0, 3.0),
+                "床": (8.0, 12.0), "bed": (8.0, 12.0),
+                "桌子": (3.0, 2.0), "table": (3.0, 2.0),
+                "厨房": (15.0, 5.0), "kitchen": (15.0, 5.0),
+            }
+            pos = target_map.get(name)
+            if pos is None:
+                for key, value in target_map.items():
+                    if key in name or name in key:
+                        pos = value
+                        break
+            if pos is None:
+                x, y, _ = self._agents[agent_id]
+                return NavigationResult(success=False, final_position=(x, y, 0.0), steps_taken=0)
+            target_pos = pos
 
-        pos = target_map.get(name)
-        if pos is None:
-            # Fuzzy match: check if any key is substring of input or vice versa
-            for key, value in target_map.items():
-                if key in name or name in key:
-                    pos = value
-                    break
+        tx, ty = target_pos
+        x, y, _ = self._agents[agent_id]
+        path = self._astar_path((x, y), (tx, ty), agent_id)
+        if path is None:
+            return NavigationResult(success=False, final_position=(x, y, 0.0), steps_taken=0)
 
-        if pos is None:
-            return NavigationResult(
-                success=False,
-                final_position=(*self._agents[agent_id][:2], 0.0),
-            )
+        for i in range(1, len(path)):
+            px, py = path[i]
+            prev_x, prev_y = path[i - 1]
+            theta = math.atan2(py - prev_y, px - prev_x)
+            self._agents[agent_id] = (float(px), float(py), theta)
 
-        x, y = pos
-        _, _, theta = self._agents[agent_id]
-        self._agents[agent_id] = (float(x), float(y), theta)
+        final_x, final_y = path[-1]
         return NavigationResult(
             success=True,
-            final_position=(float(x), float(y), 0.0),
+            final_position=(float(final_x), float(final_y), 0.0),
+            steps_taken=len(path) - 1,
+            collision_count=0,
         )
 
     def add_object(self, agent_id: str, object_id: str, x: float, y: float) -> None:

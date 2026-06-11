@@ -179,3 +179,39 @@ class TestGridWorldAdapter:
         goal = SemanticNavigationGoal(target_object="火星")
         result = adapter.navigate_to_object(goal)
         assert result.success is False
+
+    def test_astar_avoids_obstacles(self) -> None:
+        """T20: A* path planning avoids obstacles placed on direct path."""
+        adapter = GridWorldAdapter()
+        adapter.add_object("default", "wall_a", x=1.0, y=0.0)
+        adapter.add_object("default", "wall_b", x=1.0, y=1.0)
+        adapter.add_object("default", "wall_c", x=1.0, y=-1.0)
+        adapter.add_object("default", "goal", x=3.0, y=0.0)
+        from chronopersona.contracts.schemas import SemanticNavigationGoal
+        goal = SemanticNavigationGoal(target_object="goal")
+        result = adapter.navigate_to_object(goal)
+        assert result.success is True
+        assert result.steps_taken > 3
+        es = adapter.get_perception("default")
+        assert es.x == 3.0
+        assert es.y == 0.0
+
+    def test_navigate_blocked_target_returns_failure(self) -> None:
+        """T21: Navigation fails when target is fully surrounded by obstacles."""
+        adapter = GridWorldAdapter()
+        adapter.add_object("default", "boxed", x=5.0, y=5.0)
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            adapter.add_object("default", f"b_{dx}_{dy}", x=5.0 + dx, y=5.0 + dy)
+        from chronopersona.contracts.schemas import SemanticNavigationGoal
+        goal = SemanticNavigationGoal(target_object="boxed")
+        result = adapter.navigate_to_object(goal)
+        assert result.success is False
+
+    def test_navigate_records_steps_taken(self) -> None:
+        """T22: Step count reflects actual path length, proving no teleport."""
+        adapter = GridWorldAdapter()
+        from chronopersona.contracts.schemas import SemanticNavigationGoal
+        goal = SemanticNavigationGoal(target_object="床")
+        result = adapter.navigate_to_object(goal)
+        assert result.success is True
+        assert result.steps_taken == 20
