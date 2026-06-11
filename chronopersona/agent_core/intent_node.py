@@ -20,7 +20,7 @@ class IntentNode:
     for production-grade 8-class intent classification.
     """
 
-    GREETING_KEYWORDS: set[str] = {"hello", "hi", "你好", "hey", "morning"}
+    GREETING_KEYWORDS: set[str] = {"hello", "hi", "你好", "早上好", "hey", "morning"}
     MEMORY_KEYWORDS: set[str] = {"remember", "recall", "memory", "记得", "回忆", "想起"}
     NAVIGATION_PATTERNS: list[str] = [
         r"(?:到|去|导航到|前往|走向)\s*(\S+?)(?:旁边|附近|那里|去)?[吧]?[？?]?\s*$",
