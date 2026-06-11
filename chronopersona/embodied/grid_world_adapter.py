@@ -267,7 +267,21 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
         agent_id = "default"
         self._ensure_agent(agent_id)
 
-        # World model: known semantic locations (MVP pre-mapped)
+        name = goal.target_object.strip().lower()
+
+        # Priority 1: dynamic objects in spatial memory (embodied perception)
+        for record in self._spatial_memory.get(agent_id, []):
+            rid = record.object_id.strip().lower()
+            if rid == name or name in rid or rid in name:
+                x, y = record.x, record.y
+                _, _, theta = self._agents[agent_id]
+                self._agents[agent_id] = (float(x), float(y), theta)
+                return NavigationResult(
+                    success=True,
+                    final_position=(float(x), float(y), 0.0),
+                )
+
+        # Priority 2: hard-coded semantic map (MVA fallback)
         target_map = {
             "沙发": (2.0, 3.0), "sofa": (2.0, 3.0),
             "床": (8.0, 12.0), "bed": (8.0, 12.0),
@@ -275,7 +289,6 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
             "厨房": (15.0, 5.0), "kitchen": (15.0, 5.0),
         }
 
-        name = goal.target_object.strip().lower()
         pos = target_map.get(name)
         if pos is None:
             # Fuzzy match: check if any key is substring of input or vice versa

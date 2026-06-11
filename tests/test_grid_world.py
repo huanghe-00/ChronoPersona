@@ -146,3 +146,36 @@ class TestGridWorldAdapter:
         )
         assert cmd.command == "scan_fov"
         assert cmd.params["range"] == 10.0
+
+    def test_navigate_to_object_hardcoded(self) -> None:
+        """T17: navigate_to_object reaches hard-coded target coordinates."""
+        adapter = GridWorldAdapter()
+        from chronopersona.contracts.schemas import SemanticNavigationGoal
+        goal = SemanticNavigationGoal(target_object="沙发")
+        result = adapter.navigate_to_object(goal)
+        assert result.success is True
+        assert result.final_position == (2.0, 3.0, 0.0)
+        es = adapter.get_perception("default")
+        assert es.x == 2.0
+        assert es.y == 3.0
+
+    def test_navigate_to_object_dynamic_spatial_memory(self) -> None:
+        """T18: navigate_to_object prioritizes dynamically added spatial records."""
+        adapter = GridWorldAdapter()
+        adapter.add_object("default", "书架", x=7.0, y=9.0)
+        from chronopersona.contracts.schemas import SemanticNavigationGoal
+        goal = SemanticNavigationGoal(target_object="书架")
+        result = adapter.navigate_to_object(goal)
+        assert result.success is True
+        assert result.final_position == (7.0, 9.0, 0.0)
+        es = adapter.get_perception("default")
+        assert es.x == 7.0
+        assert es.y == 9.0
+
+    def test_navigate_to_object_not_found(self) -> None:
+        """T19: navigate_to_object fails gracefully for unknown targets."""
+        adapter = GridWorldAdapter()
+        from chronopersona.contracts.schemas import SemanticNavigationGoal
+        goal = SemanticNavigationGoal(target_object="火星")
+        result = adapter.navigate_to_object(goal)
+        assert result.success is False

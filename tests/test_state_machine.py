@@ -243,6 +243,11 @@ class TestStateMachineAgentCore:
         assert es.x == 2.0
         assert es.y == 3.0
 
+        # Verify navigation event was persisted to episodic memory
+        ctx = core._memory_store.retrieve("导航", branch_id="main")
+        assert any("沙发" in m.content for m in ctx.episodic_memories)
+        assert any("导航" in m.content for m in ctx.episodic_memories)
+
     def test_navigation_intent_not_found(self) -> None:
         """T20: Navigation to unknown target returns failure message."""
         from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
