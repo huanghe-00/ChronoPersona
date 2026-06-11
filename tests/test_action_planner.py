@@ -72,3 +72,15 @@ class TestMockActionPlanner:
         planner = MockActionPlanner()
         plan = planner.plan("x", EmotionState(current_state=EmotionLabel.NEUTRAL), "main")
         assert plan.action_token == "mock_action"
+
+    def test_parse_navigate_to_object(self) -> None:
+        """T08: Chinese navigation phrase triggers navigate_to_object with target extraction."""
+        planner = ActionPlanner()
+        plan = planner.plan(
+            "请移动到沙发旁边",
+            EmotionState(current_state=EmotionLabel.NEUTRAL, intensity=0.5),
+            "main",
+        )
+        assert plan.action_token == "navigate_to_object"
+        assert plan.action_params.get("target") == "沙发"
+        assert "nav target=沙发" in plan.reasoning

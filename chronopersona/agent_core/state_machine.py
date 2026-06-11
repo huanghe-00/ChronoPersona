@@ -78,6 +78,9 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         intent = self._intent_node.classify(user_input)
 
+        # H1: Update emotion state before navigation, consistent with normal flow
+        self._emotion_state = self._update_emotion(user_input, branch_id)
+
         # Embodied navigation: intent-driven bypass for semantic navigation
         if intent == Intent.NAVIGATION and self._embodied_adapter is not None:
             nav_target = self._extract_navigation_target(user_input)
