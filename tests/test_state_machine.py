@@ -345,3 +345,62 @@ class TestStateMachineAgentCore:
         es = adapter.get_perception("default")
         assert es.x == 8.0
         assert es.y == 12.0
+
+    def test_build_prompt_truncates_l2_by_budget(self) -> None:
+        """T25: L2 memories truncated when exceeding retrieval budget."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        from chronopersona.contracts.schemas import RetrievedContext, MemoryEntry
+        many = [MemoryEntry(content=f"ep-{i:03d}") for i in range(50)]
+        ctx = RetrievedContext(episodic_memories=many, total_tokens=0)
+        prompt = core._build_prompt("hi", ctx, "main")
+        # With 30% of 4096 = ~1228 tokens and 150 tokens/episodic, max ~8 items
+        assert "ep-000" in prompt
+        assert "ep-049" not in prompt
+
+    def test_build_prompt_truncates_l3_by_budget(self) -> None:
+        """T26: L3 facts and insights truncated when exceeding semantic budget."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        from chronopersona.contracts.schemas import RetrievedContext, Fact
+        many_facts = [Fact(attribute=f"attr-{i}", value=f"val-{i}") for i in range(30)]
+        many_insights = [f"insight-{i}" for i in range(30)]
+        ctx = RetrievedContext(
+            episodic_memories=[],
+            semantic_facts=many_facts,
+            insights=many_insights,
+            total_tokens=0,
+        )
+        prompt = core._build_prompt("hi", ctx, "main")
+        assert "attr-0" in prompt
+        assert "attr-029" not in prompt
+        assert "insight-0" in prompt
+        assert "insight-029" not in prompt
+
+    def test_build_prompt_preserves_embodied_and_emotion(self) -> None:
+        """T27: Budget truncation preserves embodied state and emotion sections."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        from chronopersona.contracts.schemas import (
+            EmbodiedState,
+            EmotionLabel,
+            EmotionState,
+            MemoryEntry,
+            RetrievedContext,
+        )
+        core._emotion_state = EmotionState(
+            current_state=EmotionLabel.CONCERNED,
+            intensity=0.7,
+        )
+        many = [MemoryEntry(content=f"ep-{i:03d}") for i in range(100)]
+        ctx = RetrievedContext(episodic_memories=many, total_tokens=0)
+        es = EmbodiedState(x=1.0, y=2.0, theta=0.0, fov_objects=["chair"])
+        prompt = core._build_prompt("hi", ctx, "main", embodied_state=es)
+        assert "[Embodied State]" in prompt
+        assert "[Emotion State]" in prompt

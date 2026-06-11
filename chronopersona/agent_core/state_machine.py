@@ -38,6 +38,17 @@ from chronopersona.memory_system.l3_semantic import IntentGraph
 class StateMachineAgentCore(AbstractAgentCore):
     """Agent core using state machine: Intent -> Memory -> LLM -> Output."""
 
+    # MVA prompt budget allocation (requirements.md 4.14.1)
+    PROMPT_TOKEN_BUDGET: int = 4096
+    BUDGET_L1_PCT: float = 0.40
+    BUDGET_L2_PCT: float = 0.30
+    BUDGET_L3_PCT: float = 0.20
+    BUDGET_RESERVE_PCT: float = 0.10
+    # Heuristic tokens per item for MVA truncation
+    TOKENS_PER_EPISODIC: int = 150
+    TOKENS_PER_FACT: int = 50
+    TOKENS_PER_INSIGHT: int = 80
+
     def __init__(
         self,
         memory_store: AbstractMemoryStore,
@@ -220,7 +231,8 @@ class StateMachineAgentCore(AbstractAgentCore):
     ) -> str:
         """Build LLM prompt with L1 working memory and L2/L3 retrieved context."""
         window = self._get_or_create_window(branch_id)
-        l1_items = window.get_context(branch_id=branch_id, token_limit=2048)
+        l1_limit = int(self.PROMPT_TOKEN_BUDGET * self.BUDGET_L1_PCT)
+        l1_items = window.get_context(branch_id=branch_id, token_limit=l1_limit)
 
         l1_parts: List[str] = []
         for item in l1_items:
@@ -230,13 +242,19 @@ class StateMachineAgentCore(AbstractAgentCore):
                 l1_parts.append(item.content)
 
         l1_text = "\n".join(l1_parts)
-        l2_text = "\n".join(f"- {m.content}" for m in context.episodic_memories[:3])
 
+        l2_limit_tokens = int(self.PROMPT_TOKEN_BUDGET * self.BUDGET_L2_PCT)
+        max_l2 = max(1, l2_limit_tokens // self.TOKENS_PER_EPISODIC)
+        l2_text = "\n".join(f"- {m.content}" for m in context.episodic_memories[:max_l2])
+
+        l3_limit_tokens = int(self.PROMPT_TOKEN_BUDGET * self.BUDGET_L3_PCT)
+        max_facts = max(1, int(l3_limit_tokens * 0.6) // self.TOKENS_PER_FACT)
+        max_insights = max(1, int(l3_limit_tokens * 0.4) // self.TOKENS_PER_INSIGHT)
         l3_facts = "\n".join(
-            f"- {f.attribute}: {f.value}" for f in context.semantic_facts[:3]
+            f"- {f.attribute}: {f.value}" for f in context.semantic_facts[:max_facts]
         )
         l3_insights = "\n".join(
-            f"- {i}" for i in context.insights[:2]
+            f"- {i}" for i in context.insights[:max_insights]
         )
 
         parts: List[str] = []
