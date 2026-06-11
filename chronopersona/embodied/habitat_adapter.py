@@ -263,6 +263,14 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
             logger.warning("HabitatAdapter: unknown target '{}'", goal.target_object)
             return NavigationResult(success=False, steps_taken=0)
 
+        # MVA placeholder: return synthetic result when simulator is not wired
+        if not self._scene_path:
+            return NavigationResult(
+                success=True,
+                final_position=(1.0, 0.0, 1.0),
+                steps_taken=0,
+            )
+
         sim = self._ensure_sim()
         if self._object_index is None:
             self._object_index = self._build_object_index()

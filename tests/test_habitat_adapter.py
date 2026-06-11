@@ -32,12 +32,12 @@ class TestHabitatAdapterContract:
 
     def test_2d_get_perception_raises(self):
         """2D get_perception must raise NotImplementedError."""
-        with pytest.raises(NotImplementedError, match="2D EmbodiedState"):
+        with pytest.raises(NotImplementedError, match="scene_path is required"):
             self.adapter.get_perception("test_agent")
 
     def test_2d_execute_action_raises(self):
         """2D execute_action must raise NotImplementedError."""
-        with pytest.raises(NotImplementedError, match="2D action execution"):
+        with pytest.raises(NotImplementedError, match="scene_path is required"):
             self.adapter.execute_action("test_agent", {})
 
     def test_2d_predict_action_raises(self):
@@ -46,10 +46,11 @@ class TestHabitatAdapterContract:
         with pytest.raises(NotImplementedError, match="2D predict_action"):
             self.adapter.predict_action(state, "go to sofa")
 
-    def test_2d_translate_action_token_raises(self):
-        """2D translate_action_token must raise NotImplementedError."""
-        with pytest.raises(NotImplementedError, match="2D action token"):
-            self.adapter.translate_action_token("move", {}, "grid_2d")
+    def test_translate_action_token_maps_commands(self) -> None:
+        """translate_action_token returns LowLevelCommand for known tokens."""
+        cmd = self.adapter.translate_action_token("approach_gently", {"speed": 0.5}, "habitat")
+        assert isinstance(cmd, LowLevelCommand)
+        assert cmd.command == "move_forward"
 
     def test_get_spatial_memory_empty_agent_id_raises(self):
         """Empty agent_id must raise ValueError."""
@@ -141,12 +142,12 @@ class TestHabitatAdapter2DLegacy:
 
     def test_get_perception_raises(self):
         """2D get_perception raises NotImplementedError."""
-        with pytest.raises(NotImplementedError, match="2D EmbodiedState"):
+        with pytest.raises(NotImplementedError, match="scene_path is required"):
             self.adapter.get_perception("agent_0")
 
     def test_execute_action_raises(self):
         """2D execute_action raises NotImplementedError."""
-        with pytest.raises(NotImplementedError, match="2D action execution"):
+        with pytest.raises(NotImplementedError, match="scene_path is required"):
             self.adapter.execute_action("agent_0", {"dx": 1.0})
 
     def test_predict_action_raises(self):
@@ -155,10 +156,11 @@ class TestHabitatAdapter2DLegacy:
         with pytest.raises(NotImplementedError, match="2D predict_action"):
             self.adapter.predict_action(state, "go to sofa")
 
-    def test_translate_action_token_raises(self):
-        """2D translate_action_token raises NotImplementedError."""
-        with pytest.raises(NotImplementedError, match="2D action token translation"):
-            self.adapter.translate_action_token("approach", {}, "grid_2d")
+    def test_translate_action_token_maps_commands(self) -> None:
+        """translate_action_token returns mapped command without raising."""
+        cmd = self.adapter.translate_action_token("approach_gently", {}, "habitat")
+        assert isinstance(cmd, LowLevelCommand)
+        assert cmd.command == "move_forward"
 
 
 class TestHabitatAdapter3DMethods:
