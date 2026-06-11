@@ -79,7 +79,7 @@ class TestActionPlanner:
         assert plan.action_params["proximity_mult"] == pytest.approx(0.4625, rel=1e-3)
 
     def test_positive_valence_increases_volume(self) -> None:
-        """T10: Positive valence increases volume multiplier."""
+        """T10: Positive valence increases volume multiplier (with intensity scaling)."""
         planner = ActionPlanner()
         plan = planner.plan(
             "观察四周",
@@ -92,11 +92,12 @@ class TestActionPlanner:
             "main",
         )
         # EMPATHETIC base: volume_mult=0.9
-        # valence=0.6: volume_mult = 0.9 * (1.0 + 0.6 * 0.1) = 0.954
-        assert plan.action_params["volume_mult"] == pytest.approx(0.954, rel=1e-3)
+        # intensity=0.5 scales base: 0.9 * 0.5 = 0.45
+        # valence=0.6: 0.45 * (1.0 + 0.6 * 0.1) = 0.477
+        assert plan.action_params["volume_mult"] == pytest.approx(0.477, rel=1e-3)
 
     def test_negative_valence_decreases_volume(self) -> None:
-        """T11: Negative valence decreases volume multiplier."""
+        """T11: Negative valence decreases volume multiplier (with intensity scaling)."""
         planner = ActionPlanner()
         plan = planner.plan(
             "后退",
@@ -109,8 +110,9 @@ class TestActionPlanner:
             "main",
         )
         # CONCERNED base: volume_mult=0.8
-        # valence=-0.5: volume_mult = 0.8 * (1.0 + (-0.5) * 0.15) = 0.74
-        assert plan.action_params["volume_mult"] == pytest.approx(0.74, rel=1e-3)
+        # intensity=0.5 scales base: 0.8 * 0.5 = 0.4
+        # valence=-0.5: 0.4 * (1.0 + (-0.5) * 0.15) = 0.37
+        assert plan.action_params["volume_mult"] == pytest.approx(0.37, rel=1e-3)
 
 
 class TestMockActionPlanner:
