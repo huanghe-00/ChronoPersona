@@ -195,9 +195,9 @@ class StateMachineAgentCore(AbstractAgentCore):
             except (ValueError, RuntimeError) as e:
                 logger.warning("ActionPlanner failed for branch {}: {}", branch_id, e)
 
-        output = self._output_node.assemble(response, context, branch_id)
-
-        output.emotion_state = self._emotion_state
+        output = self._output_node.assemble(
+            response, context, branch_id, self._emotion_state
+        )
         if action_plan is not None:
             output.action_plan = action_plan
             output.emotion_modulation = action_plan.action_params

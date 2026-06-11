@@ -127,6 +127,7 @@ import pytest
 
 from chronopersona.contracts.schemas import (
     EmbodiedState,
+    LowLevelCommand,
     NavigationResult,
     SemanticNavigationGoal,
     SpatialRecord,
