@@ -215,3 +215,33 @@ class TestGridWorldAdapter:
         result = adapter.navigate_to_object(goal)
         assert result.success is True
         assert result.steps_taken == 20
+
+    def test_navigate_to_chair(self) -> None:
+        """T23: Navigation to newly added chair target."""
+        adapter = GridWorldAdapter()
+        from chronopersona.contracts.schemas import SemanticNavigationGoal
+        goal = SemanticNavigationGoal(target_object="椅子")
+        result = adapter.navigate_to_object(goal)
+        assert result.success is True
+        assert result.final_position == (5.0, 5.0, 0.0)
+        es = adapter.get_perception("default")
+        assert es.x == 5.0
+        assert es.y == 5.0
+
+    def test_navigate_to_fridge(self) -> None:
+        """T24: Navigation to fridge target."""
+        adapter = GridWorldAdapter()
+        from chronopersona.contracts.schemas import SemanticNavigationGoal
+        goal = SemanticNavigationGoal(target_object="冰箱")
+        result = adapter.navigate_to_object(goal)
+        assert result.success is True
+        assert result.final_position == (10.0, 5.0, 0.0)
+
+    def test_navigate_to_coffee_table(self) -> None:
+        """T25: Navigation to coffee table target."""
+        adapter = GridWorldAdapter()
+        from chronopersona.contracts.schemas import SemanticNavigationGoal
+        goal = SemanticNavigationGoal(target_object="茶几")
+        result = adapter.navigate_to_object(goal)
+        assert result.success is True
+        assert result.final_position == (4.0, 3.0, 0.0)

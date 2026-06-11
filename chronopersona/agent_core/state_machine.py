@@ -165,9 +165,7 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         context = self._memory_node.retrieve(user_input, branch_id, intent=intent.value)
 
-        # H1: Update emotion state BEFORE building prompt so LLM sees latest emotion
-        self._emotion_state = self._update_emotion(user_input, branch_id)
-
+        # Emotion already updated at top of run_turn; avoid double computation
         prompt = self._build_prompt(user_input, context, branch_id, embodied_state)
         response = self._llm_node.generate(prompt, branch_id)
 

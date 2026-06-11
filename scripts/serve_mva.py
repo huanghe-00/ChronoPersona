@@ -102,6 +102,9 @@ def main():
     adapter.add_object("default", "床", 8.0, 12.0)
     adapter.add_object("default", "桌子", 3.0, 2.0)
     adapter.add_object("default", "厨房", 15.0, 5.0)
+    adapter.add_object("default", "椅子", 5.0, 5.0)
+    adapter.add_object("default", "冰箱", 10.0, 5.0)
+    adapter.add_object("default", "茶几", 4.0, 3.0)
 
     agent_core = StateMachineAgentCore(
         memory_store=MockMemoryStore(),

@@ -404,3 +404,20 @@ class TestStateMachineAgentCore:
         prompt = core._build_prompt("hi", ctx, "main", embodied_state=es)
         assert "[Embodied State]" in prompt
         assert "[Emotion State]" in prompt
+
+    def test_navigation_intent_to_fridge(self) -> None:
+        """T28: End-to-end navigation to fridge via StateMachineAgentCore."""
+        from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
+        adapter = GridWorldAdapter()
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+            embodied_adapter=adapter,
+        )
+        out = core.run_turn("到冰箱旁边", branch_id="main")
+        assert "已到达" in out.reply_text
+        assert out.action_plan is not None
+        assert out.action_plan.action_token == "navigate_to_object"
+        es = adapter.get_perception("default")
+        assert es.x == 10.0
+        assert es.y == 5.0

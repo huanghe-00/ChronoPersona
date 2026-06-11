@@ -53,7 +53,10 @@ const TARGETS = {
     sofa: { x: 2, y: 3, label: '沙发' },
     bed: { x: 8, y: 12, label: '床' },
     table: { x: 3, y: 2, label: '桌子' },
-    kitchen: { x: 15, y: 5, label: '厨房' }
+    kitchen: { x: 15, y: 5, label: '厨房' },
+    chair: { x: 5, y: 5, label: '椅子' },
+    fridge: { x: 10, y: 5, label: '冰箱' },
+    coffee_table: { x: 4, y: 3, label: '茶几' }
 };
 
 const WS_URL = 'ws://localhost:8765/ws';
@@ -74,6 +77,9 @@ function connectWebSocket() {
             log(`Agent: ${reply}`);
             if (reply.includes('已到达')) {
                 log('[导航完成] ' + reply);
+                if (msg.data.action_plan && msg.data.action_plan.reasoning) {
+                    log('[路径信息] ' + msg.data.action_plan.reasoning);
+                }
             }
             if (msg.data.action_plan && msg.data.action_plan.reasoning) {
                 log(`Reasoning: ${msg.data.action_plan.reasoning}`);
