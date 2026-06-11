@@ -56,7 +56,7 @@ class ConditionalDistiller:
                 has_negation = any(w in trigger for w in self.NEGATION_WORDS)
 
                 # MVA heuristic: longer conditions → higher confidence
-                confidence = min(0.95, 0.7 + 0.01 * (len(trigger) + len(action)))
+                confidence = min(0.95, 0.6 + 0.02 * (len(trigger) + len(action)))
                 if confidence < self._min_confidence:
                     continue
 
