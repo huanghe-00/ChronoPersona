@@ -293,3 +293,55 @@ class TestStateMachineAgentCore:
         assert "Sichuan cuisine" in prompt
         assert "[Insights]" in prompt
         assert "Anxiety level" in prompt
+
+    def test_navigation_intent_via_approach_phrase(self) -> None:
+        """T22: '靠近书架' triggers navigation to dynamically added object."""
+        from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
+        adapter = GridWorldAdapter()
+        adapter.add_object("default", "书架", x=5.0, y=5.0)
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+            embodied_adapter=adapter,
+        )
+        out = core.run_turn("靠近书架", branch_id="main")
+        assert "已到达" in out.reply_text
+        assert out.action_plan is not None
+        assert out.action_plan.action_token == "navigate_to_object"
+        es = adapter.get_perception("default")
+        assert es.x == 5.0
+        assert es.y == 5.0
+
+    def test_navigation_intent_via_walk_toward(self) -> None:
+        """T23: '走向沙发' triggers navigation using hard-coded target."""
+        from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
+        adapter = GridWorldAdapter()
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+            embodied_adapter=adapter,
+        )
+        out = core.run_turn("走向沙发", branch_id="main")
+        assert "已到达" in out.reply_text
+        assert out.action_plan is not None
+        assert out.action_plan.action_token == "navigate_to_object"
+        es = adapter.get_perception("default")
+        assert es.x == 2.0
+        assert es.y == 3.0
+
+    def test_navigation_intent_via_navigate_to(self) -> None:
+        """T24: '请帮我导航到床附近' triggers navigation."""
+        from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
+        adapter = GridWorldAdapter()
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+            embodied_adapter=adapter,
+        )
+        out = core.run_turn("请帮我导航到床附近", branch_id="main")
+        assert "已到达" in out.reply_text
+        assert out.action_plan is not None
+        assert out.action_plan.action_token == "navigate_to_object"
+        es = adapter.get_perception("default")
+        assert es.x == 8.0
+        assert es.y == 12.0

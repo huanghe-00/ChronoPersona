@@ -368,8 +368,9 @@ class StateMachineAgentCore(AbstractAgentCore):
     def _extract_navigation_target(self, text: str) -> Optional[str]:
         """Heuristic extraction of navigation target from user input."""
         patterns = [
-            r"[到去]\s*(\S+?)(?:旁边|附近|那里|去)?[吧]?[？?]?$",
-            r"^(?:请|帮我)?\s*(?:到|去)\s*(\S+)",
+            r"(?:到|去|导航到|前往|走向)\s*(\S+?)(?:旁边|附近|那里|去)?[吧]?[？?]?\s*$",
+            r"(?:请|帮我)?\s*(?:到|去|导航到)\s*(\S+?)(?:旁边|附近|那里)?\s*[吧]?[？?]?\s*$",
+            r"(?:靠近|走近)\s*(\S+?)(?:旁边|附近)?\s*$",
         ]
         for p in patterns:
             m = re.search(p, text)
