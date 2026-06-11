@@ -261,7 +261,7 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         semantic_cat = _OBJECT_SEMANTIC_MAP.get(goal.target_object)
         if semantic_cat is None:
             logger.warning("HabitatAdapter: unknown target '{}'", goal.target_object)
-            return NavigationResult(success=False, steps_taken=0)
+            return NavigationResult(success=False, steps_taken=0, path=[])
 
         # MVA placeholder: return synthetic result when simulator is not wired
         if not self._scene_path:
@@ -269,6 +269,7 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
                 success=True,
                 final_position=(1.0, 0.0, 1.0),
                 steps_taken=0,
+                path=[(1.0, 0.0, 1.0)],
             )
 
         sim = self._ensure_sim()
@@ -277,7 +278,7 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
 
         positions = self._object_index.get(semantic_cat, [])
         if not positions:
-            return NavigationResult(success=False, steps_taken=0)
+            return NavigationResult(success=False, steps_taken=0, path=[])
 
         agent = sim.get_agent(0)
         current_pos = tuple(float(v) for v in agent.get_state().position)
@@ -285,7 +286,7 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
 
         pf = sim.pathfinder
         if not pf.is_loaded:
-            return NavigationResult(success=False, steps_taken=0)
+            return NavigationResult(success=False, steps_taken=0, path=[])
         target_snapped = pf.snap_point(best_pos)
 
         from habitat_sim import ShortestPath
@@ -293,7 +294,7 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         sp.requested_start = current_pos
         sp.requested_end = target_snapped
         if not pf.find_path(sp):
-            return NavigationResult(success=False, steps_taken=0)
+            return NavigationResult(success=False, steps_taken=0, path=[])
 
         action_ids = self._resolve_action_ids(agent)
         fwd = action_ids.get("move_forward", 0)
@@ -311,6 +312,7 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
                     final_position=pos,
                     steps_taken=steps,
                     collision_count=collisions,
+                    path=[],
                 )
 
             dx = target_snapped[0] - pos[0]
@@ -336,4 +338,5 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
             final_position=final_pos,
             steps_taken=steps,
             collision_count=collisions,
+            path=[],
         )

@@ -103,9 +103,11 @@ class NavigationResult:
         final_position: Final (x, y, z).
         collision_count: Number of collisions during navigation.
         steps_taken: Number of simulation steps consumed.
+        path: Waypoint sequence from start to final_position.
     """
 
     success: bool = False
     final_position: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     collision_count: int = 0
     steps_taken: int = 0
+    path: List[Tuple[float, float, float]] = field(default_factory=list)

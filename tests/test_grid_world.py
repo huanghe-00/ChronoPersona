@@ -155,6 +155,8 @@ class TestGridWorldAdapter:
         result = adapter.navigate_to_object(goal)
         assert result.success is True
         assert result.final_position == (2.0, 3.0, 0.0)
+        assert len(result.path) > 0
+        assert result.path[-1] == result.final_position
         es = adapter.get_perception("default")
         assert es.x == 2.0
         assert es.y == 3.0
@@ -168,6 +170,8 @@ class TestGridWorldAdapter:
         result = adapter.navigate_to_object(goal)
         assert result.success is True
         assert result.final_position == (7.0, 9.0, 0.0)
+        assert len(result.path) > 0
+        assert result.path[-1] == result.final_position
         es = adapter.get_perception("default")
         assert es.x == 7.0
         assert es.y == 9.0
@@ -179,6 +183,7 @@ class TestGridWorldAdapter:
         goal = SemanticNavigationGoal(target_object="火星")
         result = adapter.navigate_to_object(goal)
         assert result.success is False
+        assert result.path == []
 
     def test_astar_avoids_obstacles(self) -> None:
         """T20: A* path planning avoids obstacles placed on direct path."""
@@ -192,6 +197,8 @@ class TestGridWorldAdapter:
         result = adapter.navigate_to_object(goal)
         assert result.success is True
         assert result.steps_taken > 3
+        assert len(result.path) > 0
+        assert result.path[-1] == result.final_position
         es = adapter.get_perception("default")
         assert es.x == 3.0
         assert es.y == 0.0
@@ -206,6 +213,7 @@ class TestGridWorldAdapter:
         goal = SemanticNavigationGoal(target_object="boxed")
         result = adapter.navigate_to_object(goal)
         assert result.success is False
+        assert result.path == []
 
     def test_navigate_records_steps_taken(self) -> None:
         """T22: Step count reflects actual path length, proving no teleport."""
@@ -215,6 +223,8 @@ class TestGridWorldAdapter:
         result = adapter.navigate_to_object(goal)
         assert result.success is True
         assert result.steps_taken == 20
+        assert len(result.path) == 21
+        assert result.path[-1] == result.final_position
 
     def test_navigate_to_chair(self) -> None:
         """T23: Navigation to newly added chair target."""
@@ -224,6 +234,8 @@ class TestGridWorldAdapter:
         result = adapter.navigate_to_object(goal)
         assert result.success is True
         assert result.final_position == (5.0, 5.0, 0.0)
+        assert len(result.path) > 0
+        assert result.path[-1] == result.final_position
         es = adapter.get_perception("default")
         assert es.x == 5.0
         assert es.y == 5.0
@@ -236,6 +248,8 @@ class TestGridWorldAdapter:
         result = adapter.navigate_to_object(goal)
         assert result.success is True
         assert result.final_position == (10.0, 5.0, 0.0)
+        assert len(result.path) > 0
+        assert result.path[-1] == result.final_position
 
     def test_navigate_to_coffee_table(self) -> None:
         """T25: Navigation to coffee table target."""
@@ -245,3 +259,5 @@ class TestGridWorldAdapter:
         result = adapter.navigate_to_object(goal)
         assert result.success is True
         assert result.final_position == (4.0, 3.0, 0.0)
+        assert len(result.path) > 0
+        assert result.path[-1] == result.final_position

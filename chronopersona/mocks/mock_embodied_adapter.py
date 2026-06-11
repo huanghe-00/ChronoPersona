@@ -64,4 +64,5 @@ class MockEmbodiedAdapter(AbstractEmbodiedAdapter):
             final_position=(1.0, 0.0, 1.0),
             collision_count=0,
             steps_taken=5,
+            path=[(1.0, 0.0, 1.0)],
         )

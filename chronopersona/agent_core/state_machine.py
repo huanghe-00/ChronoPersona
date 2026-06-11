@@ -136,6 +136,7 @@ class StateMachineAgentCore(AbstractAgentCore):
                         action_params={
                             "target": nav_target,
                             "final_position": nav_result.final_position,
+                            "path": nav_result.path,
                         },
                         reasoning=f"Navigation to '{nav_target}' succeeded",
                     )

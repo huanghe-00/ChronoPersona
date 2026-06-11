@@ -257,6 +257,8 @@ class TestStateMachineAgentCore:
         assert out.branch_id == "main"
         assert out.action_plan is not None
         assert out.action_plan.action_token == "navigate_to_object"
+        assert out.action_plan.action_params.get("path") is not None
+        assert len(out.action_plan.action_params["path"]) > 0
         # Verify adapter state updated
         es = adapter.get_perception("default")
         assert es.x == 2.0
@@ -308,6 +310,7 @@ class TestStateMachineAgentCore:
         assert "已到达" in out.reply_text
         assert out.action_plan is not None
         assert out.action_plan.action_token == "navigate_to_object"
+        assert out.action_plan.action_params.get("path") is not None
         es = adapter.get_perception("default")
         assert es.x == 5.0
         assert es.y == 5.0
@@ -325,6 +328,7 @@ class TestStateMachineAgentCore:
         assert "已到达" in out.reply_text
         assert out.action_plan is not None
         assert out.action_plan.action_token == "navigate_to_object"
+        assert out.action_plan.action_params.get("path") is not None
         es = adapter.get_perception("default")
         assert es.x == 2.0
         assert es.y == 3.0
@@ -342,6 +346,7 @@ class TestStateMachineAgentCore:
         assert "已到达" in out.reply_text
         assert out.action_plan is not None
         assert out.action_plan.action_token == "navigate_to_object"
+        assert out.action_plan.action_params.get("path") is not None
         es = adapter.get_perception("default")
         assert es.x == 8.0
         assert es.y == 12.0
@@ -418,6 +423,8 @@ class TestStateMachineAgentCore:
         assert "已到达" in out.reply_text
         assert out.action_plan is not None
         assert out.action_plan.action_token == "navigate_to_object"
+        assert out.action_plan.action_params.get("path") is not None
+        assert len(out.action_plan.action_params["path"]) > 0
         es = adapter.get_perception("default")
         assert es.x == 10.0
         assert es.y == 5.0

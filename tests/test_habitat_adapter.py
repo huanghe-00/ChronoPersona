@@ -186,6 +186,7 @@ class TestHabitatAdapter3DMethods:
         result = self.adapter.navigate_to_object(goal)
         assert isinstance(result, NavigationResult)
         assert result.success is True
+        assert hasattr(result, "path")
 
 
 class TestHabitatAdapterInputValidation:
@@ -216,6 +217,7 @@ class TestHabitatAdapterInputValidation:
         result = self.adapter.navigate_to_object(goal)
         assert result.success is False
         assert result.steps_taken == 0
+        assert result.path == []
 
 
 class TestHabitatAdapterSpatialMemory:
@@ -276,6 +278,8 @@ class TestHabitatAdapter:
         assert isinstance(result.success, bool)
         assert len(result.final_position) == 3
         assert result.steps_taken >= 0
+        assert hasattr(result, "path")
+        assert isinstance(result.path, list)
 
 
 """Additional contract tests for HabitatAdapter command mapping and fallback."""

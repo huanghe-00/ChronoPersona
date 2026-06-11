@@ -345,14 +345,14 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
                         break
             if pos is None:
                 x, y, _ = self._agents[agent_id]
-                return NavigationResult(success=False, final_position=(x, y, 0.0), steps_taken=0)
+                return NavigationResult(success=False, final_position=(x, y, 0.0), steps_taken=0, path=[])
             target_pos = pos
 
         tx, ty = target_pos
         x, y, _ = self._agents[agent_id]
         path = self._astar_path((x, y), (tx, ty), agent_id)
         if path is None:
-            return NavigationResult(success=False, final_position=(x, y, 0.0), steps_taken=0)
+            return NavigationResult(success=False, final_position=(x, y, 0.0), steps_taken=0, path=[])
 
         for i in range(1, len(path)):
             px, py = path[i]
@@ -366,6 +366,7 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
             final_position=(float(final_x), float(final_y), 0.0),
             steps_taken=len(path) - 1,
             collision_count=0,
+            path=[(float(px), float(py), 0.0) for px, py in path],
         )
 
     def add_object(self, agent_id: str, object_id: str, x: float, y: float) -> None:
