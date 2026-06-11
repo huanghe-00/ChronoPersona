@@ -108,7 +108,10 @@ def main():
         model_router=MockModelRouter(),
         embodied_adapter=adapter,
     )
-    gateway = WebSocketGateway(agent_core=agent_core)
+    gateway = WebSocketGateway(
+        agent_core=agent_core,
+        speech_recognizer=None,  # MVA: ASR placeholder; future: Whisper.cpp
+    )
 
     handler = functools.partial(websocket_handler, gateway=gateway, adapter=adapter)
     start_server = websockets.serve(

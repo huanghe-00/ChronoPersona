@@ -25,6 +25,9 @@ from chronopersona.contracts.interfaces.abstract_memory_migration_service import
 from chronopersona.contracts.interfaces.abstract_memory_store import AbstractMemoryStore
 from chronopersona.contracts.interfaces.abstract_persona_injector import IPersonaInjector
 from chronopersona.contracts.interfaces.abstract_semantic_store import AbstractSemanticStore
+from chronopersona.contracts.interfaces.abstract_speech_recognizer import (
+    AbstractSpeechRecognizer,
+)
 from chronopersona.contracts.interfaces.abstract_skill import ISkill
 from chronopersona.contracts.interfaces.abstract_skill_registry import ISkillRegistry
 from chronopersona.contracts.interfaces.abstract_version_manager import (
@@ -55,6 +58,7 @@ __all__ = [
     "AbstractMemoryStore",
     "AbstractModelRouter",
     "AbstractSemanticStore",
+    "AbstractSpeechRecognizer",
     "AbstractSyncManager",
     "AbstractVersionManager",
     "ICostTracker",

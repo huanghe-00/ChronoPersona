@@ -3,7 +3,7 @@
 W7+: Replaces stub with python-socketio or FastAPI WebSocket.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from loguru import logger
 
@@ -16,10 +16,12 @@ class WebSocketGateway:
     def __init__(
         self,
         agent_core: AbstractAgentCore,
+        speech_recognizer: Optional[Any] = None,
         host: str = "0.0.0.0",
         port: int = 8765,
     ) -> None:
         self._agent_core = agent_core
+        self._speech_recognizer = speech_recognizer
         self._host = host
         self._port = port
         self._clients: Dict[str, Any] = {}
@@ -49,6 +51,15 @@ class WebSocketGateway:
         """
         branch_id = payload.get("branch_id", "main")
         user_input = payload.get("message", "")
+        if not user_input:
+            audio_data = payload.get("audio_data")
+            if audio_data and self._speech_recognizer is not None:
+                import base64
+                try:
+                    audio_bytes = base64.b64decode(audio_data)
+                    user_input = self._speech_recognizer.transcribe(audio_bytes, branch_id)
+                except Exception as e:
+                    logger.warning("Speech transcription failed: {}", e)
         if not user_input:
             raise ValueError("message must not be empty")
         if not branch_id:

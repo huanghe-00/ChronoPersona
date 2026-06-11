@@ -4,6 +4,7 @@ import pytest
 
 from chronopersona.api.ws_gateway import WebSocketGateway
 from chronopersona.mocks.mock_agent_core import MockAgentCore
+from chronopersona.mocks.mock_speech_recognizer import MockSpeechRecognizer
 
 
 class TestWebSocketGateway:
@@ -40,3 +41,25 @@ class TestWebSocketGateway:
         gw.register_client("c2", None)
         count = gw.broadcast_state({"x": 0, "y": 0})
         assert count == 2
+
+    def test_handle_message_voice_input(self) -> None:
+        """T05: Base64 audio data is transcribed to text before processing."""
+        import base64
+
+        asr = MockSpeechRecognizer(fixed_text="到沙发旁边")
+        gw = WebSocketGateway(
+            agent_core=MockAgentCore(), speech_recognizer=asr
+        )
+        audio_b64 = base64.b64encode(b"fake_pcm").decode()
+        resp = gw.handle_message(
+            "c1", {"audio_data": audio_b64, "branch_id": "main"}
+        )
+        assert "reply_text" in resp
+        assert resp["branch_id"] == "main"
+        assert len(asr._calls) == 1
+
+    def test_empty_message_and_no_audio_raises_valueerror(self) -> None:
+        """T06: Empty message with no audio_data raises ValueError."""
+        gw = WebSocketGateway(agent_core=MockAgentCore())
+        with pytest.raises(ValueError):
+            gw.handle_message("c1", {"message": "", "branch_id": "main"})
