@@ -315,6 +315,13 @@
 
 **验证产出**：`scripts/serve_mva.py` 启动后，5 步场景演示全部可观测。
 
+### 具身模块收尾（P1 演示就绪）
+
+| 序号 | 任务 | 检查标准 | 状态 |
+|------|------|---------|------|
+| 6 | `serve_mva.py` 清理 monkey-patch | `demo_aware_run_turn` 移除，位置感知由 `[Embodied State]` Prompt 注入自然驱动 | ✅ |
+| 7 | 端到端演示脚本 | `docs/demo_embodied.md` 包含：启动命令、5 步演示流程、预期截图 | 🟡 待执行 |
+
 ---
 
 *排期基线: 2026-05-22 | 下次基线审视: 2026-06-29 (v1.0.0 启动)*
@@ -335,7 +342,7 @@
 | **记忆溯源链** | 幻觉注入、评估脱节 | `MemoryEntry`/`Fact` Schema 扩展 | 2d |
 | **WebSocket 真实实现** | 前端联动不可用 | `WebSocketGateway` 双向推送 + Canvas | 2d |
 | **全链路日志 trace** | 可观测性不足 | `loguru` 结构化 + 请求链 ID | 1d |
-| **具身闭环硬化** | 标准对话分支动作未执行、ActionPlanner 未装配、前端 FOV 静态 | `ActionPlanner` 装配进 `serve_mva.py`；`StateMachineAgentCore` 标准分支执行 `action_plan`；`frontend/canvas.js` 动态 FOV 高亮 | 1.5d |
+| **具身闭环硬化** | ✅ 已完成 | 标准对话动作执行、FOV 动态高亮、E2E 8 项测试全绿 | 1.5d |
 
 ### v1.2.0 `memory-quality`：记忆质量跃迁（3 周）
 

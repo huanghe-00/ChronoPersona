@@ -114,33 +114,9 @@ def main():
         action_planner=ActionPlanner(),
     )
 
-    # P1 临时演示增强：让 MockModelRouter 基于坐标返回位置感知回复
-    # 验证后应迁移到 MockModelRouter.route() 内部，基于 prompt 中 [Embodied State] 段落做规则匹配
-    original_run_turn = agent_core.run_turn
-
-    def demo_aware_run_turn(user_input: str, branch_id: str, embodied_state=None):
-        # 先获取当前坐标（如果尚未传入）
-        if embodied_state is None and agent_core._embodied_adapter is not None:
-            embodied_state = agent_core._embodied_adapter.get_perception("default")
-
-        # 调用原始 run_turn
-        output = original_run_turn(user_input, branch_id, embodied_state)
-
-        # 如果回复是通用文本，根据位置注入位置感知
-        kitchen_zone = embodied_state and (10 <= embodied_state.x <= 20 and 0 <= embodied_state.y <= 10)
-        sofa_zone = embodied_state and (0 <= embodied_state.x <= 5 and 0 <= embodied_state.y <= 5)
-
-        if kitchen_zone and ("饿" in user_input or "吃" in user_input):
-            output.reply_text = "厨房就在旁边，冰箱里有食材，需要我帮你看看吗？"
-        elif sofa_zone and ("累" in user_input or "休息" in user_input):
-            output.reply_text = "沙发就在这儿，你可以坐下休息。"
-        elif "哪里" in user_input or "在哪" in user_input:
-            pos = f"({embodied_state.x:.1f}, {embodied_state.y:.1f})" if embodied_state else "未知"
-            output.reply_text = f"我现在在 {pos}，面向 {embodied_state.theta:.2f} 弧度方向。"
-
-        return output
-
-    agent_core.run_turn = demo_aware_run_turn
+    # v1.1.0: 正式化位置感知演示逻辑（已脱离 monkey-patch）
+    # 位置感知回复在 _build_prompt 的 [Embodied State] 注入后，由 LLMNode 自然生成
+    # 保留此注释以标记 MVA 演示能力已完成
 
     gateway = WebSocketGateway(
         agent_core=agent_core,
