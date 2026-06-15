@@ -140,14 +140,16 @@ def main():
     )
 
     handler = functools.partial(websocket_handler, gateway=gateway, adapter=adapter)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     start_server = websockets.serve(
         handler, "0.0.0.0", port, process_request=process_request,
         ping_interval=30, ping_timeout=60,
     )
-    asyncio.get_event_loop().run_until_complete(start_server)
+    loop.run_until_complete(start_server)
     logger.info("Server running on ws://0.0.0.0:{}/ws (health: http://0.0.0.0:{}/health)", port, port)
     logger.info("Frontend: http://0.0.0.0:{}", static_port)
-    asyncio.get_event_loop().run_forever()
+    loop.run_forever()
 
 
 if __name__ == "__main__":
