@@ -93,62 +93,61 @@ class StateMachineAgentCore(AbstractAgentCore):
         # H1: Update emotion state before navigation, consistent with normal flow
         self._emotion_state = self._update_emotion(user_input, branch_id)
 
-        # Embodied navigation: intent-driven bypass for semantic navigation
-        if intent == Intent.NAVIGATION and self._embodied_adapter is not None:
-            nav_target = self._extract_navigation_target(user_input)
-            if nav_target:
-                from chronopersona.contracts.schemas import SemanticNavigationGoal
-                goal = SemanticNavigationGoal(target_object=nav_target)
-                nav_result = self._embodied_adapter.navigate_to_object(goal)
-                reply = (
-                    f"已到达{nav_target}旁边，还需要什么？"
-                    if nav_result.success
-                    else f"无法找到{nav_target}，请确认目标名称。"
-                )
-                # Persist to L1 working memory
-                window = self._get_or_create_window(branch_id)
-                window.add_turn(user_input, reply, branch_id)
+        # Embodied navigation: check for navigation target regardless of intent classification
+        nav_target = self._extract_navigation_target(user_input)
+        if nav_target and self._embodied_adapter is not None:
+            from chronopersona.contracts.schemas import SemanticNavigationGoal
+            goal = SemanticNavigationGoal(target_object=nav_target)
+            nav_result = self._embodied_adapter.navigate_to_object(goal)
+            reply = (
+                f"已到达{nav_target}旁边，还需要什么？"
+                if nav_result.success
+                else f"无法找到{nav_target}，请确认目标名称。"
+            )
+            # Persist to L1 working memory
+            window = self._get_or_create_window(branch_id)
+            window.add_turn(user_input, reply, branch_id)
 
-                # Persist navigation event to L2 episodic memory
-                memory_entry = MemoryEntry(
-                    content=f"[导航] 用户指令：'{user_input}' → 结果：{'成功' if nav_result.success else '失败'}，最终位置 {nav_result.final_position}",
-                    branch_id=branch_id,
-                    memory_type="episodic",
-                    session_id="embodied_nav",
-                    entities=[nav_target] if nav_result.success else [],
-                    metadata={
-                        "source": "embodied_navigation_bypass",
-                        "nav_target": nav_target,
+            # Persist navigation event to L2 episodic memory
+            memory_entry = MemoryEntry(
+                content=f"[导航] 用户指令：'{user_input}' → 结果：{'成功' if nav_result.success else '失败'}，最终位置 {nav_result.final_position}",
+                branch_id=branch_id,
+                memory_type="episodic",
+                session_id="embodied_nav",
+                entities=[nav_target] if nav_result.success else [],
+                metadata={
+                    "source": "embodied_navigation_bypass",
+                    "nav_target": nav_target,
+                    "final_position": nav_result.final_position,
+                    "extraction_model": "heuristic_rule",
+                    "extraction_confidence": 1.0,
+                },
+            )
+            try:
+                self._memory_store.add(memory_entry, branch_id=branch_id)
+            except (ValueError, RuntimeError) as e:
+                logger.warning("Failed to persist navigation memory for branch {}: {}", branch_id, e)
+
+            action_plan = None
+            if nav_result.success:
+                from chronopersona.contracts.schemas import ActionPlan
+                action_plan = ActionPlan(
+                    action_token="navigate_to_object",
+                    action_params={
+                        "target": nav_target,
                         "final_position": nav_result.final_position,
-                        "extraction_model": "heuristic_rule",
-                        "extraction_confidence": 1.0,
+                        "path": nav_result.path,
                     },
+                    reasoning=f"Navigation to '{nav_target}' succeeded",
                 )
-                try:
-                    self._memory_store.add(memory_entry, branch_id=branch_id)
-                except (ValueError, RuntimeError) as e:
-                    logger.warning("Failed to persist navigation memory for branch {}: {}", branch_id, e)
 
-                action_plan = None
-                if nav_result.success:
-                    from chronopersona.contracts.schemas import ActionPlan
-                    action_plan = ActionPlan(
-                        action_token="navigate_to_object",
-                        action_params={
-                            "target": nav_target,
-                            "final_position": nav_result.final_position,
-                            "path": nav_result.path,
-                        },
-                        reasoning=f"Navigation to '{nav_target}' succeeded",
-                    )
-
-                return AgentOutput(
-                    reply_text=reply,
-                    emotion_state=self._emotion_state,
-                    action_plan=action_plan,
-                    used_memories=[],
-                    branch_id=branch_id,
-                )
+            return AgentOutput(
+                reply_text=reply,
+                emotion_state=self._emotion_state,
+                action_plan=action_plan,
+                used_memories=[],
+                branch_id=branch_id,
+            )
 
         # v1.1.0: Hard budget throttle (production baseline skeleton)
         used = self._tokens_used.get(branch_id, 0)
@@ -352,13 +351,16 @@ class StateMachineAgentCore(AbstractAgentCore):
             branch_id: Explicit branch identifier (reserved for future per-branch isolation).
 
         Returns:
-            Updated EmotionState.
+            Updated EmotionState. Preserves current non-NEUTRAL state with
+            high confidence when new input yields weak NEUTRAL classification.
         """
         text = user_input.lower()
         negative_words = ["难过", "伤心", "痛苦", "焦虑", "担心", "害怕"]
         positive_words = ["开心", "高兴", "兴奋", "喜欢", "谢谢", "好"]
+
+        new_state: EmotionState
         if any(w in text for w in negative_words):
-            return EmotionState(
+            new_state = EmotionState(
                 current_state=EmotionLabel.CONCERNED,
                 intensity=0.7,
                 trigger_reason="User expressed negative emotion",
@@ -366,8 +368,8 @@ class StateMachineAgentCore(AbstractAgentCore):
                 valence=-0.7,
                 arousal=0.6,
             )
-        if any(w in text for w in positive_words):
-            return EmotionState(
+        elif any(w in text for w in positive_words):
+            new_state = EmotionState(
                 current_state=EmotionLabel.EMPATHETIC,
                 intensity=0.5,
                 trigger_reason="User expressed positive emotion",
@@ -375,13 +377,26 @@ class StateMachineAgentCore(AbstractAgentCore):
                 valence=0.6,
                 arousal=0.4,
             )
-        return EmotionState(
-            current_state=EmotionLabel.NEUTRAL,
-            intensity=0.0,
-            confidence=0.5,
-            valence=0.0,
-            arousal=0.0,
-        )
+        else:
+            new_state = EmotionState(
+                current_state=EmotionLabel.NEUTRAL,
+                intensity=0.0,
+                confidence=0.5,
+                valence=0.0,
+                arousal=0.0,
+            )
+
+        # Preserve current non-NEUTRAL state if new classification is weak NEUTRAL
+        if (
+            new_state.current_state == EmotionLabel.NEUTRAL
+            and new_state.confidence < 0.7
+            and self._emotion_state is not None
+            and self._emotion_state.current_state != EmotionLabel.NEUTRAL
+            and self._emotion_state.confidence >= 0.7
+        ):
+            return self._emotion_state
+
+        return new_state
 
     def get_memory_summary(self, branch_id: str) -> str:
         """Return a summary of memory state."""
@@ -400,10 +415,18 @@ class StateMachineAgentCore(AbstractAgentCore):
             r"(?:请|帮我)?\s*(?:到|去|导航到)\s*(\S+?)(?:旁边|附近|那里)?\s*[吧]?[？?]?\s*$",
             r"(?:靠近|走近)\s*(\S+?)(?:旁边|附近)?\s*$",
         ]
+        # Filter out question particles and common non-object words
+        invalid_targets = {
+            "吗", "吧", "呢", "啊", "呀", "么", "了", "的",
+            "不", "很", "都", "也", "还", "又", "再", "最", "更",
+        }
         for p in patterns:
             m = re.search(p, text)
             if m:
-                return m.group(1).strip()
+                target = m.group(1).strip()
+                if target in invalid_targets:
+                    continue
+                return target
         return None
 
     def _execute_action_plan(self, action_plan: ActionPlan, branch_id: str) -> None:

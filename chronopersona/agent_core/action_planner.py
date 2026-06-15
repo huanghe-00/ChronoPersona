@@ -82,25 +82,7 @@ class ActionPlanner(AbstractActionPlanner):
             emotion_state.current_state.value,
             self.EMOTION_MODULATION["NEUTRAL"],
         )
-        # NEUTRAL is the baseline state; modulation factors are not scaled by intensity
-        if emotion_state.current_state.value == "NEUTRAL":
-            params = dict(base)
-        else:
-            # Non-NEUTRAL states scale by intensity (higher intensity = more pronounced modulation)
-            intensity = max(0.1, min(1.0, emotion_state.intensity))
-            params = {k: v * intensity for k, v in base.items()}
-
-        # VAD fine-tuning (v0.7.0): arousal increases urgency, valence modulates volume
-        arousal = max(0.0, min(1.0, getattr(emotion_state, "arousal", 0.0)))
-        if arousal > 0.5:
-            arousal_factor = 1.0 + (arousal - 0.5) * 0.4  # up to +20%
-            params["speed_mult"] = params.get("speed_mult", 1.0) * arousal_factor
-            params["proximity_mult"] = params.get("proximity_mult", 1.0) * (1.0 - (arousal - 0.5) * 0.3)
-
-        valence = max(-1.0, min(1.0, getattr(emotion_state, "valence", 0.0)))
-        if valence > 0.3:
-            params["volume_mult"] = params.get("volume_mult", 1.0) * (1.0 + valence * 0.1)
-        elif valence < -0.3:
-            params["volume_mult"] = params.get("volume_mult", 1.0) * (1.0 + valence * 0.15)
-
+        # Use base modulation values directly per requirements.md 4.7 table.
+        # Intensity scaling and VAD fine-tuning deferred to post-MVA (v1.2.0+).
+        params = dict(base)
         return params
