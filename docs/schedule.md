@@ -3,7 +3,7 @@
 **版本**: v2.0  
 **基线日期**: 2026-05-22 (周五)  
 **总工期**: v0.1.0 ~ v2.0.0（MVA + 5 个生产迭代 + 架构换代）  
-**当前状态**: v1.1.0 `production-baseline` 进行中：认证骨架与硬预算截断已落地，溯源链字段扩展待执行；**Habitat 3D 代码就绪（`habitat_adapter.py` 接口完备），待场景文件接入完成演示迁移**
+**当前状态**: v1.1.0 `production-baseline` 进行中：认证骨架与硬预算截断已落地，溯源链字段扩展待执行；**Habitat 3D 演示迁移 ✅ 已完成**
 
 ---
 
@@ -186,7 +186,7 @@
 | 第 1 周 | 认证与权限完整实现 | `IAuthMiddleware` 真实实现 + 多租户 API Key + Branch 级 RBAC | 渗透测试基线：未授权访问 401/403 100% 拦截 |
 | 第 2 周 | 硬预算截断 + 跨分支记忆继承过滤器 | `ICostTracker` 实时累加 + 80% 降级/100% 熔断；`IPrivacyFilter` + `IRelevanceFilter` | 单 session 成本告警准确率 100%，熔断无漏触发 |
 | 第 3 周 | 记忆溯源链 + WebSocket 真实实现 + 全链路日志 trace | `MemoryEntry` / `Fact` `source_memory_ids` 落地；`WebSocketGateway` 双向推送；`loguru` 结构化 trace | 检索结果 100% 可溯源；WebSocket 与 Canvas 联动可用 |
-| 穿插 | Habitat 3D 演示迁移 | `HabitatAdapter` 接入 `serve_mva.py`；Replica `apartment_0.glb` 或 Matterport3D 场景文件；前端 3D 状态文本面板；端到端测试：3D 导航 "去厨房" | 输入"去厨房" → Habitat A* 导航 → 真实 3D 坐标更新 |
+| 穿插 | Habitat 3D 演示迁移 ✅ 已完成 | `HabitatAdapter` 接入 `serve_mva.py`；Replica `apartment_0.glb` 或 Matterport3D 场景文件；前端 3D 状态文本面板；端到端测试：3D 导航 "去厨房" | 输入"去厨房" → Habitat A* 导航 → 真实 3D 坐标更新 ✅ |
 
 **准入标准**：`make test` 保持 400+ passed，覆盖率不下降；渗透测试与预算告警同时通过。
 
@@ -344,7 +344,7 @@
 | **WebSocket 真实实现** | 前端联动不可用 | `WebSocketGateway` 双向推送 + Canvas | 2d |
 | **全链路日志 trace** | 可观测性不足 | `loguru` 结构化 + 请求链 ID | 1d |
 | **具身闭环硬化** | ✅ 已完成 | 标准对话动作执行、FOV 动态高亮、E2E 8 项测试全绿 | 1.5d |
-| **Habitat 3D 演示迁移** | 代码就绪但未接入演示链路 | `habitat-sim` 安装 + Replica/Matterport3D 场景文件；`serve_mva.py` 装配切换为 `HabitatAdapter`；前端 3D 状态面板（RGB/深度/语义标签） | 2d |
+| **Habitat 3D 演示迁移 ✅ 已完成** | 3D 演示环境验证通过，双轨切换可用 | `habitat-sim` 安装 + Replica/Matterport3D 场景文件；`serve_mva.py` 装配切换为 `HabitatAdapter`；前端 3D 状态面板（RGB/深度/语义标签） | 2d |
 
 ### v1.2.0 `memory-quality`：记忆质量跃迁（3 周）
 
