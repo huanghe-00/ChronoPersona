@@ -40,6 +40,11 @@ class MemoryEntry:
     last_accessed: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+    # v1.1.0: Provenance chain for embodied navigation and memory audit
+    source_memory_ids: List[str] = field(default_factory=list)
+    extraction_model: Optional[str] = None
+    extraction_confidence: Optional[float] = None
+
 
 @dataclass
 class Fact:
