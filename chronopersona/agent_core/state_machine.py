@@ -14,6 +14,7 @@ from chronopersona.contracts.interfaces import (
     IPersonaInjector,
 )
 from chronopersona.contracts.schemas import (
+    ActionPlan,
     AgentOutput,
     ChangeSet,
     EmbodiedState,
@@ -202,6 +203,9 @@ class StateMachineAgentCore(AbstractAgentCore):
         if action_plan is not None:
             output.action_plan = action_plan
             output.emotion_modulation = action_plan.action_params
+            # P0: 标准分支执行动作（非导航 bypass）
+            if self._embodied_adapter is not None:
+                self._execute_action_plan(action_plan, branch_id)
 
         # Persist turn to L1 Working Memory
         window = self._get_or_create_window(branch_id)
@@ -394,3 +398,45 @@ class StateMachineAgentCore(AbstractAgentCore):
             if m:
                 return m.group(1).strip()
         return None
+
+    def _execute_action_plan(self, action_plan: ActionPlan, branch_id: str) -> None:
+        """Execute non-navigation action plans through embodied adapter."""
+        if self._embodied_adapter is None:
+            return
+        import math
+        token = action_plan.action_token
+        params = action_plan.action_params
+        if token == "navigate_to_object":
+            target = params.get("target", "")
+            if target:
+                from chronopersona.contracts.schemas import SemanticNavigationGoal
+                goal = SemanticNavigationGoal(target_object=target)
+                self._embodied_adapter.navigate_to_object(goal)
+            return
+        state = self._embodied_adapter.get_perception("default")
+        dx = dy = dtheta = 0.0
+        if token in ("approach_gently", "approach"):
+            speed = params.get("speed", 1.0) * params.get("speed_mult", 1.0)
+            dist = params.get("distance", 1.0)
+            dx = math.cos(state.theta) * dist * speed
+            dy = math.sin(state.theta) * dist * speed
+        elif token == "retreat_slowly":
+            speed = params.get("speed", 0.5) * params.get("speed_mult", 1.0)
+            dist = params.get("distance", 1.0)
+            dx = -math.cos(state.theta) * dist * speed
+            dy = -math.sin(state.theta) * dist * speed
+        elif token == "turn_to_user":
+            target_x = params.get("target_x", 0.0)
+            target_y = params.get("target_y", 0.0)
+            if not target_x and not target_y:
+                target_x = state.x + 1.0
+                target_y = state.y
+            target_theta = math.atan2(target_y - state.y, target_x - state.x)
+            dtheta = (target_theta - state.theta) % (2 * math.pi)
+            if dtheta > math.pi:
+                dtheta -= 2 * math.pi
+        elif token == "look_around":
+            dtheta = math.pi / 2
+        elif token == "interact":
+            pass
+        self._embodied_adapter.execute_action("default", {"dx": dx, "dy": dy, "dtheta": dtheta})

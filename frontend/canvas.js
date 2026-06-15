@@ -97,6 +97,21 @@ function connectWebSocket() {
                 });
             }
             drawAgent(agentState.x, agentState.y, agentState.theta);
+            if (s.fov_objects && s.fov_objects.length > 0) {
+                s.fov_objects.forEach((objName) => {
+                    const obj = Object.values(TARGETS).find(
+                        t => t.label === objName || t.label.includes(objName) || objName.includes(t.label)
+                    );
+                    if (obj) {
+                        ctx.beginPath();
+                        ctx.arc(obj.x * CELL + CELL / 2, obj.y * CELL + CELL / 2, CELL / 2, 0, Math.PI * 2);
+                        ctx.strokeStyle = '#e74c3c';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        ctx.lineWidth = 1;
+                    }
+                });
+            }
             log(`State update: (${s.x}, ${s.y}) θ=${s.theta}`);
         }
     };

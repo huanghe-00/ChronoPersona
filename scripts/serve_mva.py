@@ -19,6 +19,7 @@ from loguru import logger
 from chronopersona.agent_core.state_machine import StateMachineAgentCore
 from chronopersona.api.ws_gateway import WebSocketGateway
 from chronopersona.mocks.mock_memory_store import MockMemoryStore
+from chronopersona.agent_core.action_planner import ActionPlanner
 from chronopersona.mocks.mock_model_router import MockModelRouter
 
 
@@ -110,6 +111,7 @@ def main():
         memory_store=MockMemoryStore(),
         model_router=MockModelRouter(),
         embodied_adapter=adapter,
+        action_planner=ActionPlanner(),
     )
     gateway = WebSocketGateway(
         agent_core=agent_core,

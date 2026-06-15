@@ -303,6 +303,15 @@
    - **Spindle Gating**：在 `InsightScheduler` 中增加 `importance_score` 硬门槛（≥0.7），低价值记忆不进入 Insight 处理队列。
    - **Affective VAD 轻量扩展**：`EmotionState` 增加 `valence`/`arousal`，映射到 `ActionPlanner` 调制表；舍弃 Dominance 维度。
 
+### 当日冲刺：具身全闭环（P0 当日交付）
+
+| 序号 | 任务 | 检查标准 |
+|------|------|---------|
+| 1 | ActionPlanner 装配 | `serve_mva.py` 中 `StateMachineAgentCore` 实例化含 `action_planner=ActionPlanner()` |
+| 2 | 标准分支动作执行 | `state_machine.py` 中 `run_turn()` 标准分支在产出 `action_plan` 后调用 `_execute_action_plan()`，实现 6 个 token 的坐标/朝向实际变更 |
+| 3 | 前端 FOV 动态绘制 | `canvas.js` 在 `embodied.state` 事件中遍历 `fov_objects` 并用红色描边标注视野内物体 |
+| 4 | 端到端验证 | WebSocket 发送"你能慢慢靠近吗" → Agent 坐标实际变化，且前端收到 `embodied.state` 重绘 |
+
 ---
 
 *排期基线: 2026-05-22 | 下次基线审视: 2026-06-29 (v1.0.0 启动)*
@@ -323,6 +332,7 @@
 | **记忆溯源链** | 幻觉注入、评估脱节 | `MemoryEntry`/`Fact` Schema 扩展 | 2d |
 | **WebSocket 真实实现** | 前端联动不可用 | `WebSocketGateway` 双向推送 + Canvas | 2d |
 | **全链路日志 trace** | 可观测性不足 | `loguru` 结构化 + 请求链 ID | 1d |
+| **具身闭环硬化** | 标准对话分支动作未执行、ActionPlanner 未装配、前端 FOV 静态 | `ActionPlanner` 装配进 `serve_mva.py`；`StateMachineAgentCore` 标准分支执行 `action_plan`；`frontend/canvas.js` 动态 FOV 高亮 | 1.5d |
 
 ### v1.2.0 `memory-quality`：记忆质量跃迁（3 周）
 
