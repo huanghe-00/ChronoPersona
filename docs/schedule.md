@@ -3,7 +3,7 @@
 **版本**: v2.0  
 **基线日期**: 2026-05-22 (周五)  
 **总工期**: v0.1.0 ~ v2.0.0（MVA + 5 个生产迭代 + 架构换代）  
-**当前状态**: v1.1.0 `production-baseline` 进行中：认证骨架与硬预算截断已落地，溯源链字段扩展待执行
+**当前状态**: v1.1.0 `production-baseline` 进行中：认证骨架与硬预算截断已落地，溯源链字段扩展待执行；**Habitat 3D 代码就绪（`habitat_adapter.py` 接口完备），待场景文件接入完成演示迁移**
 
 ---
 
@@ -19,7 +19,7 @@
 | **v0.6.0** | 06-15 ~ 06-21 | `embodied`：评估框架 | A1-A11 对抗测试集（**39 文件/400+ 用例**）、量化对比表、**测试语义红线** | ✅ 已完成 |
 | **v0.7.0** | 06-22 ~ 06-28 | `frontend`：2D 世界 + 前端 | GridWorldAdapter **5 动作真实跨本体映射**、WebSocket Gateway 双向推送、Canvas 联调、`[Emotion State]` + `[Semantic Facts]` Prompt 注入、5 项穿插改进落地 | ✅ 已完成 |
 | **v1.0.0** | 06-29 ~ 07-05 | `mva`：文档与发布准备 | README 量化数据刷新、技术博客定稿、Slide Deck 定稿、`scripts/demo_mva.py`、**记忆系统生产优化文档化** | ✅ 已完成 |
-| **v1.1.0** | 07-06 ~ 07-26 | `production-baseline`：生产基线硬化 | 认证权限、硬预算截断、跨分支隐私过滤、记忆溯源链、WebSocket 真实实现、全链路日志 trace | 🟡 进行中 |
+| **v1.1.0** | 07-06 ~ 07-26 | `production-baseline`：生产基线硬化 | 认证权限、硬预算截断、跨分支隐私过滤、记忆溯源链、WebSocket 真实实现、全链路日志 trace、**Habitat 3D 演示迁移** | 🟡 进行中 |
 | **v1.2.0** | 07-27 ~ 08-16 | `memory-quality`：记忆质量跃迁 | 条件感知蒸馏器、动态重要性重算、检索结果可解释性、边类型纠错、动态 max_hops | ⚪ 未开始 |
 | **v1.3.0** | 08-17 ~ 09-13 | `graph-production`：图谱与检索生产化 | IntentGraph PostgreSQL 持久化、Episodic Store Qdrant 分布式、Intent-Aware 融合、级联更新 | ⚪ 未开始 |
 | **v1.4.0** | 09-14 ~ 10-18 | `cognitive-deepening`：认知仿生深化 | L4 程序记忆、Dream T2–T6 全周期、L5 元记忆、DynamicImportance、动作反馈闭环 | ⚪ 未开始 |
@@ -186,6 +186,7 @@
 | 第 1 周 | 认证与权限完整实现 | `IAuthMiddleware` 真实实现 + 多租户 API Key + Branch 级 RBAC | 渗透测试基线：未授权访问 401/403 100% 拦截 |
 | 第 2 周 | 硬预算截断 + 跨分支记忆继承过滤器 | `ICostTracker` 实时累加 + 80% 降级/100% 熔断；`IPrivacyFilter` + `IRelevanceFilter` | 单 session 成本告警准确率 100%，熔断无漏触发 |
 | 第 3 周 | 记忆溯源链 + WebSocket 真实实现 + 全链路日志 trace | `MemoryEntry` / `Fact` `source_memory_ids` 落地；`WebSocketGateway` 双向推送；`loguru` 结构化 trace | 检索结果 100% 可溯源；WebSocket 与 Canvas 联动可用 |
+| 穿插 | Habitat 3D 演示迁移 | `HabitatAdapter` 接入 `serve_mva.py`；Replica `apartment_0.glb` 或 Matterport3D 场景文件；前端 3D 状态文本面板；端到端测试：3D 导航 "去厨房" | 输入"去厨房" → Habitat A* 导航 → 真实 3D 坐标更新 |
 
 **准入标准**：`make test` 保持 400+ passed，覆盖率不下降；渗透测试与预算告警同时通过。
 
@@ -320,7 +321,7 @@
 | 序号 | 任务 | 检查标准 | 状态 |
 |------|------|---------|------|
 | 6 | `serve_mva.py` 清理 monkey-patch | `demo_aware_run_turn` 移除，位置感知由 `[Embodied State]` Prompt 注入自然驱动 | ✅ |
-| 7 | 端到端演示脚本 | `docs/demo_embodied.md` 包含：启动命令、5 步演示流程、预期截图 | 🟡 待执行 |
+| 7 | 端到端演示脚本 | `docs/demo_embodied.md` 包含：2D GridWorld 演示（5 步）+ **Habitat 3D 演示迁移章节** | ✅ |
 
 ---
 
@@ -343,6 +344,7 @@
 | **WebSocket 真实实现** | 前端联动不可用 | `WebSocketGateway` 双向推送 + Canvas | 2d |
 | **全链路日志 trace** | 可观测性不足 | `loguru` 结构化 + 请求链 ID | 1d |
 | **具身闭环硬化** | ✅ 已完成 | 标准对话动作执行、FOV 动态高亮、E2E 8 项测试全绿 | 1.5d |
+| **Habitat 3D 演示迁移** | 代码就绪但未接入演示链路 | `habitat-sim` 安装 + Replica/Matterport3D 场景文件；`serve_mva.py` 装配切换为 `HabitatAdapter`；前端 3D 状态面板（RGB/深度/语义标签） | 2d |
 
 ### v1.2.0 `memory-quality`：记忆质量跃迁（3 周）
 
