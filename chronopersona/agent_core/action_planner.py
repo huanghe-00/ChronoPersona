@@ -28,7 +28,7 @@ class ActionPlanner(AbstractActionPlanner):
     ACTION_PATTERNS = [
         (r"(?:慢慢|轻轻|温柔).*(?:靠近|接近)", "approach_gently", {"speed": 0.5}),
         (r"(?:后退|退后|远离)", "retreat_slowly", {"speed": 0.5}),
-        (r"(?:转身|转向).*(?:用户|人)", "turn_to_user", {}),
+        (r"(?:转身|转向|转过去|转过头).*(?:用户|人|我)", "turn_to_user", {"dtheta": 1.5707963267948966}),
         (r"(?:互动|交互|操作)", "interact", {}),
         (r"(?:环顾|看看|观察)", "look_around", {}),
         (r"(?:到|去|导航).*(?:沙发|床|桌子|椅子|冰箱|茶几)", "navigate_to_object", {"target": ""}),
@@ -82,15 +82,16 @@ class ActionPlanner(AbstractActionPlanner):
             emotion_state.current_state.value,
             self.EMOTION_MODULATION["NEUTRAL"],
         )
-        # 1. Intensity scales all base parameters (test_concerned_reduces_speed baseline)
-        intensity = max(0.0, min(1.0, emotion_state.intensity))
-        params = {k: v * intensity for k, v in base.items()}
-        # 2. Arousal modulates speed and proximity (test_arousal)
+        params = dict(base)
+        # Arousal modulates speed and proximity only at high levels (≥0.75)
         arousal = emotion_state.arousal
-        if arousal > 0.0:
+        if arousal >= 0.75:
             params["speed_mult"] = params.get("speed_mult", 0.0) * (1.0 + (arousal - 0.5) * 0.4)
             params["proximity_mult"] = params.get("proximity_mult", 0.0) * (1.0 - (arousal - 0.5) * 0.3)
-        # 3. Valence modulates volume with asymmetric coefficient (test_positive_valence / test_negative_valence)
+        # Intensity scales volume baseline; valence fine-tunes volume
+        intensity = max(0.0, min(1.0, emotion_state.intensity))
+        if intensity > 0.0:
+            params["volume_mult"] = params.get("volume_mult", 0.0) * intensity
         valence = emotion_state.valence
         if valence > 0.0:
             params["volume_mult"] = params.get("volume_mult", 0.0) * (1.0 + valence * 0.1)

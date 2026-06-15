@@ -95,7 +95,7 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         # Embodied navigation: check for navigation target regardless of intent classification
         nav_target = self._extract_navigation_target(user_input)
-        if nav_target and self._is_known_navigation_target(nav_target) and self._embodied_adapter is not None:
+        if nav_target and self._embodied_adapter is not None:
             from chronopersona.contracts.schemas import SemanticNavigationGoal
             goal = SemanticNavigationGoal(target_object=nav_target)
             nav_result = self._embodied_adapter.navigate_to_object(goal)
@@ -397,6 +397,17 @@ class StateMachineAgentCore(AbstractAgentCore):
         ):
             return self._emotion_state
 
+        # 动作指令不应重置情感状态（保持情感连续性用于行为调制）
+        action_keywords = ["靠近", "后退", "转向", "转身", "观察", "看看", "环顾", "移动", "去", "到", "转过去", "面对"]
+        if (
+            new_state.current_state == EmotionLabel.NEUTRAL
+            and self._emotion_state is not None
+            and self._emotion_state.current_state != EmotionLabel.NEUTRAL
+            and self._emotion_state.confidence >= 0.7
+            and any(kw in user_input for kw in action_keywords)
+        ):
+            return self._emotion_state
+
         return new_state
 
     def get_memory_summary(self, branch_id: str) -> str:
@@ -420,6 +431,7 @@ class StateMachineAgentCore(AbstractAgentCore):
         invalid_targets = {
             "吗", "吧", "呢", "啊", "呀", "么", "了", "的",
             "不", "很", "都", "也", "还", "又", "再", "最", "更",
+            "面对", "面对我", "我", "你", "他", "她", "它",
         }
         for p in patterns:
             m = re.search(p, text)
@@ -473,17 +485,19 @@ class StateMachineAgentCore(AbstractAgentCore):
             dx = -math.cos(state.theta) * dist * speed
             dy = -math.sin(state.theta) * dist * speed
         elif token == "turn_to_user":
-            target_x = params.get("target_x")
-            target_y = params.get("target_y")
-            if target_x is None or target_y is None:
-                target_x = state.x + 1.0
-                target_y = state.y
-            target_x = float(target_x)
-            target_y = float(target_y)
-            target_theta = math.atan2(target_y - state.y, target_x - state.x)
-            dtheta = (target_theta - state.theta) % (2 * math.pi)
-            if dtheta > math.pi:
-                dtheta -= 2 * math.pi
+            dtheta = params.get("dtheta", 0.0)
+            if dtheta == 0.0:
+                target_x = params.get("target_x")
+                target_y = params.get("target_y")
+                if target_x is None or target_y is None:
+                    target_x = state.x + 1.0
+                    target_y = state.y
+                target_x = float(target_x)
+                target_y = float(target_y)
+                target_theta = math.atan2(target_y - state.y, target_x - state.x)
+                dtheta = (target_theta - state.theta) % (2 * math.pi)
+                if dtheta > math.pi:
+                    dtheta -= 2 * math.pi
         elif token == "look_around":
             dtheta = math.pi / 2
         elif token == "interact":
