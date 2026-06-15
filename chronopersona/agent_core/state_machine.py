@@ -21,10 +21,10 @@ from chronopersona.contracts.schemas import (
     EmbodiedState,
     EmotionLabel,
     EmotionState,
-    MemoryEntry,
     RetrievedContext,
     Version,
 )
+from chronopersona.contracts.schemas.base import MemoryEntry
 from chronopersona.agent_core.intent_node import Intent, IntentNode
 from chronopersona.agent_core.llm_node import LLMNode
 from chronopersona.agent_core.memory_node import MemoryNode
