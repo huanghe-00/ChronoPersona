@@ -215,7 +215,7 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
             "retreat_slowly": "move_backward",
             "turn_to_user": "turn_right",
             "interact": "look_up",
-            "look_around": "look_up",
+            "look_around": "turn_right",  # 90° 旋转，与 2D theta 增量语义一致
             "move_forward": "move_forward",
             "move_backward": "move_backward",
             "turn_left": "turn_left",

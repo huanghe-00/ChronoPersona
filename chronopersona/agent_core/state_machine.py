@@ -504,4 +504,14 @@ class StateMachineAgentCore(AbstractAgentCore):
             dtheta = math.pi / 2
         elif token == "interact":
             pass
-        self._embodied_adapter.execute_action("default", {"dx": dx, "dy": dy, "dtheta": dtheta})
+        # 兼容 2D GridWorld (dx/dy/dtheta) 和 3D Habitat (action token)
+        self._embodied_adapter.execute_action(
+            "default",
+            {
+                "action": token,
+                "dx": dx,
+                "dy": dy,
+                "dtheta": dtheta,
+                "speed": params.get("speed", 1.0) * params.get("speed_mult", 1.0),
+            },
+        )
