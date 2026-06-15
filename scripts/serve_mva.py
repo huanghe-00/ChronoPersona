@@ -159,6 +159,8 @@ def main():
                 "Falling back to GridWorldAdapter (2D): HabitatAdapter init failed — {}", e
             )
             habitat_scene = None  # Trigger 2D fallback below
+
+    if not habitat_scene:
         from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
         adapter = GridWorldAdapter()
         # Align initial pose with frontend hard-coded initial state
