@@ -40,8 +40,12 @@ async def process_request(path, request_headers):
     return None
 
 
-async def websocket_handler(websocket, path, gateway, adapter):
-    """Handle WebSocket connections with shared state."""
+async def websocket_handler(websocket, gateway, adapter):
+    """Handle WebSocket connections with shared state.
+    
+    websockets 14.0+ compatibility: path is available via websocket.request.path
+    if needed; signature reduced to (websocket, ...) only.
+    """
     # v1.1.0: API Key authentication skeleton (production baseline)
     api_key = os.environ.get("MVA_API_KEY")
     if api_key:
