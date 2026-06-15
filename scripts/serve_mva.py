@@ -6,6 +6,16 @@ WebSocket endpoint on ws://localhost:8765/ws
 HTTP health check on http://localhost:8765/health
 """
 
+import sys
+from pathlib import Path
+
+# Ensure project root is in sys.path for absolute imports like
+# `from chronopersona.agent_core...` to work regardless of
+# invocation directory or PYTHONPATH configuration.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
 import asyncio
 import functools
 import json
