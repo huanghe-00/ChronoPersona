@@ -3,7 +3,7 @@
 W7+: Replaces stub with python-socketio or FastAPI WebSocket.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
