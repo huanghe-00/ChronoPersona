@@ -3,6 +3,7 @@
 Defines core dataclasses used across all memory layers.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
@@ -18,7 +19,7 @@ class MemoryEntry:
     - source_turn_index: original turn position in session
     """
 
-    id: str
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     content: str
     memory_type: str  # episodic, semantic, insight
     branch_id: str

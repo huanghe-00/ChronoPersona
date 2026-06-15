@@ -1,6 +1,7 @@
 """State machine orchestration for Agent Core."""
 
 import re
+import uuid
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
@@ -110,6 +111,7 @@ class StateMachineAgentCore(AbstractAgentCore):
 
             # Persist navigation event to L2 episodic memory
             memory_entry = MemoryEntry(
+                id=str(uuid.uuid4()),
                 content=f"[导航] 用户指令：'{user_input}' → 结果：{'成功' if nav_result.success else '失败'}，最终位置 {nav_result.final_position}",
                 branch_id=branch_id,
                 memory_type="episodic",
