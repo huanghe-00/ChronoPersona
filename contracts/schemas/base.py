@@ -19,10 +19,9 @@ class MemoryEntry:
     - source_turn_index: original turn position in session
     """
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     content: str
-    memory_type: str  # episodic, semantic, insight
-    branch_id: str
+    memory_type: str = "episodic"
+    branch_id: str = "main"
     session_id: Optional[str] = None
     turn_id: Optional[int] = None
     entities: List[str] = field(default_factory=list)
@@ -45,3 +44,5 @@ class MemoryEntry:
     source_memory_ids: List[str] = field(default_factory=list)
     extraction_model: Optional[str] = None
     extraction_confidence: Optional[float] = None
+
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
