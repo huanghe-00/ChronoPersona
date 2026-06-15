@@ -95,7 +95,7 @@ class StateMachineAgentCore(AbstractAgentCore):
 
         # Embodied navigation: check for navigation target regardless of intent classification
         nav_target = self._extract_navigation_target(user_input)
-        if nav_target and self._embodied_adapter is not None:
+        if nav_target and self._is_known_navigation_target(nav_target) and self._embodied_adapter is not None:
             from chronopersona.contracts.schemas import SemanticNavigationGoal
             goal = SemanticNavigationGoal(target_object=nav_target)
             nav_result = self._embodied_adapter.navigate_to_object(goal)
@@ -386,10 +386,11 @@ class StateMachineAgentCore(AbstractAgentCore):
                 arousal=0.0,
             )
 
-        # Preserve current non-NEUTRAL state if new classification is weak NEUTRAL
+        # Preserve non-NEUTRAL state only when input is completely empty (no signal to update)
+        # Normal text input, even neutral, should be allowed to reset to NEUTRAL
         if (
-            new_state.current_state == EmotionLabel.NEUTRAL
-            and new_state.confidence < 0.7
+            not user_input.strip()
+            and new_state.current_state == EmotionLabel.NEUTRAL
             and self._emotion_state is not None
             and self._emotion_state.current_state != EmotionLabel.NEUTRAL
             and self._emotion_state.confidence >= 0.7
@@ -428,6 +429,22 @@ class StateMachineAgentCore(AbstractAgentCore):
                     continue
                 return target
         return None
+
+    def _is_known_navigation_target(self, target: str) -> bool:
+        """Check if extracted target matches known semantic objects in the world."""
+        if not target:
+            return False
+        target = target.strip().lower()
+        known = {
+            "沙发", "sofa", "床", "bed", "桌子", "table", "厨房", "kitchen",
+            "椅子", "chair", "冰箱", "fridge", "茶几", "coffee_table",
+        }
+        if target in known:
+            return True
+        for k in known:
+            if target in k or k in target:
+                return True
+        return False
 
     def _execute_action_plan(self, action_plan: ActionPlan, branch_id: str) -> None:
         """Execute non-navigation action plans through embodied adapter."""

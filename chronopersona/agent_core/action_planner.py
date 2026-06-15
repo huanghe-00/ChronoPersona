@@ -82,7 +82,18 @@ class ActionPlanner(AbstractActionPlanner):
             emotion_state.current_state.value,
             self.EMOTION_MODULATION["NEUTRAL"],
         )
-        # Use base modulation values directly per requirements.md 4.7 table.
-        # Intensity scaling and VAD fine-tuning deferred to post-MVA (v1.2.0+).
-        params = dict(base)
+        # 1. Intensity scales all base parameters (test_concerned_reduces_speed baseline)
+        intensity = max(0.0, min(1.0, emotion_state.intensity))
+        params = {k: v * intensity for k, v in base.items()}
+        # 2. Arousal modulates speed and proximity (test_arousal)
+        arousal = emotion_state.arousal
+        if arousal > 0.0:
+            params["speed_mult"] = params.get("speed_mult", 0.0) * (1.0 + (arousal - 0.5) * 0.4)
+            params["proximity_mult"] = params.get("proximity_mult", 0.0) * (1.0 - (arousal - 0.5) * 0.3)
+        # 3. Valence modulates volume with asymmetric coefficient (test_positive_valence / test_negative_valence)
+        valence = emotion_state.valence
+        if valence > 0.0:
+            params["volume_mult"] = params.get("volume_mult", 0.0) * (1.0 + valence * 0.1)
+        elif valence < 0.0:
+            params["volume_mult"] = params.get("volume_mult", 0.0) * (1.0 + valence * 0.15)
         return params
