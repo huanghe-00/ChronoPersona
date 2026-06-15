@@ -139,14 +139,16 @@ def main():
         speech_recognizer=None,  # MVA: ASR placeholder; future: Whisper.cpp
     )
 
+    async def start_ws_server():
+        return await websockets.serve(
+            handler, "0.0.0.0", port, process_request=process_request,
+            ping_interval=30, ping_timeout=60,
+        )
+
     handler = functools.partial(websocket_handler, gateway=gateway, adapter=adapter)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    start_server = websockets.serve(
-        handler, "0.0.0.0", port, process_request=process_request,
-        ping_interval=30, ping_timeout=60,
-    )
-    loop.run_until_complete(start_server)
+    server = loop.run_until_complete(start_ws_server())
     logger.info("Server running on ws://0.0.0.0:{}/ws (health: http://0.0.0.0:{}/health)", port, port)
     logger.info("Frontend: http://0.0.0.0:{}", static_port)
     loop.run_forever()
