@@ -257,9 +257,6 @@ class TestHabitatAdapter:
         assert isinstance(result.path, list)
 
 
-"""Additional contract tests for HabitatAdapter command mapping and fallback."""
-
-
 class TestHabitatAdapterFallback:
     """T23-T26: Fallback and command mapping tests."""
 
