@@ -112,6 +112,18 @@ function connectWebSocket() {
                     }
                 });
             }
+            // 3D 状态文本面板（v1.1.0 Habitat 适配）
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(5, 5, 320, 55);
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px monospace';
+            if (s.metadata && s.metadata.position_3d) {
+                const pos = s.metadata.position_3d;
+                ctx.fillText(`3D: (${pos[0].toFixed(2)}, ${pos[1].toFixed(2)}, ${pos[2].toFixed(2)})`, 10, 25);
+            } else {
+                ctx.fillText(`2D: (${s.x.toFixed(2)}, ${s.y.toFixed(2)}) θ=${s.theta.toFixed(2)}`, 10, 25);
+            }
+            ctx.fillText(`FOV: ${(s.fov_objects || []).join(', ') || 'none'}`, 10, 45);
             log(`State update: (${s.x}, ${s.y}) θ=${s.theta}`);
         }
     };

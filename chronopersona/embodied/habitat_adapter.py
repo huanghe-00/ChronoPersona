@@ -46,7 +46,7 @@ def _try_import_habitat() -> Optional[Any]:
     return _habitat_sim
 
 
-# Known object name → semantic category mapping (MVP seed)
+# Known object name → semantic category mapping (MVP seed + v1.1.0 3D demo)
 _OBJECT_SEMANTIC_MAP: Dict[str, str] = {
     "沙发": "sofa",
     "床": "bed",
@@ -54,6 +54,9 @@ _OBJECT_SEMANTIC_MAP: Dict[str, str] = {
     "椅子": "chair",
     "冰箱": "fridge",
     "茶几": "coffee_table",
+    "厨房": "kitchen",      # v1.1.0: 3D 演示核心目标
+    "书架": "shelf",        # v1.1.0: 测试用
+    "电视": "tv",           # v1.1.0: 3D 演示辅助目标
 }
 
 # Maximum navigation steps before declaring failure
