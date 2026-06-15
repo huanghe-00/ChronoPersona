@@ -39,3 +39,8 @@ class MemoryEntry:
     affective_valence: Optional[float] = None
     source_turn_index: Optional[int] = None
     admission_score: Optional[float] = None
+
+    # v1.1.0 Provenance chain extensions (requirements.md 12.1.1)
+    source_memory_ids: List[str] = field(default_factory=list)
+    extraction_model: Optional[str] = None
+    extraction_confidence: Optional[float] = None

@@ -115,12 +115,12 @@ class StateMachineAgentCore(AbstractAgentCore):
                 memory_type="episodic",
                 session_id="embodied_nav",
                 entities=[nav_target] if nav_result.success else [],
+                extraction_model="heuristic_rule",
+                extraction_confidence=1.0,
                 metadata={
                     "source": "embodied_navigation_bypass",
                     "nav_target": nav_target,
                     "final_position": nav_result.final_position,
-                    "extraction_model": "heuristic_rule",
-                    "extraction_confidence": 1.0,
                 },
             )
             try:

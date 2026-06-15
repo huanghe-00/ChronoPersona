@@ -133,3 +133,24 @@ class WebSocketGateway:
                 logger.warning("Failed to broadcast to {}: {}", client_id, e)
                 self.unregister_client(client_id)
         return sent
+
+    async def heartbeat_loop(self, interval: int = 30) -> None:
+        """v1.1.0: Periodic heartbeat ping to detect stale connections.
+
+        Args:
+            interval: Ping interval in seconds (default 30s per requirements.md 6.3).
+        """
+        import asyncio
+
+        while True:
+            await asyncio.sleep(interval)
+            stale: List[str] = []
+            for client_id, socket in list(self._clients.items()):
+                try:
+                    if hasattr(socket, "ping"):
+                        await socket.ping()
+                except Exception:
+                    stale.append(client_id)
+            for cid in stale:
+                logger.warning("Heartbeat failed for client {}, removing", cid)
+                self.unregister_client(cid)

@@ -47,11 +47,11 @@ class TestEmbodiedNavigationEndToEnd:
         assert "厨房" in nav_memories[0].content
         assert nav_memories[0].branch_id == "main"
 
-        # v1.1.0: Provenance chain verification via metadata
+        # v1.1.0: Provenance chain verification via dedicated fields
+        assert nav_memories[0].extraction_model == "heuristic_rule"
+        assert nav_memories[0].extraction_confidence == 1.0
         assert nav_memories[0].metadata.get("source") == "embodied_navigation_bypass"
         assert nav_memories[0].metadata.get("nav_target") == "厨房"
-        assert nav_memories[0].metadata.get("extraction_model") == "heuristic_rule"
-        assert nav_memories[0].metadata.get("extraction_confidence") == 1.0
 
     def test_consecutive_navigation_stateful(self, core: StateMachineAgentCore) -> None:
         """T4: Consecutive navigation respects current position (no reset)."""

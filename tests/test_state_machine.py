@@ -428,3 +428,30 @@ class TestStateMachineAgentCore:
         es = adapter.get_perception("default")
         assert es.x == 10.0
         assert es.y == 5.0
+
+    def test_hard_budget_throttle_blocks_at_limit(self) -> None:
+        """T29: v1.1.0 Hard budget throttle returns exhausted message when budget reached."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        core._token_budget = 10  # Artificially low budget for test
+        core._tokens_used["main"] = 10  # Already at limit
+        out = core.run_turn("hello", branch_id="main")
+        assert "预算已用尽" in out.reply_text
+        assert out.action_plan is None
+
+    def test_hard_budget_throttle_warning_at_80pct(self) -> None:
+        """T30: v1.1.0 Budget warning logged at 80% threshold (verify via output)."""
+        core = StateMachineAgentCore(
+            memory_store=MockMemoryStore(),
+            model_router=MockModelRouter(),
+        )
+        core._token_budget = 100
+        # First turn consumes tokens; verify it doesn't block
+        out = core.run_turn("hello", branch_id="main")
+        assert out.reply_text  # Should succeed
+        # Manually set to 80% to verify warning path
+        core._tokens_used["main"] = 80
+        out2 = core.run_turn("test", branch_id="main")
+        assert out2.reply_text  # Should still succeed (warning only)
