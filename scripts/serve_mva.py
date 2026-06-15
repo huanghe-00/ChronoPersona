@@ -92,19 +92,33 @@ async def websocket_handler(websocket, gateway, adapter):
                 # 可选：让前端感知到"到达"停顿
                 await asyncio.sleep(0.2)
 
-            # Push real embodied state from adapter
-            embodied = adapter.get_perception("default")
-            state = {
-                "x": embodied.x,
-                "y": embodied.y,
-                "theta": embodied.theta,
-                "fov_objects": embodied.fov_objects,
-                "action_token": (
-                    response.get("action_plan", {}).get("action_token")
-                    if response.get("action_plan")
-                    else None
-                ),
-            }
+            # Push real embodied state from adapter (graceful degradation on failure)
+            try:
+                embodied = adapter.get_perception("default")
+                state = {
+                    "x": embodied.x,
+                    "y": embodied.y,
+                    "theta": embodied.theta,
+                    "fov_objects": embodied.fov_objects,
+                    "action_token": (
+                        response.get("action_plan", {}).get("action_token")
+                        if response.get("action_plan")
+                        else None
+                    ),
+                }
+            except (NotImplementedError, RuntimeError, FileNotFoundError) as e:
+                logger.warning("get_perception failed, using fallback state: {}", e)
+                state = {
+                    "x": 3.0,
+                    "y": 4.0,
+                    "theta": 0.0,
+                    "fov_objects": [],
+                    "action_token": (
+                        response.get("action_plan", {}).get("action_token")
+                        if response.get("action_plan")
+                        else None
+                    ),
+                }
             await gateway.broadcast_state_async(state)
     except websockets.exceptions.ConnectionClosed:
         pass
@@ -136,10 +150,15 @@ def main():
 
     habitat_scene = os.environ.get("HABITAT_SCENE")
     if habitat_scene:
-        from chronopersona.embodied.habitat_adapter import HabitatAdapter
-        adapter = HabitatAdapter(scene_path=habitat_scene, agent_id="default")
-        logger.info("Using HabitatAdapter (3D) with scene: {}", habitat_scene)
-    else:
+        try:
+            from chronopersona.embodied.habitat_adapter import HabitatAdapter
+            adapter = HabitatAdapter(scene_path=habitat_scene, agent_id="default")
+            logger.info("Using HabitatAdapter (3D) with scene: {}", habitat_scene)
+        except (ImportError, RuntimeError, FileNotFoundError) as e:
+            logger.warning(
+                "Falling back to GridWorldAdapter (2D): HabitatAdapter init failed — {}", e
+            )
+            habitat_scene = None  # Trigger 2D fallback below
         from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
         adapter = GridWorldAdapter()
         # Align initial pose with frontend hard-coded initial state
