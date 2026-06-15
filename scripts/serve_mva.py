@@ -94,18 +94,24 @@ def main():
     static_thread = threading.Thread(target=start_static_server, daemon=True)
     static_thread.start()
 
-    from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
-
-    adapter = GridWorldAdapter()
-    # Align initial pose with frontend hard-coded initial state
-    adapter._agents["default"] = (3.0, 4.0, 0.0)
-    adapter.add_object("default", "沙发", 2.0, 3.0)
-    adapter.add_object("default", "床", 8.0, 12.0)
-    adapter.add_object("default", "桌子", 3.0, 2.0)
-    adapter.add_object("default", "厨房", 15.0, 5.0)
-    adapter.add_object("default", "椅子", 5.0, 5.0)
-    adapter.add_object("default", "冰箱", 10.0, 5.0)
-    adapter.add_object("default", "茶几", 4.0, 3.0)
+    habitat_scene = os.environ.get("HABITAT_SCENE")
+    if habitat_scene:
+        from chronopersona.embodied.habitat_adapter import HabitatAdapter
+        adapter = HabitatAdapter(scene_path=habitat_scene, agent_id="default")
+        logger.info("Using HabitatAdapter (3D) with scene: {}", habitat_scene)
+    else:
+        from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
+        adapter = GridWorldAdapter()
+        # Align initial pose with frontend hard-coded initial state
+        adapter._agents["default"] = (3.0, 4.0, 0.0)
+        adapter.add_object("default", "沙发", 2.0, 3.0)
+        adapter.add_object("default", "床", 8.0, 12.0)
+        adapter.add_object("default", "桌子", 3.0, 2.0)
+        adapter.add_object("default", "厨房", 15.0, 5.0)
+        adapter.add_object("default", "椅子", 5.0, 5.0)
+        adapter.add_object("default", "冰箱", 10.0, 5.0)
+        adapter.add_object("default", "茶几", 4.0, 3.0)
+        logger.info("Using GridWorldAdapter (2D)")
 
     agent_core = StateMachineAgentCore(
         memory_store=MockMemoryStore(),
