@@ -10,6 +10,7 @@ without the simulator.
 """
 
 import pytest
+from unittest.mock import patch
 
 from chronopersona.contracts.schemas import (
     EmbodiedState,
@@ -113,26 +114,6 @@ class TestHabitatAdapterObjectMapping:
         for cn, en in _OBJECT_SEMANTIC_MAP.items():
             assert en.islower()
             assert en.replace("_", "").isalpha()
-"""Tests for HabitatAdapter: contract compliance and 3D method validation.
-
-Covers:
-- 2D legacy method NotImplementedError
-- Input validation (empty agent_id, empty goal)
-- 3D method NotImplementedError (simulator not wired)
-- Unknown target graceful failure (no simulator init)
-- Spatial memory operations
-"""
-
-import pytest
-
-from chronopersona.contracts.schemas import (
-    EmbodiedState,
-    LowLevelCommand,
-    NavigationResult,
-    SemanticNavigationGoal,
-    SpatialRecord,
-)
-from chronopersona.embodied.habitat_adapter import HabitatAdapter
 
 
 class TestHabitatAdapter2DLegacy:
@@ -247,12 +228,6 @@ class TestHabitatAdapterSpatialMemory:
         assert records[0].object_id == "sofa"
         assert records[0].x == 1.0
         assert records[0].y == 2.0
-"""Tests for HabitatAdapter with real simulator wiring."""
-
-import pytest
-
-from chronopersona.contracts.schemas import SemanticNavigationGoal
-from chronopersona.embodied.habitat_adapter import HabitatAdapter
 
 
 class TestHabitatAdapter:
