@@ -311,6 +311,9 @@
 | 2 | 标准分支动作执行 | `state_machine.py` 中 `run_turn()` 标准分支在产出 `action_plan` 后调用 `_execute_action_plan()`，实现 6 个 token 的坐标/朝向实际变更 | ✅ |
 | 3 | 前端 FOV 动态绘制 | `canvas.js` 在 `embodied.state` 事件中遍历 `fov_objects` 并用红色描边标注视野内物体 | ✅ |
 | 4 | 端到端验证 | WebSocket 发送"你能慢慢靠近吗" → Agent 坐标实际变化，且前端收到 `embodied.state` 重绘 | ✅ |
+| 5 | 集成测试固化 | `tests/test_embodied_e2e.py` 8 个用例覆盖 approach/retreat/turn/look/navigate/FOV/emotion-modulation | ✅ |
+
+**验证产出**：`scripts/serve_mva.py` 启动后，5 步场景演示全部可观测。
 
 ---
 
