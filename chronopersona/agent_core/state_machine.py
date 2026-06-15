@@ -194,6 +194,13 @@ class StateMachineAgentCore(AbstractAgentCore):
                     emotion_state=self.get_emotion_state(),
                     branch_id=branch_id,
                 )
+                # Fallback: if LLM output is generic, parse user input directly for embodied commands
+                if action_plan is not None and action_plan.action_token == "idle":
+                    action_plan = self._action_planner.plan(
+                        user_input,
+                        emotion_state=self.get_emotion_state(),
+                        branch_id=branch_id,
+                    )
             except (ValueError, RuntimeError) as e:
                 logger.warning("ActionPlanner failed for branch {}: {}", branch_id, e)
 
@@ -426,11 +433,13 @@ class StateMachineAgentCore(AbstractAgentCore):
             dx = -math.cos(state.theta) * dist * speed
             dy = -math.sin(state.theta) * dist * speed
         elif token == "turn_to_user":
-            target_x = params.get("target_x", 0.0)
-            target_y = params.get("target_y", 0.0)
-            if not target_x and not target_y:
+            target_x = params.get("target_x")
+            target_y = params.get("target_y")
+            if target_x is None or target_y is None:
                 target_x = state.x + 1.0
                 target_y = state.y
+            target_x = float(target_x)
+            target_y = float(target_y)
             target_theta = math.atan2(target_y - state.y, target_x - state.x)
             dtheta = (target_theta - state.theta) % (2 * math.pi)
             if dtheta > math.pi:
