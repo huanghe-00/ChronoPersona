@@ -53,6 +53,7 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
             raise ValueError("agent_id must not be empty")
         if agent_id not in self._agents:
             self._agents[agent_id] = (0.0, 0.0, 0.0)
+        if agent_id not in self._spatial_memory:
             self._spatial_memory[agent_id] = []
 
     def get_perception(self, agent_id: str) -> EmbodiedState:
