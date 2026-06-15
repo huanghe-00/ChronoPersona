@@ -275,12 +275,16 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
 
         # MVA placeholder: return synthetic result when simulator is not wired
         if not self._scene_path:
-            return NavigationResult(
-                success=True,
-                final_position=(1.0, 0.0, 1.0),
-                steps_taken=0,
-                path=[(1.0, 0.0, 1.0)],
-            )
+            # Known targets return synthetic success; unknown targets fail gracefully
+            if semantic_cat in _OBJECT_SEMANTIC_MAP.values():
+                return NavigationResult(
+                    success=True,
+                    final_position=(1.0, 0.0, 1.0),
+                    steps_taken=0,
+                    path=[(1.0, 0.0, 1.0)],
+                )
+            else:
+                return NavigationResult(success=False, steps_taken=0, path=[])
 
         sim = self._ensure_sim()
         if self._object_index is None:
