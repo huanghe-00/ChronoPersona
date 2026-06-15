@@ -47,6 +47,8 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
         self._agents: Dict[str, Tuple[float, float, float]] = {}
         # agent_id -> list of SpatialRecord
         self._spatial_memory: Dict[str, List[SpatialRecord]] = {}
+        # Navigation step-by-step path for animation replay (non-teleport)
+        self._nav_path: List[Tuple[float, float, float]] = []
 
     def _ensure_agent(self, agent_id: str) -> None:
         if not agent_id:
@@ -355,11 +357,13 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
         if path is None:
             return NavigationResult(success=False, final_position=(x, y, 0.0), steps_taken=0, path=[])
 
+        self._nav_path = []
         for i in range(1, len(path)):
             px, py = path[i]
             prev_x, prev_y = path[i - 1]
             theta = math.atan2(py - prev_y, px - prev_x)
             self._agents[agent_id] = (float(px), float(py), theta)
+            self._nav_path.append((float(px), float(py), 0.0))
 
         final_x, final_y = path[-1]
         return NavigationResult(
@@ -367,7 +371,7 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
             final_position=(float(final_x), float(final_y), 0.0),
             steps_taken=len(path) - 1,
             collision_count=0,
-            path=[(float(px), float(py), 0.0) for px, py in path],
+            path=self._nav_path,
         )
 
     def add_object(self, agent_id: str, object_id: str, x: float, y: float) -> None:
