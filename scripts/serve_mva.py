@@ -66,6 +66,32 @@ async def websocket_handler(websocket, gateway, adapter):
             response = gateway.handle_message(client_id, payload)
             await websocket.send(json.dumps({"event": "chat.reply", "data": response}))
 
+            # 步进动画重播：广播中间坐标，让前端感知移动过程（非瞬移）
+            if hasattr(adapter, '_nav_path') and adapter._nav_path:
+                path = list(adapter._nav_path)  # 拷贝避免并发修改
+                adapter._nav_path = []  # 立即消费清空
+                # 限制步数避免过长等待
+                if len(path) > 100:
+                    step = max(1, len(path) // 100)
+                    path = path[::step]
+                for pos in path:
+                    if len(pos) >= 3:
+                        x, y, z = float(pos[0]), float(pos[1]), float(pos[2])
+                    else:
+                        x, y = float(pos[0]), float(pos[1])
+                        z = 0.0
+                    state = {
+                        "x": x,
+                        "y": y,
+                        "theta": 0,
+                        "fov_objects": [],
+                        "metadata": {"position_3d": (x, y, z)} if len(pos) >= 3 else {},
+                    }
+                    await gateway.broadcast_state_async(state)
+                    await asyncio.sleep(0.05)  # 50ms 每步，前端平滑动画
+                # 可选：让前端感知到"到达"停顿
+                await asyncio.sleep(0.2)
+
             # Push real embodied state from adapter
             embodied = adapter.get_perception("default")
             state = {
