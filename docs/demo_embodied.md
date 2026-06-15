@@ -36,7 +36,9 @@ python scripts/serve_mva.py
 ### 3D 演示流程
 
 1. **启动验证**：确认后端日志显示 `HabitatAdapter: simulator initialized with data/scenes/apartment_0.glb`
-2. **3D 语义导航**：输入"去厨房" → `HabitatAdapter.navigate_to_object("厨房")` → A* 路径规划 → Agent 3D 坐标更新 → 前端显示新位置
+2. **3D 语义导航**：输入"去沙发"（或英文"sofa"）→ `HabitatAdapter.navigate_to_object` 匹配 `sofa` 类别 → A* 路径规划 → Agent 3D 坐标更新 → 前端显示新位置
+   - 可用目标：沙发(sofa)、床(bed)、桌子(table)、椅子(chair)、冰箱(fridge)、茶几(coffee_table)
+   - 输入"去厨房"将返回"无法找到"（Replica 场景类别需与映射表匹配）
 3. **多模态感知**：输入"看看周围" → `get_visual_observation()` 返回 RGB/深度/语义掩码 → 前端面板显示语义标签列表（如 `sofa: 0.8m`, `table: 1.2m`）
 4. **跨本体一致性验证**：同一套人格配置（`therapist`）在 3D 场景与 2D 网格中，`approach_gently` 的 `speed_mult` 调制参数一致（CONCERNED=0.5）
 

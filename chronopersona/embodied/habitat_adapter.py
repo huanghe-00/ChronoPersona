@@ -260,8 +260,18 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
 
         semantic_cat = _OBJECT_SEMANTIC_MAP.get(goal.target_object)
         if semantic_cat is None:
-            logger.warning("HabitatAdapter: unknown target '{}'", goal.target_object)
-            return NavigationResult(success=False, steps_taken=0, path=[])
+            # Fallback: try direct English category name (for 3D scene-native labels)
+            target_lower = goal.target_object.lower()
+            if target_lower.replace("_", "").replace(" ", "").isalpha():
+                logger.info(
+                    "HabitatAdapter: '{}' not in seed map, trying direct category '{}'",
+                    goal.target_object,
+                    target_lower,
+                )
+                semantic_cat = target_lower
+            else:
+                logger.warning("HabitatAdapter: unknown target '{}'", goal.target_object)
+                return NavigationResult(success=False, steps_taken=0, path=[])
 
         # MVA placeholder: return synthetic result when simulator is not wired
         if not self._scene_path:
