@@ -339,18 +339,21 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         left = action_ids.get("turn_left", 1)
         right = action_ids.get("turn_right", 2)
 
+        self._nav_path = []  # 重置路径缓存
         steps = 0
         collisions = 0
         for _ in range(_MAX_NAV_STEPS):
             state = agent.get_state()
             pos = tuple(float(v) for v in state.position)
+            self._nav_path.append(pos)  # ← 记录真实3D步进坐标
+            
             if math.dist(pos, target_snapped) < _SUCCESS_RADIUS:
                 return NavigationResult(
                     success=True,
                     final_position=pos,
                     steps_taken=steps,
                     collision_count=collisions,
-                    path=[],
+                    path=self._nav_path,  # ← 返回完整3D路径
                 )
 
             dx = target_snapped[0] - pos[0]
@@ -376,5 +379,5 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
             final_position=final_pos,
             steps_taken=steps,
             collision_count=collisions,
-            path=[],
+            path=self._nav_path,  # ← 返回完整3D路径
         )

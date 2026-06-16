@@ -76,16 +76,19 @@ async def websocket_handler(websocket, gateway, adapter):
                     path = path[::step]
                 for pos in path:
                     if len(pos) >= 3:
-                        x, y, z = float(pos[0]), float(pos[1]), float(pos[2])
+                        x, h, z = float(pos[0]), float(pos[1]), float(pos[2])
+                        # x=水平x, h=垂直高度(Y), z=水平深度
+                        # 2D俯视投影：x→x, z→y, h→z(高度)
                     else:
-                        x, y = float(pos[0]), float(pos[1])
-                        z = 0.0
+                        x, z = float(pos[0]), float(pos[1])
+                        h = 0.0
                     state = {
                         "x": x,
-                        "y": y,
+                        "y": z,  # 水平深度映射为2D平面y轴
+                        "z": h,  # 垂直高度作为3D特征
                         "theta": 0,
                         "fov_objects": [],
-                        "metadata": {"position_3d": (x, y, z)} if len(pos) >= 3 else {},
+                        "metadata": {"position_3d": (x, h, z)},
                     }
                     await gateway.broadcast_state_async(state)
                     await asyncio.sleep(0.05)  # 50ms 每步，前端平滑动画

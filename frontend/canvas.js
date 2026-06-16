@@ -16,13 +16,33 @@ function drawGrid() {
     }
 }
 
-function drawAgent(x, y, theta) {
+function drawAgent(x, y, theta, z = 0) {
     const cx = x * CELL + CELL / 2;
     const cy = y * CELL + CELL / 2;
+    
+    // 3D高度指示线：从圆心向上，长度与z成正比
+    if (z > 0) {
+        ctx.strokeStyle = 'rgba(231, 76, 60, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx, cy - z * 8); // 高度线向上延伸
+        ctx.stroke();
+        // 高度线顶端标记
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(cx, cy - z * 8, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = 1;
+    }
+    
+    // Agent 大小随高度变化（z越大越近，视觉越大）
+    const radius = CELL / 3 + Math.min(z * 2, 5);
     ctx.fillStyle = '#3498db';
     ctx.beginPath();
-    ctx.arc(cx, cy, CELL / 3, 0, Math.PI * 2);
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.fill();
+    
     // Facing direction
     ctx.strokeStyle = '#e74c3c';
     ctx.lineWidth = 2;
@@ -33,12 +53,22 @@ function drawAgent(x, y, theta) {
     ctx.lineWidth = 1;
 }
 
-function drawObject(x, y, label) {
+function drawObject(x, y, label, z = 0) {
+    // 3D高度指示：物体高度柱（半透明绿色柱体）
+    if (z > 0) {
+        ctx.fillStyle = 'rgba(46, 204, 113, 0.3)';
+        ctx.fillRect(x * CELL + 2, y * CELL + 2 - z * 5, CELL - 4, z * 5);
+    }
     ctx.fillStyle = '#2ecc71';
     ctx.fillRect(x * CELL + 2, y * CELL + 2, CELL - 4, CELL - 4);
     ctx.fillStyle = '#000';
     ctx.font = '10px sans-serif';
     ctx.fillText(label, x * CELL + 4, y * CELL + 14);
+    // 显示z高度（红色小字）
+    if (z > 0) {
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillText(`z:${z.toFixed(1)}`, x * CELL + 2, y * CELL - 5);
+    }
 }
 
 function log(msg) {
@@ -100,13 +130,13 @@ function connectWebSocket() {
             // Redraw canvas with new state
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawGrid();
-            Object.values(TARGETS).forEach(t => drawObject(t.x, t.y, t.label));
+            Object.values(TARGETS).forEach(t => drawObject(t.x, t.y, t.label, t.z || 0));
             if (s.fov_objects) {
                 s.fov_objects.forEach((obj, idx) => {
                     // Optional: draw dynamic FOV objects
                 });
             }
-            drawAgent(agentState.x, agentState.y, agentState.theta);
+            drawAgent(agentState.x, agentState.y, agentState.theta, agentState.z || 0);
             if (s.fov_objects && s.fov_objects.length > 0) {
                 s.fov_objects.forEach((objName) => {
                     const obj = Object.values(TARGETS).find(
@@ -127,9 +157,12 @@ function connectWebSocket() {
             ctx.fillRect(5, 5, 320, 55);
             ctx.fillStyle = '#fff';
             ctx.font = '12px monospace';
-            if (s.metadata && s.metadata.position_3d) {
+            // 3D坐标显示：明确展示垂直高度z，证明非2D伪造
+            if (s.z !== undefined && s.z > 0) {
+                ctx.fillText(`3D: (${s.x.toFixed(2)}, ${s.y.toFixed(2)}, ${s.z.toFixed(2)}) [Z=Height]`, 10, 25);
+            } else if (s.metadata && s.metadata.position_3d) {
                 const pos = s.metadata.position_3d;
-                ctx.fillText(`3D: (${pos[0].toFixed(2)}, ${pos[1].toFixed(2)}, ${pos[2].toFixed(2)})`, 10, 25);
+                ctx.fillText(`3D: (${pos[0].toFixed(2)}, ${pos[1].toFixed(2)}, ${pos[2].toFixed(2)}) [Z=Height]`, 10, 25);
             } else {
                 ctx.fillText(`2D: (${s.x.toFixed(2)}, ${s.y.toFixed(2)}) θ=${s.theta.toFixed(2)}`, 10, 25);
             }
