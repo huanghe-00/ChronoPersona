@@ -357,7 +357,7 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
         if path is None:
             return NavigationResult(success=False, final_position=(x, y, 0.0), steps_taken=0, path=[])
 
-        self._nav_path = []
+        self._nav_path = [(float(path[0][0]), float(path[0][1]), 0.0)]
         for i in range(1, len(path)):
             px, py = path[i]
             prev_x, prev_y = path[i - 1]

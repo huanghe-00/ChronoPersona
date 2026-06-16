@@ -177,7 +177,7 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
                 fov_objects=[],
                 metadata={"position_3d": position, "rotation": rot},
             )
-        except (NotImplementedError, RuntimeError, FileNotFoundError):
+        except (RuntimeError, FileNotFoundError, ValueError, IOError):
             # Fallback: return placeholder 3D state so frontend shows 3D panel
             return EmbodiedState(
                 agent_id=agent_id,
@@ -192,7 +192,7 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         """Execute a Habitat action by name or index via sim.step."""
         try:
             sim = self._ensure_sim()
-        except (NotImplementedError, RuntimeError, FileNotFoundError):
+        except (RuntimeError, FileNotFoundError, ValueError, IOError):
             return PerceptionResult(success=False, message="Simulator not available")
         if isinstance(action, dict):
             action_name = action.get("action", "move_forward")
@@ -290,12 +290,6 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
             else:
                 logger.warning("HabitatAdapter: unknown target '{}'", goal.target_object)
                 return NavigationResult(success=False, steps_taken=0, path=[])
-
-        # Early fallback: if simulator cannot be initialized, return graceful failure
-        try:
-            sim = self._ensure_sim()
-        except (NotImplementedError, RuntimeError, FileNotFoundError):
-            return NavigationResult(success=False, steps_taken=0, path=[])
 
         # MVA placeholder: return synthetic result when simulator is not wired
         if not self._scene_path:
