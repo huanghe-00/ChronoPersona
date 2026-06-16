@@ -113,6 +113,7 @@ async def websocket_handler(websocket, gateway, adapter):
                     "y": 4.0,
                     "theta": 0.0,
                     "fov_objects": [],
+                    "metadata": {"position_3d": (3.0, 4.0, 0.0)},  # 3D 标识
                     "action_token": (
                         response.get("action_plan", {}).get("action_token")
                         if response.get("action_plan")

@@ -153,29 +153,47 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
     # ------------------------------------------------------------------
 
     def get_perception(self, agent_id: str) -> EmbodiedState:
-        """Return 2D-projected embodied state from 3D simulator."""
-        sim = self._ensure_sim()
-        agent = sim.get_agent(0)
-        state = agent.get_state()
-        position = tuple(float(v) for v in state.position)
-        x, y, z = position[0], position[1], position[2]
-        theta = 0.0
-        rot = state.rotation
-        if isinstance(rot, (list, tuple)) and len(rot) >= 4:
-            qx, qy, qz, qw = rot
-            theta = math.atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz))
-        return EmbodiedState(
-            agent_id=agent_id,
-            x=x,
-            y=z,
-            theta=theta,
-            fov_objects=[],
-            metadata={"position_3d": position, "rotation": rot},
-        )
+        """Return 2D-projected embodied state from 3D simulator.
+
+        Falls back to placeholder 3D coordinates when simulator is unavailable
+        (e.g., placeholder scene file or habitat_sim not installed).
+        """
+        try:
+            sim = self._ensure_sim()
+            agent = sim.get_agent(0)
+            state = agent.get_state()
+            position = tuple(float(v) for v in state.position)
+            x, y, z = position[0], position[1], position[2]
+            theta = 0.0
+            rot = state.rotation
+            if isinstance(rot, (list, tuple)) and len(rot) >= 4:
+                qx, qy, qz, qw = rot
+                theta = math.atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz))
+            return EmbodiedState(
+                agent_id=agent_id,
+                x=x,
+                y=z,
+                theta=theta,
+                fov_objects=[],
+                metadata={"position_3d": position, "rotation": rot},
+            )
+        except (NotImplementedError, RuntimeError, FileNotFoundError):
+            # Fallback: return placeholder 3D state so frontend shows 3D panel
+            return EmbodiedState(
+                agent_id=agent_id,
+                x=3.0,
+                y=4.0,
+                theta=0.0,
+                fov_objects=[],
+                metadata={"position_3d": (3.0, 4.0, 0.0)},
+            )
 
     def execute_action(self, agent_id: str, action: Any) -> PerceptionResult:
         """Execute a Habitat action by name or index via sim.step."""
-        sim = self._ensure_sim()
+        try:
+            sim = self._ensure_sim()
+        except (NotImplementedError, RuntimeError, FileNotFoundError):
+            return PerceptionResult(success=False, message="Simulator not available")
         if isinstance(action, dict):
             action_name = action.get("action", "move_forward")
         else:
@@ -272,6 +290,12 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
             else:
                 logger.warning("HabitatAdapter: unknown target '{}'", goal.target_object)
                 return NavigationResult(success=False, steps_taken=0, path=[])
+
+        # Early fallback: if simulator cannot be initialized, return graceful failure
+        try:
+            sim = self._ensure_sim()
+        except (NotImplementedError, RuntimeError, FileNotFoundError):
+            return NavigationResult(success=False, steps_taken=0, path=[])
 
         # MVA placeholder: return synthetic result when simulator is not wired
         if not self._scene_path:
