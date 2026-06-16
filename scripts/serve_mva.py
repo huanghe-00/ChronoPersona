@@ -100,6 +100,7 @@ async def websocket_handler(websocket, gateway, adapter):
                     "y": embodied.y,
                     "theta": embodied.theta,
                     "fov_objects": embodied.fov_objects,
+                    "metadata": getattr(embodied, "metadata", {}),  # 传递 3D 标识
                     "action_token": (
                         response.get("action_plan", {}).get("action_token")
                         if response.get("action_plan")

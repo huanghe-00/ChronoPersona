@@ -87,6 +87,16 @@ function connectWebSocket() {
         } else if (msg.event === 'embodied.state') {
             const s = msg.data;
             agentState = { x: s.x, y: s.y, theta: s.theta || 0 };
+            
+            // 动态标题：根据 3D 坐标标识切换
+            const titleEl = document.getElementById('app-title');
+            if (s.metadata && s.metadata.position_3d) {
+                document.title = 'ChronoPersona 3D Agent (MVA)';
+                if (titleEl) titleEl.textContent = 'ChronoPersona 3D Agent (MVA)';
+            } else {
+                document.title = 'ChronoPersona 2D Agent (MVA)';
+                if (titleEl) titleEl.textContent = 'ChronoPersona 2D Agent (MVA)';
+            }
             // Redraw canvas with new state
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawGrid();
