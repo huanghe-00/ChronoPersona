@@ -177,7 +177,9 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
                 fov_objects=[],
                 metadata={"position_3d": position, "rotation": rot},
             )
-        except (RuntimeError, FileNotFoundError, ValueError, IOError):
+        except (RuntimeError, FileNotFoundError, ValueError, IOError) as e:
+            if isinstance(e, NotImplementedError):
+                raise
             # Fallback: return placeholder 3D state so frontend shows 3D panel
             return EmbodiedState(
                 agent_id=agent_id,
@@ -192,7 +194,9 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         """Execute a Habitat action by name or index via sim.step."""
         try:
             sim = self._ensure_sim()
-        except (RuntimeError, FileNotFoundError, ValueError, IOError):
+        except (RuntimeError, FileNotFoundError, ValueError, IOError) as e:
+            if isinstance(e, NotImplementedError):
+                raise
             return PerceptionResult(success=False, message="Simulator not available")
         if isinstance(action, dict):
             action_name = action.get("action", "move_forward")
