@@ -98,9 +98,11 @@ async def websocket_handler(websocket, gateway, adapter):
             # Push real embodied state from adapter (graceful degradation on failure)
             try:
                 embodied = adapter.get_perception("default")
+                pos_3d = getattr(embodied, "metadata", {}).get("position_3d", (embodied.x, 0, embodied.y))
                 state = {
                     "x": embodied.x,
                     "y": embodied.y,
+                    "z": float(pos_3d[1]) if len(pos_3d) >= 3 else 0.0,  # 真实垂直高度
                     "theta": embodied.theta,
                     "fov_objects": embodied.fov_objects,
                     "metadata": getattr(embodied, "metadata", {}),  # 传递 3D 标识
