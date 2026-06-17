@@ -43,10 +43,60 @@ DEFAULT_SCENE_OBJECTS = {
     "coffee_table": {"x": 4, "y": 3, "z": 0, "label": "茶几"},
 }
 
+_DATASET_ROOT = _PROJECT_ROOT / "dataset" / "habitat-matterport-3dresearch" / "example"
+
+
+def _discover_scenes() -> list[Path]:
+    """Scan dataset root for scenes with .basis.glb files."""
+    scenes: list[Path] = []
+    for dataset_root in [_DATASET_ROOT, Path.home() / "projects" / "ChronoPersona" / "dataset" / "habitat-matterport-3dresearch" / "example"]:
+        if dataset_root.exists():
+            for subdir in sorted(dataset_root.iterdir()):
+                if subdir.is_dir() and list(subdir.glob("*.basis.glb")):
+                    scenes.append(subdir)
+    return scenes
+
+
+def _resolve_scene_path(scene_id: str, scene_path: str, backend_type: str) -> str:
+    """Resolve scene path from --scene-id or --scene or environment variables.
+
+    Args:
+        scene_id: Scene identifier (e.g., '00337-CFVBbU9Rsyb') from --scene-id.
+        scene_path: Direct scene path from --scene.
+        backend_type: Current backend type for env var fallback.
+
+    Returns:
+        Resolved scene path string.
+    """
+    if scene_path:
+        return scene_path
+
+    if scene_id:
+        # Look up scene in dataset roots
+        for dataset_root in [_DATASET_ROOT, Path.home() / "projects" / "ChronoPersona" / "dataset" / "habitat-matterport-3dresearch" / "example"]:
+            candidate = dataset_root / scene_id
+            if candidate.is_dir() and list(candidate.glob("*.basis.glb")):
+                return str(candidate)
+        logger.warning("Scene-id '{}' not found in dataset roots", scene_id)
+        return ""
+
+    # Fallback to environment variables
+    if backend_type == "habitat":
+        return os.environ.get("HABITAT_SCENE", "")
+    elif backend_type == "hm3d":
+        return os.environ.get("HM3D_SCENE", "")
+    return ""
+
 
 def _auto_detect_backend() -> tuple[str, str]:
-    """Auto-detect available embodied backend in priority order."""
+    """Auto-detect available embodied backend in priority order.
+
+    Priority: Habitat (if importable, EGL probe deferred) > HM3D (trimesh) > 2D Grid.
+    Checks both project-relative and home directory dataset roots.
+    Logs navmesh availability for habitat capability assessment.
+    """
     # 1. Habitat: requires env var + importable habitat_sim
+    # Note: EGL/GPU probe happens later in main() after adapter creation
     habitat_scene = os.environ.get("HABITAT_SCENE", "")
     if habitat_scene:
         try:
@@ -54,26 +104,26 @@ def _auto_detect_backend() -> tuple[str, str]:
             importlib.import_module("habitat_sim")
             return "habitat", habitat_scene
         except ImportError:
-            pass
+            logger.info("habitat_sim not installed, skipping Habitat backend")
 
     # 2. HM3D: env var overrides auto-scan
     hm3d_env = os.environ.get("HM3D_SCENE", "")
     if hm3d_env:
         return "hm3d", hm3d_env
 
-    # 3. Auto-scan default HM3D dataset path
-    default_hm3d = (
-        Path.home()
-        / "projects"
-        / "ChronoPersona"
-        / "dataset"
-        / "habitat-matterport-3dresearch"
-        / "example"
-    )
-    if default_hm3d.exists():
-        for subdir in sorted(default_hm3d.iterdir()):
-            if subdir.is_dir() and list(subdir.glob("*.basis.glb")):
-                return "hm3d", str(subdir)
+    # 3. Auto-scan dataset paths (project root + home directory)
+    for dataset_root in [_DATASET_ROOT, Path.home() / "projects" / "ChronoPersona" / "dataset" / "habitat-matterport-3dresearch" / "example"]:
+        if dataset_root.exists():
+            for subdir in sorted(dataset_root.iterdir()):
+                if subdir.is_dir() and list(subdir.glob("*.basis.glb")):
+                    # Check for navmesh (indicates habitat navigation capability)
+                    navmeshes = list(subdir.glob("*.basis.navmesh"))
+                    if navmeshes:
+                        logger.info(
+                            "Scene {} has navmesh files — Habitat A* navigation possible (requires GPU/EGL)",
+                            subdir.name,
+                        )
+                    return "hm3d", str(subdir)
 
     # 4. Fallback to 2D grid
     return "grid2d", ""
@@ -225,31 +275,55 @@ def main():
         help="Embodied backend mode",
     )
     parser.add_argument("--scene", default="", help="Override scene path")
+    parser.add_argument(
+        "--scene-id",
+        default="",
+        help="Scene identifier (e.g., 00337-CFVBbU9Rsyb) to auto-resolve from dataset root",
+    )
     args = parser.parse_args()
 
     backend_type, scene_path = args.backend, args.scene
 
-    # 显式后端模式下，若未指定 --scene，回退到环境变量
+    # Resolve scene path: --scene > --scene-id > env vars > auto-detect
     if not scene_path:
-        if backend_type == "habitat":
-            scene_path = os.environ.get("HABITAT_SCENE", "")
-        elif backend_type == "hm3d":
-            scene_path = os.environ.get("HM3D_SCENE", "")
+        scene_path = _resolve_scene_path(args.scene_id, "", backend_type)
 
     if backend_type == "auto":
-        backend_type, scene_path = _auto_detect_backend()
+        backend_type, auto_scene = _auto_detect_backend()
+        if not scene_path:
+            scene_path = auto_scene
 
     logger.info("Joint demo backend={}, scene={}", backend_type, scene_path)
+
+    # Log discovered scenes for dataset awareness
+    discovered = _discover_scenes()
+    if discovered:
+        logger.info("Discovered {} HM3D scene(s) in dataset root(s):", len(discovered))
+        for scene_dir in discovered:
+            navmeshes = list(scene_dir.glob("*.basis.navmesh"))
+            navmesh_status = f" (+{len(navmeshes)} navmesh)" if navmeshes else ""
+            logger.info("  {}{}", scene_dir.name, navmesh_status)
+    else:
+        logger.info("No HM3D scenes found in dataset root ({})", _DATASET_ROOT)
+
     adapter = None
 
-    # Mode 1: Habitat true 3D (requires habitat-sim)
+    # Mode 1: Habitat true 3D (requires habitat-sim + EGL/GPU)
     if backend_type == "habitat" and scene_path:
         try:
             from chronopersona.embodied.habitat_adapter import HabitatAdapter
             adapter = HabitatAdapter(scene_path=scene_path, agent_id="default")
-            logger.info("Using HabitatAdapter (true 3D)")
+            can_import, can_render, reason = adapter.probe()
+            if can_render:
+                logger.info("Using HabitatAdapter (true 3D): {}", reason)
+            else:
+                logger.warning("HabitatAdapter probe failed: {}", reason)
+                logger.warning(
+                    "该场景支持真3D导航，但当前环境无EGL/GPU，已降级为HM3D轻量模式"
+                )
+                adapter = None  # Force degradation to HM3D
         except (ImportError, RuntimeError, FileNotFoundError) as e:
-            logger.warning("HabitatAdapter failed: {}", e)
+            logger.warning("HabitatAdapter creation failed: {}", e)
 
     # Mode 2: HM3D lightweight 3D (trimesh only, no habitat-sim)
     if adapter is None and backend_type in ("hm3d", "auto") and scene_path:

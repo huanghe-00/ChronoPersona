@@ -3,19 +3,33 @@
 ## 1. 快速启动
 
 ```bash
-# 方式 A：自动探测（推荐）
+# 方式 A：自动探测（推荐，按机器环境自动选择最优后端）
 cd ~/projects/ChronoPersona
 python scripts/serve_mva.py --backend auto
 
-# 方式 B：强制指定 Habitat 真 3D（需 habitat-sim + 场景文件）
+# 方式 A+：指定场景 ID（自动从 dataset root 查找）
+python scripts/serve_mva.py --backend auto --scene-id 00337-CFVBbU9Rsyb
+
+# 方式 B：强制 Habitat 真 3D（需 habitat-sim + GPU/EGL + 场景文件）
+# ⚠ 仅在具备 GPU/EGL 的机器上可用（如 RTX 5080 开发机）
+# 启动时自动探测 EGL，若不可用则降级为 HM3D 轻量模式
 HABITAT_SCENE=/path/to/scene.glb python scripts/serve_mva.py --backend habitat
+# 或使用 scene-id:
+python scripts/serve_mva.py --backend habitat --scene-id 00337-CFVBbU9Rsyb
 
-# 方式 C：强制指定 HM3D 轻量 3D
-python scripts/serve_mva.py --backend hm3d
+# 方式 C：强制 HM3D 轻量 3D（trimesh，无需 GPU，任意机器可用）
+python scripts/serve_mva.py --backend hm3d --scene-id 00337-CFVBbU9Rsyb
 
-# 方式 D：强制 2D 网格（无数据集依赖）
+# 方式 D：强制 2D 网格（无数据集依赖，任意机器可用）
 python scripts/serve_mva.py --backend 2d
 ```
+
+**机器分工建议**：
+
+| 机器 | 推荐后端 | 原因 |
+|------|---------|------|
+| 机器A（WSL2/无显示器） | `--backend hm3d` 或 `--backend 2d` | 无 EGL 上下文，Habitat 渲染不可用 |
+| 机器B（RTX 5080 + 原生 Linux） | `--backend habitat` | GPU/EGL 可用，支持真 3D A* 导航 |
 
 启动后访问：
 - 2D 前端：http://localhost:8080 （`frontend/canvas.html`）
@@ -23,11 +37,13 @@ python scripts/serve_mva.py --backend 2d
 
 ## 2. 三态后端切换
 
-| 后端 | 触发条件 | 说明 |
-|------|---------|------|
-| **Habitat 真 3D** | `HABITAT_SCENE=/path/to.glb python scripts/serve_mva.py` | 需 `habitat-sim` 安装，A* navmesh 路径规划 |
-| **HM3D 轻量 3D** | 默认自动探测 `~/projects/.../example/00337-CFVBbU9Rsyb/` | 纯 `trimesh` 加载 `.basis.glb`，10 步直线插值导航 |
-| **2D Grid** | 前两者均失败时降级 | 20×20 网格，A* 寻路，FOV 锥形检测 |
+| 后端 | 触发条件 | 说明 | 目标机器 |
+|------|---------|------|---------|
+| **T1: Habitat 真 3D** | `--backend habitat` + `--scene-id` 或 `HABITAT_SCENE` | 需 `habitat-sim` + GPU/EGL；A* navmesh 路径规划 + RGB-D/Semantic 传感器 | 机器B（5080） |
+| **T2: HM3D 轻量 3D** | `--backend hm3d` 或自动探测 | 纯 `trimesh` 加载 `.basis.glb`，10 步直线插值导航；自动探测 navmesh 文件 | 任意机器 |
+| **T3: 2D Grid** | `--backend 2d` 或前两者均失败时降级 | 20×20 网格，A* 寻路，FOV 锥形检测 | 任意机器 |
+
+**降级链**：T1 → T2 → T3。启动时 HabitatAdapter.probe() 检测 EGL/GPU，若不可用则自动降级并提示："该场景支持真3D导航，但当前环境无EGL/GPU，已降级为HM3D轻量模式"。
 
 ## 3. 支持的导航指令
 

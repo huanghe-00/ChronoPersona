@@ -87,6 +87,22 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         self._bounds = self._mesh.bounds  # [[minx, miny, minz], [maxx, maxy, maxz]]
         logger.info("HM3DAdapter loaded {} with bounds {}", glb_files[0], self._bounds)
 
+        # Detect navmesh files for future collision avoidance capability
+        navmesh_files = list(scene_dir.glob("*.basis.navmesh")) + list(
+            scene_dir.glob("*.semantic.navmesh")
+        )
+        if navmesh_files:
+            logger.info(
+                "HM3DAdapter: navmesh files detected in {} — "
+                "geometric collision avoidance possible (future feature)",
+                scene_dir,
+            )
+        else:
+            logger.info(
+                "HM3DAdapter: no navmesh files in {}, using linear interpolation navigation",
+                scene_dir,
+            )
+
     def _ensure_agent(self, agent_id: str) -> None:
         if not agent_id:
             raise ValueError("agent_id must not be empty")

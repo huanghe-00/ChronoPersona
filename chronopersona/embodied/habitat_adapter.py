@@ -129,6 +129,41 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
         logger.info("HabitatAdapter: simulator initialized with {}", self._scene_path)
         return self._sim
 
+    def probe(self) -> tuple[bool, bool, str]:
+        """Probe habitat-sim initialization capability.
+
+        Attempts to initialize the Habitat simulator with full sensor suite.
+        If successful, the adapter is ready for use; if EGL/GPU is unavailable,
+        returns (can_import=True, can_render=False) with diagnostic reason.
+
+        Returns:
+            (can_import, can_render, reason) tuple:
+            can_import: habitat_sim module is available
+            can_render: Simulator can be initialized (EGL/GPU available)
+            reason: Human-readable explanation for logging
+        """
+        hsim = _try_import_habitat()
+        if hsim is None:
+            return (False, False, "habitat_sim not installed")
+
+        if not self._scene_path:
+            return (True, False, "no scene_path provided for probe")
+
+        try:
+            self._ensure_sim()
+            return (True, True, "habitat_sim initialized successfully with EGL/GPU")
+        except NotImplementedError as e:
+            return (True, False, f"NotImplementedError: {e}")
+        except RuntimeError as e:
+            msg = str(e)
+            if "WindowlessContext" in msg or "EGL" in msg.upper() or "gl_context" in msg.lower():
+                return (True, False, f"EGL/GPU unavailable: {msg}")
+            return (True, False, f"Simulator init failed: {msg}")
+        except FileNotFoundError as e:
+            return (True, False, f"Scene file error: {e}")
+        except Exception as e:
+            return (True, False, f"Unexpected error during probe: {e}")
+
     def _build_object_index(self) -> Dict[str, List[Tuple[float, float, float]]]:
         """Index objects by semantic category from scene annotation."""
         sim = self._ensure_sim()
