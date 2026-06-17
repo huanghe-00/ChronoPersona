@@ -181,6 +181,7 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
                     "metadata": getattr(embodied, "metadata", {}),
                     "scene_id": getattr(embodied, "scene_id", None),
                     "backend_mode": backend_type,
+                    "scene_glb_path": scene_glb_path,
                     "scene_objects": (
                         {
                             k: {"x": v[0][0], "y": v[0][2], "z": v[0][1], "label": k}
@@ -202,6 +203,7 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
                     "metadata": {"position_3d": (3.0, 4.0, 0.0)},
                     "scene_id": None,
                     "backend_mode": backend_type,
+                    "scene_glb_path": None,
                     "scene_objects": None,
                 }
             await gateway.broadcast_state_async(state)

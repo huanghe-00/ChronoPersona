@@ -186,7 +186,7 @@
 | 第 1 周 | 认证与权限完整实现 | `IAuthMiddleware` 真实实现 + 多租户 API Key + Branch 级 RBAC | 渗透测试基线：未授权访问 401/403 100% 拦截 |
 | 第 2 周 | 硬预算截断 + 跨分支记忆继承过滤器 | `ICostTracker` 实时累加 + 80% 降级/100% 熔断；`IPrivacyFilter` + `IRelevanceFilter` | 单 session 成本告警准确率 100%，熔断无漏触发 |
 | 第 3 周 | 记忆溯源链 + WebSocket 真实实现 + 全链路日志 trace | `MemoryEntry` / `Fact` `source_memory_ids` 落地；`WebSocketGateway` 双向推送；`loguru` 结构化 trace | 检索结果 100% 可溯源；WebSocket 与 Canvas 联动可用 |
-| 穿插 | **Habitat + HM3D 联合演示** | `serve_mva.py` 三态切换（Habitat/HM3D/2D）、前端统一协议、自动数据集探测、`_nav_path` 步进动画 | 输入"去沙发" → 轻量 HM3D 10 步到达 / Habitat A* 真 3D 到达 → 前端坐标一致 |
+| 穿插 | **Habitat + HM3D 联合演示 ✅ 已完成** | `serve_mva.py` 三态切换（Habitat/HM3D/2D）、前端统一协议、自动数据集探测、`_nav_path` 步进动画、**Three.js 3D 查看器 + `objectsGroup` 修复** | 输入"去沙发" → 轻量 HM3D 10 步到达 / Habitat A* 真 3D 到达 → 前端坐标一致 |
 | P0 | HM3D 智能启动 | 自动扫描 `~/projects/.../example/` 含 `.basis.glb` 子目录；`--backend auto` 默认探测；静态路由 `/assets/hm3d/` | 运行 `python scripts/serve_mva.py` 无需环境变量 |
 | P1 | Three.js 真 3D 前端 | `frontend/threejs_viewer.html` 加载 `.basis.glb`，3D Agent 球体 + 导航路径线，保留 2D Canvas 小地图 | 浏览器访问 `http://localhost:8080/threejs_viewer.html` |
 | P2 | 联合一致性测试 | `tests/test_embodied_joint.py`：接口契约/导航精度/降级链；更新 `docs/embodied_intelligence_navigation.md` | `make test` 新增 3 个用例全绿 |

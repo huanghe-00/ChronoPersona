@@ -11,6 +11,7 @@ fallback if simulator is not installed).
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
@@ -172,8 +173,10 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
             return EmbodiedState(
                 agent_id=agent_id,
                 x=x,
-                y=z,
+                y=z,  # 3D z (depth) → 2D y axis
+                z=y,  # 3D y (height) → 3D z axis
                 theta=theta,
+                scene_id=Path(self._scene_path).parent.name if self._scene_path else None,
                 fov_objects=[],
                 metadata={"position_3d": position, "rotation": rot},
             )
@@ -185,7 +188,9 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
                 agent_id=agent_id,
                 x=3.0,
                 y=4.0,
+                z=0.0,
                 theta=0.0,
+                scene_id=None,
                 fov_objects=[],
                 metadata={"position_3d": (3.0, 4.0, 0.0)},
             )

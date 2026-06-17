@@ -152,7 +152,9 @@ ws.onmessage = (event) => {
   agentMesh.position.set(d.x, d.z, d.y);
 
   // 3D Object markers
-  objectsGroup.clear();
+  while (objectsGroup.children.length > 0) {
+      objectsGroup.remove(objectsGroup.children[0]);
+  }
   Object.values(currentObjects).forEach(o => {
     const mesh = new THREE.Mesh(goalGeo, goalMat);
     // x=水平, y=高度, z=深度

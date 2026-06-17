@@ -271,9 +271,15 @@ class StateMachineAgentCore(AbstractAgentCore):
         parts: List[str] = []
         if embodied_state is not None:
             fov = ", ".join(embodied_state.fov_objects) if embodied_state.fov_objects else "none"
+            pos_str = f"({embodied_state.x}, {embodied_state.y})"
+            if embodied_state.z != 0.0:
+                pos_str = f"({embodied_state.x}, {embodied_state.y}, z={embodied_state.z:.2f})"
+            scene_str = ""
+            if embodied_state.scene_id:
+                scene_str = f", scene={embodied_state.scene_id}"
             parts.append(
-                f"[Embodied State] Agent at ({embodied_state.x}, {embodied_state.y}), "
-                f"facing {embodied_state.theta:.2f} rad. FOV: {fov}"
+                f"[Embodied State] Agent at {pos_str}, "
+                f"facing {embodied_state.theta:.2f} rad{scene_str}. FOV: {fov}"
             )
         if self._emotion_state is not None:
             if (
