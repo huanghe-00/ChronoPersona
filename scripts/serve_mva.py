@@ -96,6 +96,43 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
     gateway.register_client(client_id, websocket)
 
     logger.info("Client connected: {}", client_id)
+
+    # 连接建立后立即推送真实状态，避免前端依赖硬编码 (3,4)
+    try:
+        embodied = adapter.get_perception("default")
+        # 自动发现 GLB 文件供前端 Three.js 加载
+        scene_glb_path = None
+        if backend_type == "hm3d" and hasattr(adapter, "_scene_dir") and adapter._scene_dir:
+            glb_files = (
+                list(adapter._scene_dir.glob("*.basis.glb"))
+                + list(adapter._scene_dir.glob("*.semantic.glb"))
+            )
+            if glb_files:
+                scene_glb_path = f"assets/hm3d/{glb_files[0].name}"
+        state = {
+            "x": embodied.x,
+            "y": embodied.y,
+            "z": embodied.z,
+            "theta": embodied.theta,
+            "fov_objects": embodied.fov_objects,
+            "metadata": getattr(embodied, "metadata", {}),
+            "scene_id": getattr(embodied, "scene_id", None),
+            "backend_mode": backend_type,
+            "scene_glb_path": scene_glb_path,
+            "scene_objects": (
+                {
+                    k: {"x": v[0][0], "y": v[0][2], "z": v[0][1], "label": k}
+                    for k, v in adapter._object_index.items()
+                    if v
+                }
+                if hasattr(adapter, "_object_index") and adapter._object_index
+                else None
+            ),
+        }
+        await websocket.send(json.dumps({"event": "embodied.state", "data": state}))
+    except Exception as e:
+        logger.warning("Initial state push failed: {}", e)
+
     try:
         async for message in websocket:
             payload = json.loads(message)

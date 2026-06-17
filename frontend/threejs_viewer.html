@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChronoPersona 3D HM3D Viewer</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #111; color: #0ff; font-family: monospace; }
+  #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 18px; pointer-events: none; }
+  #info { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 4px; max-width: 320px; line-height: 1.6; }
+  #canvas2d { position: absolute; bottom: 10px; right: 10px; width: 240px; height: 240px; border: 1px solid #0ff; background: rgba(0,0,0,0.7); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="loading">Loading 3D Scene...</div>
+<div id="info">Connecting to ws://localhost:8765/ws ...</div>
+<canvas id="canvas2d" width="240" height="240"></canvas>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// --- Three.js 场景初始化 ---
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a20);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(5, 8, 15);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(5, 0, 5);
+
+// 灯光
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+dir.position.set(10, 20, 10);
+scene.add(dir);
+const hemi = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.5);
+scene.add(hemi);
+
+// 参考网格
+const grid = new THREE.GridHelper(40, 40, 0x444444, 0x222222);
+scene.add(grid);
+
+// --- 3D 对象池 ---
+const agentGeo = new THREE.SphereGeometry(0.25, 16, 16);
+const agentMat = new THREE.MeshBasicMaterial({ color: 0x3498db });
+const agentMesh = new THREE.Mesh(agentGeo, agentMat);
+scene.add(agentMesh);
+
+const goalGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+const goalMat = new THREE.MeshBasicMaterial({ color: 0x2ecc71 });
+const objectsGroup = new THREE.Group();
+scene.add(objectsGroup);
+
+let pathLine = null;
+const pathMat = new THREE.LineBasicMaterial({ color: 0xe74c3c, linewidth: 2 });
+
+// --- 2D 小地图 ---
+const c2d = document.getElementById('canvas2d');
+const ctx2d = c2d.getContext('2d');
+const MAP_SIZE = 240;
+const SCALE = 8; // 1 unit = 8 px
+const CENTER = MAP_SIZE / 2;
+
+function drawMiniMap(state, sceneObjects) {
+  ctx2d.clearRect(0, 0, MAP_SIZE, MAP_SIZE);
+  ctx2d.fillStyle = 'rgba(0,0,0,0.8)';
+  ctx2d.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+  ctx2d.strokeStyle = '#0ff';
+  ctx2d.strokeRect(0, 0, MAP_SIZE, MAP_SIZE);
+
+  // Grid
+  ctx2d.strokeStyle = '#333';
+  for (let i = 0; i <= 30; i++) {
+    ctx2d.beginPath(); ctx2d.moveTo(i * 8, 0); ctx2d.lineTo(i * 8, MAP_SIZE); ctx2d.stroke();
+    ctx2d.beginPath(); ctx2d.moveTo(0, i * 8); ctx2d.lineTo(MAP_SIZE, i * 8); ctx2d.stroke();
+  }
+
+  // Objects
+  if (sceneObjects) {
+    Object.values(sceneObjects).forEach(o => {
+      const px = CENTER + o.x * SCALE;
+      const py = CENTER + o.y * SCALE; // y is depth (2D plane)
+      ctx2d.fillStyle = '#2ecc71';
+      ctx2d.fillRect(px - 3, py - 3, 6, 6);
+      ctx2d.fillStyle = '#fff';
+      ctx2d.font = '10px sans-serif';
+      ctx2d.fillText(o.label, px + 4, py + 3);
+    });
+  }
+
+  // Agent
+  if (state) {
+    const ax = CENTER + state.x * SCALE;
+    const ay = CENTER + state.y * SCALE;
+    ctx2d.fillStyle = '#3498db';
+    ctx2d.beginPath(); ctx2d.arc(ax, ay, 5, 0, Math.PI * 2); ctx2d.fill();
+    // Facing arrow
+    const theta = state.theta || 0;
+    ctx2d.strokeStyle = '#e74c3c';
+    ctx2d.beginPath();
+    ctx2d.moveTo(ax, ay);
+    ctx2d.lineTo(ax + Math.cos(theta) * 12, ay + Math.sin(theta) * 12);
+    ctx2d.stroke();
+  }
+}
+
+// --- WebSocket ---
+const ws = new WebSocket('ws://localhost:8765/ws');
+let currentState = null;
+let currentObjects = {};
+let glbLoaded = false;
+
+ws.onopen = () => {
+  document.getElementById('info').innerHTML = 'WebSocket Connected<br>Waiting for embodied.state...';
+};
+ws.onmessage = (event) => {
+  const msg = JSON.parse(event.data);
+  if (msg.event !== 'embodied.state') return;
+
+  const d = msg.data;
+  currentState = d;
+  currentObjects = d.scene_objects || {};
+
+  // Info panel
+  const info = document.getElementById('info');
+  info.innerHTML = `
+    <b>Scene:</b> ${d.scene_id || 'N/A'}<br>
+    <b>Backend:</b> ${d.backend_mode || 'N/A'}<br>
+    <b>Pos:</b> (${d.x.toFixed(2)}, ${d.y.toFixed(2)}, ${d.z.toFixed(2)})<br>
+    <b>FOV:</b> ${(d.fov_objects || []).join(', ') || 'none'}
+  `;
+
+  // 3D Agent position: x=x, y=height(z), z=depth(y)
+  agentMesh.position.set(d.x, d.z, d.y);
+
+  // 3D Object markers
+  objectsGroup.clear();
+  Object.values(currentObjects).forEach(o => {
+    const mesh = new THREE.Mesh(goalGeo, goalMat);
+    // x=水平, y=高度, z=深度
+    mesh.position.set(o.x, o.z, o.y);
+    objectsGroup.add(mesh);
+  });
+
+  // 3D Path from metadata (if present)
+  if (d.metadata && Array.isArray(d.metadata.path_3d) && d.metadata.path_3d.length > 0) {
+    const points = d.metadata.path_3d.map(p => new THREE.Vector3(p[0], p[2], p[1]));
+    const geom = new THREE.BufferGeometry().setFromPoints(points);
+    if (pathLine) { scene.remove(pathLine); pathLine.geometry.dispose(); }
+    pathLine = new THREE.Line(geom, pathMat);
+    scene.add(pathLine);
+  }
+
+  // Load GLB scene once
+  if (!glbLoaded && d.scene_glb_path) {
+    glbLoaded = true;
+    const loader = new GLTFLoader();
+    loader.load(
+      d.scene_glb_path,
+      (gltf) => {
+        scene.add(gltf.scene);
+        // Auto-center camera target
+        const box = new THREE.Box3().setFromObject(gltf.scene);
+        const center = box.getCenter(new THREE.Vector3());
+        controls.target.copy(center);
+        camera.position.set(center.x + 5, center.y + 8, center.z + 10);
+        document.getElementById('loading').style.display = 'none';
+      },
+      undefined,
+      (err) => {
+        console.error('GLB load failed:', err);
+        document.getElementById('loading').textContent = 'GLB load failed (see console)';
+      }
+    );
+  }
+
+  drawMiniMap(d, currentObjects);
+};
+
+ws.onclose = () => {
+  document.getElementById('info').innerHTML += '<br><span style="color:#e74c3c">WS Disconnected</span>';
+};
+
+// --- Animation ---
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
