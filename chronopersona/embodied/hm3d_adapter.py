@@ -69,6 +69,7 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         )
         self._agents: Dict[str, Tuple[float, float, float, float]] = {}  # x,y,z,theta
         self._spatial_memory: Dict[str, List[SpatialRecord]] = {}
+        self._mesh_vertices: Optional[List[List[float]]] = None
         self._nav_path: List[Tuple[float, float, float]] = []  # Animation replay cache
 
         if self._scene_dir and self._scene_dir.exists():
@@ -81,9 +82,17 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         if not glb_files:
             logger.warning("No .glb found in {}, using fallback bounds", scene_dir)
             self._bounds = [[0.0, 0.0, 0.0], [20.0, 5.0, 20.0]]
+            self._mesh_vertices = None
             return
 
         self._mesh = trimesh.load(glb_files[0], force="mesh")
+        # Sample vertices for lightweight frontend point cloud rendering
+        verts = self._mesh.vertices
+        if len(verts) > 5000:
+            step = max(1, len(verts) // 5000)
+            self._mesh_vertices = verts[::step].tolist()
+        else:
+            self._mesh_vertices = verts.tolist()
         self._bounds = self._mesh.bounds  # [[minx, miny, minz], [maxx, maxy, maxz]]
         logger.info("HM3DAdapter loaded {} with bounds {}", glb_files[0], self._bounds)
 

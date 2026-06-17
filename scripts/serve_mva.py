@@ -119,6 +119,7 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
             "scene_id": getattr(embodied, "scene_id", None),
             "backend_mode": backend_type,
             "scene_glb_path": scene_glb_path,
+            "mesh_vertices": getattr(adapter, "_mesh_vertices", None),
             "scene_objects": (
                 {
                     k: {"x": v[0][0], "y": v[0][2], "z": v[0][1], "label": k}
@@ -182,6 +183,7 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
                     "scene_id": getattr(embodied, "scene_id", None),
                     "backend_mode": backend_type,
                     "scene_glb_path": scene_glb_path,
+                    "mesh_vertices": getattr(adapter, "_mesh_vertices", None),
                     "scene_objects": (
                         {
                             k: {"x": v[0][0], "y": v[0][2], "z": v[0][1], "label": k}
