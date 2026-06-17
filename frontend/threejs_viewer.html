@@ -28,6 +28,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // --- Three.js 场景初始化 ---
@@ -174,7 +175,10 @@ ws.onmessage = (event) => {
   // Load GLB scene once
   if (!glbLoaded && d.scene_glb_path) {
     glbLoaded = true;
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
     const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
     loader.load(
       d.scene_glb_path,
       (gltf) => {
@@ -189,7 +193,21 @@ ws.onmessage = (event) => {
       undefined,
       (err) => {
         console.error('GLB load failed:', err);
-        document.getElementById('loading').textContent = 'GLB load failed (see console)';
+        document.getElementById('loading').textContent = 'GLB load failed (Draco/Basis fallback)';
+        
+        // Fallback: visualize scene bounds as wireframe box
+        const bmin = new THREE.Vector3(-6.85, -4.11, -2.80);
+        const bmax = new THREE.Vector3(10.65, 11.15, 8.17);
+        const box = new THREE.Box3(bmin, bmax);
+        const helper = new THREE.Box3Helper(box, 0x00ffff);
+        scene.add(helper);
+        // Also add a ground plane at y=0 for reference
+        const groundGeo = new THREE.PlaneGeometry(40, 40);
+        const groundMat = new THREE.MeshBasicMaterial({ color: 0x222222, side: THREE.DoubleSide });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = Math.PI / 2;
+        ground.position.y = 0;
+        scene.add(ground);
       }
     );
   }
