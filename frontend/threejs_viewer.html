@@ -176,14 +176,14 @@ ws.onmessage = (event) => {
   if (!glbLoaded && d.scene_glb_path) {
     glbLoaded = true;
     const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
+    // 使用 Google Draco CDN，避免 unpkg WASM MIME 问题
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
     loader.load(
       d.scene_glb_path,
       (gltf) => {
         scene.add(gltf.scene);
-        // Auto-center camera target
         const box = new THREE.Box3().setFromObject(gltf.scene);
         const center = box.getCenter(new THREE.Vector3());
         controls.target.copy(center);
@@ -192,22 +192,38 @@ ws.onmessage = (event) => {
       },
       undefined,
       (err) => {
-        console.error('GLB load failed:', err);
-        document.getElementById('loading').textContent = 'GLB load failed (Draco/Basis fallback)';
-        
-        // Fallback: visualize scene bounds as wireframe box
-        const bmin = new THREE.Vector3(-6.85, -4.11, -2.80);
-        const bmax = new THREE.Vector3(10.65, 11.15, 8.17);
-        const box = new THREE.Box3(bmin, bmax);
-        const helper = new THREE.Box3Helper(box, 0x00ffff);
-        scene.add(helper);
-        // Also add a ground plane at y=0 for reference
-        const groundGeo = new THREE.PlaneGeometry(40, 40);
-        const groundMat = new THREE.MeshBasicMaterial({ color: 0x222222, side: THREE.DoubleSide });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = Math.PI / 2;
-        ground.position.y = 0;
-        scene.add(ground);
+        console.error('GLB load with Draco failed:', err);
+        // 降级：尝试无 Draco 直接加载（可能文件未压缩）
+        const plainLoader = new GLTFLoader();
+        plainLoader.load(
+          d.scene_glb_path,
+          (gltf) => {
+            console.log('GLB loaded without Draco');
+            scene.add(gltf.scene);
+            const box = new THREE.Box3().setFromObject(gltf.scene);
+            const center = box.getCenter(new THREE.Vector3());
+            controls.target.copy(center);
+            camera.position.set(center.x + 5, center.y + 8, center.z + 10);
+            document.getElementById('loading').style.display = 'none';
+          },
+          undefined,
+          (err2) => {
+            console.error('GLB load without Draco also failed:', err2);
+            document.getElementById('loading').textContent = 'GLB load failed (check F12 console)';
+            // Fallback: visualize scene bounds as wireframe box
+            const bmin = new THREE.Vector3(-6.85, -4.11, -2.80);
+            const bmax = new THREE.Vector3(10.65, 11.15, 8.17);
+            const box = new THREE.Box3(bmin, bmax);
+            const helper = new THREE.Box3Helper(box, 0x00ffff);
+            scene.add(helper);
+            const groundGeo = new THREE.PlaneGeometry(40, 40);
+            const groundMat = new THREE.MeshBasicMaterial({ color: 0x222222, side: THREE.DoubleSide });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = Math.PI / 2;
+            ground.position.y = 0;
+            scene.add(ground);
+          }
+        );
       }
     );
   }
