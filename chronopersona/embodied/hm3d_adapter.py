@@ -91,9 +91,9 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         if not agent_id:
             raise ValueError("agent_id must not be empty")
         if agent_id not in self._agents:
-            cx = (self._bounds[0][0] + self._bounds[1][0]) / 2 if self._bounds else 10.0
-            cy = self._bounds[0][1] if self._bounds else 0.0
-            cz = (self._bounds[0][2] + self._bounds[1][2]) / 2 if self._bounds else 10.0
+            cx = (self._bounds[0][0] + self._bounds[1][0]) / 2 if self._bounds is not None else 10.0
+            cy = self._bounds[0][1] if self._bounds is not None else 0.0
+            cz = (self._bounds[0][2] + self._bounds[1][2]) / 2 if self._bounds is not None else 10.0
             self._agents[agent_id] = (cx, cy, cz, 0.0)
             self._spatial_memory[agent_id] = []
 
