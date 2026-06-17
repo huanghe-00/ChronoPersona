@@ -33,6 +33,16 @@ from chronopersona.mocks.mock_memory_store import MockMemoryStore
 from chronopersona.agent_core.action_planner import ActionPlanner
 from chronopersona.mocks.mock_model_router import MockModelRouter
 
+# 统一前端家具坐标（与 VLNAgent / HM3DAdapter / HabitatAdapter 语义映射一致）
+DEFAULT_SCENE_OBJECTS = {
+    "sofa": {"x": 2, "y": 3, "z": 0, "label": "沙发"},
+    "bed": {"x": 8, "y": 12, "z": 0, "label": "床"},
+    "table": {"x": 3, "y": 2, "z": 0, "label": "桌子"},
+    "chair": {"x": 5, "y": 5, "z": 0, "label": "椅子"},
+    "fridge": {"x": 10, "y": 5, "z": 0, "label": "冰箱"},
+    "coffee_table": {"x": 4, "y": 3, "z": 0, "label": "茶几"},
+}
+
 
 def _auto_detect_backend() -> tuple[str, str]:
     """Auto-detect available embodied backend in priority order."""
@@ -109,15 +119,7 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
             "metadata": getattr(embodied, "metadata", {}),
             "scene_id": getattr(embodied, "scene_id", None),
             "backend_mode": backend_type,
-            "scene_objects": (
-                {
-                    k: {"x": v[0][0], "y": v[0][2], "z": v[0][1], "label": k}
-                    for k, v in adapter._object_index.items()
-                    if v
-                }
-                if hasattr(adapter, "_object_index") and adapter._object_index
-                else None
-            ),
+            "scene_objects": DEFAULT_SCENE_OBJECTS,
         }
         await websocket.send(json.dumps({"event": "embodied.state", "data": state}))
     except Exception as e:
@@ -171,15 +173,7 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
                     "metadata": getattr(embodied, "metadata", {}),
                     "scene_id": getattr(embodied, "scene_id", None),
                     "backend_mode": backend_type,
-                    "scene_objects": (
-                        {
-                            k: {"x": v[0][0], "y": v[0][2], "z": v[0][1], "label": k}
-                            for k, v in adapter._object_index.items()
-                            if v
-                        }
-                        if hasattr(adapter, "_object_index") and adapter._object_index
-                        else None
-                    ),
+                    "scene_objects": DEFAULT_SCENE_OBJECTS,
                 }
             except (NotImplementedError, RuntimeError, FileNotFoundError) as e:
                 logger.warning("get_perception failed, using fallback state: {}", e)
@@ -234,6 +228,14 @@ def main():
     args = parser.parse_args()
 
     backend_type, scene_path = args.backend, args.scene
+
+    # 显式后端模式下，若未指定 --scene，回退到环境变量
+    if not scene_path:
+        if backend_type == "habitat":
+            scene_path = os.environ.get("HABITAT_SCENE", "")
+        elif backend_type == "hm3d":
+            scene_path = os.environ.get("HM3D_SCENE", "")
+
     if backend_type == "auto":
         backend_type, scene_path = _auto_detect_backend()
 

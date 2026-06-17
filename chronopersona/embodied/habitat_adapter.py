@@ -139,6 +139,19 @@ class HabitatAdapter(AbstractEmbodiedAdapter):
                     cat_name = obj.category.name().lower()
                     pos = tuple(float(v) for v in obj.aabb.center)
                     obj_index.setdefault(cat_name, []).append(pos)
+        if not obj_index:
+            logger.warning(
+                "HabitatAdapter: semantic_scene has no objects (HM3D scene without semantic annotation). "
+                "Falling back to default object positions."
+            )
+            obj_index = {
+                "sofa": [(2.0, 0.0, 3.0)],
+                "bed": [(8.0, 0.0, 12.0)],
+                "table": [(3.0, 0.0, 2.0)],
+                "chair": [(5.0, 0.0, 5.0)],
+                "fridge": [(10.0, 0.0, 5.0)],
+                "coffee_table": [(4.0, 0.0, 3.0)],
+            }
         return obj_index
 
     def _resolve_action_ids(self, agent: Any) -> Dict[str, int]:
