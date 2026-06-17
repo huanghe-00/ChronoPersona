@@ -27,236 +27,104 @@
 
 <script type="module">
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// --- Three.js 场景初始化 ---
+// 空场景
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a1a20);
-
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
 camera.position.set(5, 8, 15);
-
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
-
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.target.set(5, 0, 5);
 
-// 灯光
+// 灯光与网格
 scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-dir.position.set(10, 20, 10);
-scene.add(dir);
-const hemi = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.5);
-scene.add(hemi);
+scene.add(new THREE.GridHelper(40, 40, 0x444444, 0x222222));
 
-// 参考网格
-const grid = new THREE.GridHelper(40, 40, 0x444444, 0x222222);
-scene.add(grid);
-
-// --- 3D 对象池 ---
+// Agent 蓝球
 const agentGeo = new THREE.SphereGeometry(0.25, 16, 16);
 const agentMat = new THREE.MeshBasicMaterial({ color: 0x3498db });
 const agentMesh = new THREE.Mesh(agentGeo, agentMat);
 scene.add(agentMesh);
 
+// 目标标记组
 const goalGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
 const goalMat = new THREE.MeshBasicMaterial({ color: 0x2ecc71 });
 const objectsGroup = new THREE.Group();
 scene.add(objectsGroup);
 
 let pathLine = null;
-let pointCloud = null;
-const pathMat = new THREE.LineBasicMaterial({ color: 0xe74c3c, linewidth: 2 });
+const pathMat = new THREE.LineBasicMaterial({ color: 0xe74c3c });
 
-// --- 2D 小地图 ---
+// 2D 小地图
 const c2d = document.getElementById('canvas2d');
 const ctx2d = c2d.getContext('2d');
-const MAP_SIZE = 240;
-const SCALE = 8; // 1 unit = 8 px
-const CENTER = MAP_SIZE / 2;
+const MAP_SIZE = 240, SCALE = 8, CENTER = MAP_SIZE / 2;
 
 function drawMiniMap(state, sceneObjects) {
   ctx2d.clearRect(0, 0, MAP_SIZE, MAP_SIZE);
-  ctx2d.fillStyle = 'rgba(0,0,0,0.8)';
-  ctx2d.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
-  ctx2d.strokeStyle = '#0ff';
-  ctx2d.strokeRect(0, 0, MAP_SIZE, MAP_SIZE);
-
-  // Grid
-  ctx2d.strokeStyle = '#333';
-  for (let i = 0; i <= 30; i++) {
-    ctx2d.beginPath(); ctx2d.moveTo(i * 8, 0); ctx2d.lineTo(i * 8, MAP_SIZE); ctx2d.stroke();
-    ctx2d.beginPath(); ctx2d.moveTo(0, i * 8); ctx2d.lineTo(MAP_SIZE, i * 8); ctx2d.stroke();
-  }
-
-  // Objects
+  ctx2d.fillStyle = 'rgba(0,0,0,0.8)'; ctx2d.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+  ctx2d.strokeStyle = '#0ff'; ctx2d.strokeRect(0, 0, MAP_SIZE, MAP_SIZE);
   if (sceneObjects) {
     Object.values(sceneObjects).forEach(o => {
-      const px = CENTER + o.x * SCALE;
-      const py = CENTER + o.y * SCALE; // y is depth (2D plane)
-      ctx2d.fillStyle = '#2ecc71';
-      ctx2d.fillRect(px - 3, py - 3, 6, 6);
-      ctx2d.fillStyle = '#fff';
-      ctx2d.font = '10px sans-serif';
+      const px = CENTER + o.x * SCALE, py = CENTER + o.y * SCALE;
+      ctx2d.fillStyle = '#2ecc71'; ctx2d.fillRect(px - 3, py - 3, 6, 6);
+      ctx2d.fillStyle = '#fff'; ctx2d.font = '10px sans-serif';
       ctx2d.fillText(o.label, px + 4, py + 3);
     });
   }
-
-  // Agent
   if (state) {
-    const ax = CENTER + state.x * SCALE;
-    const ay = CENTER + state.y * SCALE;
-    ctx2d.fillStyle = '#3498db';
-    ctx2d.beginPath(); ctx2d.arc(ax, ay, 5, 0, Math.PI * 2); ctx2d.fill();
-    // Facing arrow
+    const ax = CENTER + state.x * SCALE, ay = CENTER + state.y * SCALE;
+    ctx2d.fillStyle = '#3498db'; ctx2d.beginPath(); ctx2d.arc(ax, ay, 5, 0, Math.PI * 2); ctx2d.fill();
     const theta = state.theta || 0;
-    ctx2d.strokeStyle = '#e74c3c';
-    ctx2d.beginPath();
-    ctx2d.moveTo(ax, ay);
-    ctx2d.lineTo(ax + Math.cos(theta) * 12, ay + Math.sin(theta) * 12);
-    ctx2d.stroke();
+    ctx2d.strokeStyle = '#e74c3c'; ctx2d.beginPath(); ctx2d.moveTo(ax, ay);
+    ctx2d.lineTo(ax + Math.cos(theta) * 12, ay + Math.sin(theta) * 12); ctx2d.stroke();
   }
 }
 
-// --- WebSocket ---
+// WebSocket
 const ws = new WebSocket('ws://localhost:8765/ws');
 let currentState = null;
 let currentObjects = {};
-let glbLoaded = false;
 
 ws.onopen = () => {
   document.getElementById('info').innerHTML = 'WebSocket Connected<br>Waiting for embodied.state...';
+  document.getElementById('loading').style.display = 'none';
 };
 ws.onmessage = (event) => {
   const msg = JSON.parse(event.data);
   if (msg.event !== 'embodied.state') return;
-
   const d = msg.data;
-  currentState = d;
-  currentObjects = d.scene_objects || {};
+  currentState = d; currentObjects = d.scene_objects || {};
 
   // Info panel
-  const info = document.getElementById('info');
-  info.innerHTML = `
+  document.getElementById('info').innerHTML = `
     <b>Scene:</b> ${d.scene_id || 'N/A'}<br>
     <b>Backend:</b> ${d.backend_mode || 'N/A'}<br>
     <b>Pos:</b> (${d.x.toFixed(2)}, ${d.y.toFixed(2)}, ${d.z.toFixed(2)})<br>
     <b>FOV:</b> ${(d.fov_objects || []).join(', ') || 'none'}
   `;
 
-  // 3D Agent position: x=x, y=height(z), z=depth(y)
+  // 3D Agent: x=x, y=height(z), z=depth(y)
   agentMesh.position.set(d.x, d.z, d.y);
 
-  // 3D Object markers
-  while (objectsGroup.children.length > 0) {
-      objectsGroup.remove(objectsGroup.children[0]);
-  }
+  // 目标标记
+  while (objectsGroup.children.length > 0) objectsGroup.remove(objectsGroup.children[0]);
   Object.values(currentObjects).forEach(o => {
     const mesh = new THREE.Mesh(goalGeo, goalMat);
-    // x=水平, y=高度, z=深度
-    mesh.position.set(o.x, o.z, o.y);
+    mesh.position.set(o.x, o.z || 0, o.y);
     objectsGroup.add(mesh);
   });
 
-  // 3D Path from metadata (if present)
+  // 导航路径
   if (d.metadata && Array.isArray(d.metadata.path_3d) && d.metadata.path_3d.length > 0) {
     const points = d.metadata.path_3d.map(p => new THREE.Vector3(p[0], p[2], p[1]));
     const geom = new THREE.BufferGeometry().setFromPoints(points);
     if (pathLine) { scene.remove(pathLine); pathLine.geometry.dispose(); }
-    pathLine = new THREE.Line(geom, pathMat);
-    scene.add(pathLine);
-  }
-
-  // Render point cloud from server-side trimesh vertices (primary, bypasses GLB material extensions)
-  if (d.mesh_vertices && Array.isArray(d.mesh_vertices) && d.mesh_vertices.length > 0) {
-      if (pointCloud) {
-          scene.remove(pointCloud);
-          pointCloud.geometry.dispose();
-          pointCloud.material.dispose();
-      }
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(d.mesh_vertices.length * 3);
-      for (let i = 0; i < d.mesh_vertices.length; i++) {
-          const v = d.mesh_vertices[i];
-          positions[i * 3] = v[0];
-          positions[i * 3 + 1] = v[1];
-          positions[i * 3 + 2] = v[2];
-      }
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const material = new THREE.PointsMaterial({ color: 0xaaaaaa, size: 0.05, transparent: true, opacity: 0.8 });
-      pointCloud = new THREE.Points(geometry, material);
-      scene.add(pointCloud);
-      
-      // Auto-center camera on geometry
-      geometry.computeBoundingBox();
-      const center = new THREE.Vector3();
-      geometry.boundingBox.getCenter(center);
-      controls.target.copy(center);
-      camera.position.set(center.x + 5, center.y + 8, center.z + 10);
-      document.getElementById('loading').style.display = 'none';
-      glbLoaded = true; // Skip GLB attempt since we already have geometry
-  }
-
-  // Load GLB scene once
-  if (!glbLoaded && d.scene_glb_path) {
-    glbLoaded = true;
-    const dracoLoader = new DRACOLoader();
-    // 使用 Google Draco CDN，避免 unpkg WASM MIME 问题
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
-    const loader = new GLTFLoader();
-    loader.setDRACOLoader(dracoLoader);
-    loader.load(
-      d.scene_glb_path,
-      (gltf) => {
-        scene.add(gltf.scene);
-        const box = new THREE.Box3().setFromObject(gltf.scene);
-        const center = box.getCenter(new THREE.Vector3());
-        controls.target.copy(center);
-        camera.position.set(center.x + 5, center.y + 8, center.z + 10);
-        document.getElementById('loading').style.display = 'none';
-      },
-      undefined,
-      (err) => {
-        console.error('GLB load with Draco failed:', err);
-        // 降级：尝试无 Draco 直接加载（可能文件未压缩）
-        const plainLoader = new GLTFLoader();
-        plainLoader.load(
-          d.scene_glb_path,
-          (gltf) => {
-            console.log('GLB loaded without Draco');
-            scene.add(gltf.scene);
-            const box = new THREE.Box3().setFromObject(gltf.scene);
-            const center = box.getCenter(new THREE.Vector3());
-            controls.target.copy(center);
-            camera.position.set(center.x + 5, center.y + 8, center.z + 10);
-            document.getElementById('loading').style.display = 'none';
-          },
-          undefined,
-          (err2) => {
-            console.error('GLB load without Draco also failed:', err2);
-            document.getElementById('loading').textContent = 'GLB load failed (check F12 console)';
-            // Fallback: visualize scene bounds as wireframe box
-            const bmin = new THREE.Vector3(-6.85, -4.11, -2.80);
-            const bmax = new THREE.Vector3(10.65, 11.15, 8.17);
-            const box = new THREE.Box3(bmin, bmax);
-            const helper = new THREE.Box3Helper(box, 0x00ffff);
-            scene.add(helper);
-            const groundGeo = new THREE.PlaneGeometry(40, 40);
-            const groundMat = new THREE.MeshBasicMaterial({ color: 0x222222, side: THREE.DoubleSide });
-            const ground = new THREE.Mesh(groundGeo, groundMat);
-            ground.rotation.x = Math.PI / 2;
-            ground.position.y = 0;
-            scene.add(ground);
-          }
-        );
-      }
-    );
+    pathLine = new THREE.Line(geom, pathMat); scene.add(pathLine);
   }
 
   drawMiniMap(d, currentObjects);
@@ -266,18 +134,10 @@ ws.onclose = () => {
   document.getElementById('info').innerHTML += '<br><span style="color:#e74c3c">WS Disconnected</span>';
 };
 
-// --- Animation ---
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-}
+function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
 animate();
-
 window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
 });
 </script>
 </body>

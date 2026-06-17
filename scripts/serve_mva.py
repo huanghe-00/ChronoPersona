@@ -100,15 +100,6 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
     # 连接建立后立即推送真实状态，避免前端依赖硬编码 (3,4)
     try:
         embodied = adapter.get_perception("default")
-        # 自动发现 GLB 文件供前端 Three.js 加载
-        scene_glb_path = None
-        if backend_type == "hm3d" and hasattr(adapter, "_scene_dir") and adapter._scene_dir:
-            glb_files = (
-                list(adapter._scene_dir.glob("*.basis.glb"))
-                + list(adapter._scene_dir.glob("*.semantic.glb"))
-            )
-            if glb_files:
-                scene_glb_path = f"assets/hm3d/{glb_files[0].name}"
         state = {
             "x": embodied.x,
             "y": embodied.y,
@@ -118,8 +109,6 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
             "metadata": getattr(embodied, "metadata", {}),
             "scene_id": getattr(embodied, "scene_id", None),
             "backend_mode": backend_type,
-            "scene_glb_path": scene_glb_path,
-            "mesh_vertices": getattr(adapter, "_mesh_vertices", None),
             "scene_objects": (
                 {
                     k: {"x": v[0][0], "y": v[0][2], "z": v[0][1], "label": k}
@@ -182,8 +171,6 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
                     "metadata": getattr(embodied, "metadata", {}),
                     "scene_id": getattr(embodied, "scene_id", None),
                     "backend_mode": backend_type,
-                    "scene_glb_path": scene_glb_path,
-                    "mesh_vertices": getattr(adapter, "_mesh_vertices", None),
                     "scene_objects": (
                         {
                             k: {"x": v[0][0], "y": v[0][2], "z": v[0][1], "label": k}
@@ -205,7 +192,6 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
                     "metadata": {"position_3d": (3.0, 4.0, 0.0)},
                     "scene_id": None,
                     "backend_mode": backend_type,
-                    "scene_glb_path": None,
                     "scene_objects": None,
                 }
             await gateway.broadcast_state_async(state)
@@ -287,15 +273,6 @@ def main():
         adapter.add_object("default", "茶几", 4.0, 3.0)
         backend_type = "grid2d"
         logger.info("Using GridWorldAdapter (2D)")
-
-    # Expose HM3D dataset for frontend 3D viewer via /assets/hm3d/
-    if backend_type == "hm3d" and scene_path:
-        asset_link = Path(frontend_dir) / "assets" / "hm3d"
-        asset_link.parent.mkdir(parents=True, exist_ok=True)
-        if asset_link.exists() or asset_link.is_symlink():
-            asset_link.unlink()
-        asset_link.symlink_to(Path(scene_path).resolve(), target_is_directory=True)
-        logger.info("HM3D dataset exposed at /assets/hm3d/ → {}", scene_path)
 
     agent_core = StateMachineAgentCore(
         memory_store=MockMemoryStore(),
