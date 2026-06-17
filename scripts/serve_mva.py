@@ -20,6 +20,7 @@ import asyncio
 import functools
 import json
 import os
+import argparse
 import threading
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
@@ -33,6 +34,41 @@ from chronopersona.agent_core.action_planner import ActionPlanner
 from chronopersona.mocks.mock_model_router import MockModelRouter
 
 
+def _auto_detect_backend() -> tuple[str, str]:
+    """Auto-detect available embodied backend in priority order."""
+    # 1. Habitat: requires env var + importable habitat_sim
+    habitat_scene = os.environ.get("HABITAT_SCENE", "")
+    if habitat_scene:
+        try:
+            import importlib
+            importlib.import_module("habitat_sim")
+            return "habitat", habitat_scene
+        except ImportError:
+            pass
+
+    # 2. HM3D: env var overrides auto-scan
+    hm3d_env = os.environ.get("HM3D_SCENE", "")
+    if hm3d_env:
+        return "hm3d", hm3d_env
+
+    # 3. Auto-scan default HM3D dataset path
+    default_hm3d = (
+        Path.home()
+        / "projects"
+        / "ChronoPersona"
+        / "dataset"
+        / "habitat-matterport-3dresearch"
+        / "example"
+    )
+    if default_hm3d.exists():
+        for subdir in sorted(default_hm3d.iterdir()):
+            if subdir.is_dir() and list(subdir.glob("*.basis.glb")):
+                return "hm3d", str(subdir)
+
+    # 4. Fallback to 2D grid
+    return "grid2d", ""
+
+
 async def process_request(path, request_headers):
     """Handle HTTP health check before WebSocket upgrade."""
     if path == "/health":
@@ -40,7 +76,7 @@ async def process_request(path, request_headers):
     return None
 
 
-async def websocket_handler(websocket, gateway, adapter):
+async def websocket_handler(websocket, gateway, adapter, backend_type):
     """Handle WebSocket connections with shared state.
     
     websockets 14.0+ compatibility: path is available via websocket.request.path
@@ -89,6 +125,7 @@ async def websocket_handler(websocket, gateway, adapter):
                         "theta": 0,
                         "fov_objects": [],
                         "metadata": {"position_3d": (x, h, z)},
+                        "backend_mode": backend_type,
                     }
                     await gateway.broadcast_state_async(state)
                     await asyncio.sleep(0.05)  # 50ms 每步，前端平滑动画
@@ -106,6 +143,7 @@ async def websocket_handler(websocket, gateway, adapter):
                     "fov_objects": embodied.fov_objects,
                     "metadata": getattr(embodied, "metadata", {}),
                     "scene_id": getattr(embodied, "scene_id", None),
+                    "backend_mode": backend_type,
                     "scene_objects": (
                         {
                             k: {"x": v[0][0], "y": v[0][2], "z": v[0][1], "label": k}
@@ -126,6 +164,7 @@ async def websocket_handler(websocket, gateway, adapter):
                     "fov_objects": [],
                     "metadata": {"position_3d": (3.0, 4.0, 0.0)},
                     "scene_id": None,
+                    "backend_mode": backend_type,
                     "scene_objects": None,
                 }
             await gateway.broadcast_state_async(state)
@@ -157,25 +196,38 @@ def main():
     static_thread = threading.Thread(target=start_static_server, daemon=True)
     static_thread.start()
 
-    habitat_scene = os.environ.get("HABITAT_SCENE")
-    hm3d_scene = os.environ.get("HM3D_SCENE")
+    parser = argparse.ArgumentParser(description="ChronoPersona MVA Joint Server")
+    parser.add_argument(
+        "--backend",
+        choices=["auto", "habitat", "hm3d", "2d"],
+        default="auto",
+        help="Embodied backend mode",
+    )
+    parser.add_argument("--scene", default="", help="Override scene path")
+    args = parser.parse_args()
+
+    backend_type, scene_path = args.backend, args.scene
+    if backend_type == "auto":
+        backend_type, scene_path = _auto_detect_backend()
+
+    logger.info("Joint demo backend={}, scene={}", backend_type, scene_path)
     adapter = None
 
     # Mode 1: Habitat true 3D (requires habitat-sim)
-    if habitat_scene:
+    if backend_type == "habitat" and scene_path:
         try:
             from chronopersona.embodied.habitat_adapter import HabitatAdapter
-            adapter = HabitatAdapter(scene_path=habitat_scene, agent_id="default")
-            logger.info("Using HabitatAdapter (3D) with scene: {}", habitat_scene)
+            adapter = HabitatAdapter(scene_path=scene_path, agent_id="default")
+            logger.info("Using HabitatAdapter (true 3D)")
         except (ImportError, RuntimeError, FileNotFoundError) as e:
             logger.warning("HabitatAdapter failed: {}", e)
 
     # Mode 2: HM3D lightweight 3D (trimesh only, no habitat-sim)
-    if adapter is None and hm3d_scene:
+    if adapter is None and backend_type in ("hm3d", "auto") and scene_path:
         try:
             from chronopersona.embodied.hm3d_adapter import HM3DAdapter
-            adapter = HM3DAdapter(scene_dir=hm3d_scene, agent_id="default")
-            logger.info("Using HM3DAdapter (lightweight 3D) with scene: {}", hm3d_scene)
+            adapter = HM3DAdapter(scene_dir=scene_path, agent_id="default")
+            logger.info("Using HM3DAdapter (lightweight 3D)")
         except (ImportError, RuntimeError, FileNotFoundError, NotImplementedError) as e:
             logger.warning("HM3DAdapter failed: {}", e)
 
@@ -192,7 +244,17 @@ def main():
         adapter.add_object("default", "椅子", 5.0, 5.0)
         adapter.add_object("default", "冰箱", 10.0, 5.0)
         adapter.add_object("default", "茶几", 4.0, 3.0)
+        backend_type = "grid2d"
         logger.info("Using GridWorldAdapter (2D)")
+
+    # Expose HM3D dataset for frontend 3D viewer via /assets/hm3d/
+    if backend_type == "hm3d" and scene_path:
+        asset_link = Path(frontend_dir) / "assets" / "hm3d"
+        asset_link.parent.mkdir(parents=True, exist_ok=True)
+        if asset_link.exists() or asset_link.is_symlink():
+            asset_link.unlink()
+        asset_link.symlink_to(Path(scene_path).resolve(), target_is_directory=True)
+        logger.info("HM3D dataset exposed at /assets/hm3d/ → {}", scene_path)
 
     agent_core = StateMachineAgentCore(
         memory_store=MockMemoryStore(),
@@ -216,7 +278,7 @@ def main():
             ping_interval=30, ping_timeout=60,
         )
 
-    handler = functools.partial(websocket_handler, gateway=gateway, adapter=adapter)
+    handler = functools.partial(websocket_handler, gateway=gateway, adapter=adapter, backend_type=backend_type)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     server = loop.run_until_complete(start_ws_server())

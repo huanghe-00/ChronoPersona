@@ -98,6 +98,7 @@ function connectWebSocket() {
 
     ws.onopen = () => {
         log('WebSocket connected');
+        log('Backend mode: requesting state...');
     };
 
     ws.onmessage = (event) => {
@@ -118,20 +119,22 @@ function connectWebSocket() {
             const s = msg.data;
             agentState = { x: s.x, y: s.y, theta: s.theta || 0, z: s.z || 0 };
             
-            // 动态标题：根据 3D 坐标标识切换
+            // 动态标题：根据后端模式与场景标识切换
             const titleEl = document.getElementById('app-title');
-            if (s.metadata && s.metadata.position_3d) {
-                document.title = 'ChronoPersona 3D Agent (MVA)';
-                if (titleEl) titleEl.textContent = 'ChronoPersona 3D Agent (MVA)';
-            } else {
-                document.title = 'ChronoPersona 2D Agent (MVA)';
-                if (titleEl) titleEl.textContent = 'ChronoPersona 2D Agent (MVA)';
-            }
+            const modeLabel = s.backend_mode === 'habitat' ? '3D Habitat' :
+                              s.backend_mode === 'hm3d' ? '3D HM3D' :
+                              s.backend_mode === 'grid2d' ? '2D Grid' : 'MVA';
+            const sceneLabel = s.scene_id ? ` [${s.scene_id}]` : '';
+            document.title = `ChronoPersona ${modeLabel}${sceneLabel}`;
+            if (titleEl) titleEl.textContent = `ChronoPersona ${modeLabel}${sceneLabel}`;
             if (s.scene_objects) {
                 sceneObjects = s.scene_objects;
             }
             if (s.scene_id) {
                 log('Scene: ' + s.scene_id);
+            }
+            if (s.backend_mode) {
+                log('Backend: ' + s.backend_mode);
             }
             // Redraw canvas with new state
             ctx.clearRect(0, 0, canvas.width, canvas.height);
