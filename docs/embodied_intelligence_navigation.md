@@ -7,10 +7,13 @@
 cd ~/projects/ChronoPersona
 python scripts/serve_mva.py --backend auto
 
-# 方式 B：强制指定 HM3D 轻量 3D
+# 方式 B：强制指定 Habitat 真 3D（需 habitat-sim + 场景文件）
+HABITAT_SCENE=/path/to/scene.glb python scripts/serve_mva.py --backend habitat
+
+# 方式 C：强制指定 HM3D 轻量 3D
 python scripts/serve_mva.py --backend hm3d
 
-# 方式 C：强制 2D 网格（无数据集依赖）
+# 方式 D：强制 2D 网格（无数据集依赖）
 python scripts/serve_mva.py --backend 2d
 ```
 
