@@ -28,7 +28,7 @@ auto-lint: true
 auto-test: true
 dark-mode: true
 git: true
-read: [docs/architecture.md, AIDER.md]
+read: [docs/requirements.md, AIDER.md]
 show-model-warnings: false
 api-key: 
 chat-language: Chinese
