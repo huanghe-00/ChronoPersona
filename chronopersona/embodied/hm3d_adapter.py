@@ -69,6 +69,7 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         )
         self._agents: Dict[str, Tuple[float, float, float, float]] = {}  # x,y,z,theta
         self._spatial_memory: Dict[str, List[SpatialRecord]] = {}
+        self._nav_path: List[Tuple[float, float, float]] = []  # Animation replay cache
 
         if self._scene_dir and self._scene_dir.exists():
             self._load_scene(self._scene_dir)
@@ -103,11 +104,12 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         scene_name = ""
         if self._scene_dir:
             scene_name = self._scene_dir.name
+        # Coordinate convention alignment: y=2D depth (from 3D z), z=height (from 3D y)
         return EmbodiedState(
             agent_id=agent_id,
             x=x,
-            y=y,
-            z=z,
+            y=z,  # 3D z (depth) → 2D y axis
+            z=y,  # 3D y (height) → 3D z axis
             theta=theta,
             scene_id=scene_name,
             fov_objects=fov,
@@ -273,6 +275,7 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         # Update agent state to final position
         final_theta = math.atan2(tz - z, tx - x)
         self._agents[self._agent_id] = (tx, ty, tz, final_theta)
+        self._nav_path = path  # Cache for step-by-step animation replay
         return NavigationResult(
             success=True,
             final_position=(tx, ty, tz),

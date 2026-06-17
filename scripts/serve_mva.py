@@ -98,17 +98,21 @@ async def websocket_handler(websocket, gateway, adapter):
             # Push real embodied state from adapter (graceful degradation on failure)
             try:
                 embodied = adapter.get_perception("default")
-                pos_3d = getattr(embodied, "metadata", {}).get("position_3d", (embodied.x, 0, embodied.y))
                 state = {
                     "x": embodied.x,
                     "y": embodied.y,
-                    "z": float(pos_3d[1]) if len(pos_3d) >= 3 else 0.0,  # 真实垂直高度
+                    "z": embodied.z,
                     "theta": embodied.theta,
                     "fov_objects": embodied.fov_objects,
-                    "metadata": getattr(embodied, "metadata", {}),  # 传递 3D 标识
-                    "action_token": (
-                        response.get("action_plan", {}).get("action_token")
-                        if response.get("action_plan")
+                    "metadata": getattr(embodied, "metadata", {}),
+                    "scene_id": getattr(embodied, "scene_id", None),
+                    "scene_objects": (
+                        {
+                            k: {"x": v[0][0], "y": v[0][2], "z": v[0][1], "label": k}
+                            for k, v in adapter._object_index.items()
+                            if v
+                        }
+                        if hasattr(adapter, "_object_index") and adapter._object_index
                         else None
                     ),
                 }
@@ -117,14 +121,12 @@ async def websocket_handler(websocket, gateway, adapter):
                 state = {
                     "x": 3.0,
                     "y": 4.0,
+                    "z": 0.0,
                     "theta": 0.0,
                     "fov_objects": [],
-                    "metadata": {"position_3d": (3.0, 4.0, 0.0)},  # 3D 标识
-                    "action_token": (
-                        response.get("action_plan", {}).get("action_token")
-                        if response.get("action_plan")
-                        else None
-                    ),
+                    "metadata": {"position_3d": (3.0, 4.0, 0.0)},
+                    "scene_id": None,
+                    "scene_objects": None,
                 }
             await gateway.broadcast_state_async(state)
     except websockets.exceptions.ConnectionClosed:
@@ -156,18 +158,29 @@ def main():
     static_thread.start()
 
     habitat_scene = os.environ.get("HABITAT_SCENE")
+    hm3d_scene = os.environ.get("HM3D_SCENE")
+    adapter = None
+
+    # Mode 1: Habitat true 3D (requires habitat-sim)
     if habitat_scene:
         try:
             from chronopersona.embodied.habitat_adapter import HabitatAdapter
             adapter = HabitatAdapter(scene_path=habitat_scene, agent_id="default")
             logger.info("Using HabitatAdapter (3D) with scene: {}", habitat_scene)
         except (ImportError, RuntimeError, FileNotFoundError) as e:
-            logger.warning(
-                "Falling back to GridWorldAdapter (2D): HabitatAdapter init failed — {}", e
-            )
-            habitat_scene = None  # Trigger 2D fallback below
+            logger.warning("HabitatAdapter failed: {}", e)
 
-    if not habitat_scene:
+    # Mode 2: HM3D lightweight 3D (trimesh only, no habitat-sim)
+    if adapter is None and hm3d_scene:
+        try:
+            from chronopersona.embodied.hm3d_adapter import HM3DAdapter
+            adapter = HM3DAdapter(scene_dir=hm3d_scene, agent_id="default")
+            logger.info("Using HM3DAdapter (lightweight 3D) with scene: {}", hm3d_scene)
+        except (ImportError, RuntimeError, FileNotFoundError, NotImplementedError) as e:
+            logger.warning("HM3DAdapter failed: {}", e)
+
+    # Mode 3: 2D grid fallback (default)
+    if adapter is None:
         from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
         adapter = GridWorldAdapter()
         # Align initial pose with frontend hard-coded initial state
