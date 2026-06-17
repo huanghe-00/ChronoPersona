@@ -88,16 +88,20 @@ class EmbodiedState:
         agent_id: Unique agent identifier.
         x: Agent x-coordinate.
         y: Agent y-coordinate.
+        z: Agent z-coordinate (height/elevation).
         theta: Agent orientation in radians.
         fov_objects: List of object identifiers currently in the field of view.
         last_action: Last executed action token.
         metadata: Extra embodied metadata.
+        scene_id: Scene identifier for 3D environments.
     """
 
     agent_id: str = ""
     x: float = 0.0
     y: float = 0.0
+    z: float = 0.0
     theta: float = 0.0
     fov_objects: List[str] = field(default_factory=list)
     last_action: str = ""
     metadata: Dict[str, Any] = field(default_factory=dict)
+    scene_id: Optional[str] = None

@@ -79,7 +79,7 @@ function log(msg) {
     div.scrollTop = div.scrollHeight;
 }
 
-const TARGETS = {
+let sceneObjects = {
     sofa: { x: 2, y: 3, label: '沙发' },
     bed: { x: 8, y: 12, label: '床' },
     table: { x: 3, y: 2, label: '桌子' },
@@ -116,7 +116,7 @@ function connectWebSocket() {
             }
         } else if (msg.event === 'embodied.state') {
             const s = msg.data;
-            agentState = { x: s.x, y: s.y, theta: s.theta || 0 };
+            agentState = { x: s.x, y: s.y, theta: s.theta || 0, z: s.z || 0 };
             
             // 动态标题：根据 3D 坐标标识切换
             const titleEl = document.getElementById('app-title');
@@ -127,10 +127,16 @@ function connectWebSocket() {
                 document.title = 'ChronoPersona 2D Agent (MVA)';
                 if (titleEl) titleEl.textContent = 'ChronoPersona 2D Agent (MVA)';
             }
+            if (s.scene_objects) {
+                sceneObjects = s.scene_objects;
+            }
+            if (s.scene_id) {
+                log('Scene: ' + s.scene_id);
+            }
             // Redraw canvas with new state
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawGrid();
-            Object.values(TARGETS).forEach(t => drawObject(t.x, t.y, t.label, t.z || 0));
+            Object.values(sceneObjects).forEach(t => drawObject(t.x, t.y, t.label, t.z || 0));
             if (s.fov_objects) {
                 s.fov_objects.forEach((obj, idx) => {
                     // Optional: draw dynamic FOV objects
@@ -139,7 +145,7 @@ function connectWebSocket() {
             drawAgent(agentState.x, agentState.y, agentState.theta, agentState.z || 0);
             if (s.fov_objects && s.fov_objects.length > 0) {
                 s.fov_objects.forEach((objName) => {
-                    const obj = Object.values(TARGETS).find(
+                    const obj = Object.values(sceneObjects).find(
                         t => t.label === objName || t.label.includes(objName) || objName.includes(t.label)
                     );
                     if (obj) {
@@ -197,7 +203,7 @@ function sendMsg() {
 
 // Initial render
 drawGrid();
-Object.values(TARGETS).forEach(t => drawObject(t.x, t.y, t.label));
-drawAgent(agentState.x, agentState.y, agentState.theta);
+Object.values(sceneObjects).forEach(t => drawObject(t.x, t.y, t.label, t.z || 0));
+drawAgent(agentState.x, agentState.y, agentState.theta, agentState.z || 0);
 log('MVA: 2D world initialized. Grid 20x20, Agent at (3,4).');
 connectWebSocket();
