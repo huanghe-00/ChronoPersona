@@ -71,20 +71,49 @@ function drawObject(x, y, label, z = 0) {
     }
 }
 
-function drawObstacle(x, y, radius, label) {
+function drawBoxObstacle(x, y, sx, sz, label, color) {
+    const px = x * CELL;
+    const py = y * CELL;
+    const w = sx * CELL;
+    const h = sz * CELL;
+    // Parse hex color to RGB for semi-transparent fill
+    let fillR = 231, fillG = 76, fillB = 60; // default red
+    if (color && color.startsWith('#')) {
+        fillR = parseInt(color.slice(1, 3), 16);
+        fillG = parseInt(color.slice(3, 5), 16);
+        fillB = parseInt(color.slice(5, 7), 16);
+    }
+    ctx.fillStyle = `rgba(${fillR}, ${fillG}, ${fillB}, 0.2)`;
+    ctx.fillRect(px - w/2, py - h/2, w, h);
+    ctx.strokeStyle = color || '#e74c3c';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(px - w/2, py - h/2, w, h);
+    ctx.lineWidth = 1;
+    ctx.fillStyle = color || '#e74c3c';
+    ctx.font = '10px sans-serif';
+    ctx.fillText(label, px + w/2 + 4, py + 3);
+}
+
+function drawObstacle(x, y, radius, label, color) {
     const cx = x * CELL + CELL / 2;
     const cy = y * CELL + CELL / 2;
-    ctx.fillStyle = 'rgba(231, 76, 60, 0.3)';
+    let fillR = 231, fillG = 76, fillB = 60;
+    if (color && color.startsWith('#')) {
+        fillR = parseInt(color.slice(1, 3), 16);
+        fillG = parseInt(color.slice(3, 5), 16);
+        fillB = parseInt(color.slice(5, 7), 16);
+    }
+    ctx.fillStyle = `rgba(${fillR}, ${fillG}, ${fillB}, 0.3)`;
     ctx.beginPath();
     ctx.arc(cx, cy, radius * CELL, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#e74c3c';
+    ctx.strokeStyle = color || '#e74c3c';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(cx, cy, radius * CELL, 0, Math.PI * 2);
     ctx.stroke();
     ctx.lineWidth = 1;
-    ctx.fillStyle = '#e74c3c';
+    ctx.fillStyle = color || '#e74c3c';
     ctx.font = '10px sans-serif';
     ctx.fillText(label, cx + radius * CELL + 4, cy + 3);
 }
@@ -105,7 +134,9 @@ let sceneObjects = {
     chair: { x: 5, y: 5, z: 0.4, label: '椅子' },
     fridge: { x: 10, y: 5, z: 1.2, label: '冰箱' },
     coffee_table: { x: 4, y: 3, z: 0.3, label: '茶几' },
-    obstacle: { x: 6, y: 6.5, z: 0, label: '障碍物', radius: 1.5, type: 'obstacle' }
+    obstacle_island: { x: 6.5, y: 6.5, z: 0, label: '岛台', type: 'obstacle', shape: 'box', size: [3.0, 0.9, 1.0], color: '#8B4513' },
+    obstacle_pillar: { x: 4.0, y: 8.0, z: 0, label: '灯柱', type: 'obstacle', shape: 'cylinder', radius: 0.4, height: 2.2, color: '#696969' },
+    obstacle_cabinet: { x: 9.0, y: 4.0, z: 0, label: '矮柜', type: 'obstacle', shape: 'box', size: [1.5, 0.6, 0.8], color: '#2E8B57' }
 };
 
 const WS_URL = 'ws://localhost:8765/ws';
@@ -160,7 +191,11 @@ function connectWebSocket() {
             drawGrid();
             Object.values(sceneObjects).forEach(t => {
                 if (t.type === 'obstacle') {
-                    drawObstacle(t.x, t.y, t.radius || 1.5, t.label);
+                    if (t.shape === 'box' && t.size) {
+                        drawBoxObstacle(t.x, t.y, t.size[0], t.size[2], t.label, t.color);
+                    } else {
+                        drawObstacle(t.x, t.y, t.radius || 1.0, t.label, t.color);
+                    }
                 } else {
                     drawObject(t.x, t.y, t.label, t.z || 0);
                 }
@@ -236,7 +271,11 @@ function sendMsg() {
 drawGrid();
 Object.values(sceneObjects).forEach(t => {
     if (t.type === 'obstacle') {
-        drawObstacle(t.x, t.y, t.radius || 1.5, t.label);
+        if (t.shape === 'box' && t.size) {
+            drawBoxObstacle(t.x, t.y, t.size[0], t.size[2], t.label, t.color);
+        } else {
+            drawObstacle(t.x, t.y, t.radius || 1.0, t.label, t.color);
+        }
     } else {
         drawObject(t.x, t.y, t.label, t.z || 0);
     }

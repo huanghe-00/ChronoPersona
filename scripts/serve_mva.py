@@ -42,7 +42,24 @@ DEFAULT_SCENE_OBJECTS = {
     "chair": {"x": 5, "y": 5, "z": 0.4, "label": "椅子"},
     "fridge": {"x": 10, "y": 5, "z": 1.2, "label": "冰箱"},
     "coffee_table": {"x": 4, "y": 3, "z": 0.3, "label": "茶几"},
-    "obstacle": {"x": 6, "y": 6.5, "z": 0.0, "label": "障碍物", "radius": 1.5, "type": "obstacle"},
+    "obstacle_island": {
+        "x": 6.5, "y": 6.5, "z": 0.0,
+        "label": "岛台", "type": "obstacle",
+        "shape": "box", "size": [3.0, 0.9, 1.0],
+        "color": "#8B4513",
+    },
+    "obstacle_pillar": {
+        "x": 4.0, "y": 8.0, "z": 0.0,
+        "label": "灯柱", "type": "obstacle",
+        "shape": "cylinder", "radius": 0.4, "height": 2.2,
+        "color": "#696969",
+    },
+    "obstacle_cabinet": {
+        "x": 9.0, "y": 4.0, "z": 0.0,
+        "label": "矮柜", "type": "obstacle",
+        "shape": "box", "size": [1.5, 0.6, 0.8],
+        "color": "#2E8B57",
+    },
 }
 
 _DATASET_ROOT = _PROJECT_ROOT / "dataset" / "habitat-matterport-3dresearch" / "example"
@@ -357,8 +374,11 @@ def main():
         adapter.add_object("default", "椅子", 5.0, 5.0)
         adapter.add_object("default", "冰箱", 10.0, 5.0)
         adapter.add_object("default", "茶几", 4.0, 3.0)
-        # Obstacle for path planning demonstration (A* will avoid this cell)
-        adapter.add_object("default", "障碍物", 6.0, 6.5)
+        # 障碍物：真实室内空间布局（岛台覆盖多个网格单元）
+        for dx in [-1.0, 0.0, 1.0]:
+            adapter.add_object("default", "岛台", 6.5 + dx, 6.5)
+        adapter.add_object("default", "灯柱", 4.0, 8.0)
+        adapter.add_object("default", "矮柜", 9.0, 4.0)
         backend_type = "grid2d"
         logger.info("Using GridWorldAdapter (2D)")
 

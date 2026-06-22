@@ -51,10 +51,36 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
     仅用于前端联调和2D/3D坐标演示，非真实物理仿真。
     """
 
-    # Obstacles for path planning demonstration (x, y_height, z_depth, radius)
+    # 障碍物物理参数: (x, y_height, z_depth, safety_radius)
+    # safety_radius = 几何外接半宽 + 0.5m 绕行余量
     _OBSTACLES = [
-        (6.0, 0.0, 6.5, 1.5),  # Blocks center→sofa direct path
+        (6.5, 0.0, 6.5, 2.0),   # 中央岛台 (box 3.0x0.9x1.0): 半宽~1.5 + 0.5 = 2.0
+        (4.0, 0.0, 8.0, 1.0),   # 落地灯柱 (cylinder r=0.4, h=2.2): 半径0.4 + 0.6 = 1.0
+        (9.0, 0.0, 4.0, 1.0),   # 矮边柜 (box 1.5x0.6x0.8): 半宽~0.5 + 0.5 = 1.0
     ]
+
+    # 3D 形状与外观定义（供前端渲染使用）
+    _OBSTACLE_SHAPES = {
+        (6.5, 0.0, 6.5): {
+            "shape": "box",
+            "size": (3.0, 0.9, 1.0),
+            "color": 0x8B4513,
+            "label": "岛台",
+        },
+        (4.0, 0.0, 8.0): {
+            "shape": "cylinder",
+            "radius": 0.4,
+            "height": 2.2,
+            "color": 0x696969,
+            "label": "灯柱",
+        },
+        (9.0, 0.0, 4.0): {
+            "shape": "box",
+            "size": (1.5, 0.6, 0.8),
+            "color": 0x2E8B57,
+            "label": "矮柜",
+        },
+    }
 
     def __init__(
         self,
@@ -126,6 +152,14 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         scene_name = ""
         if self._scene_dir:
             scene_name = self._scene_dir.name
+        # 附加障碍物形状信息供前端 3D 渲染
+        obstacle_meta = []
+        for (ox, oy, oz), meta in self._OBSTACLE_SHAPES.items():
+            obstacle_meta.append({
+                "x": ox, "y": oy, "z": oz,
+                **meta,
+            })
+
         # Coordinate convention alignment: y=2D depth (from 3D z), z=height (from 3D y)
         return EmbodiedState(
             agent_id=agent_id,
@@ -135,6 +169,7 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
             theta=theta,
             scene_id=scene_name,
             fov_objects=fov,
+            metadata={"obstacles": obstacle_meta},
         )
 
     def _compute_fov(
@@ -306,26 +341,38 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         tx, ty, tz = positions[0]
         x, y, z, theta = self._agents.get(self._agent_id, (0.0, 0.0, 0.0, 0.0))
 
-        # Obstacle-aware path planning: check for intersections and generate detour
-        needs_detour = False
-        detour_x, detour_z = 0.0, 0.0
+        # 收集所有碰撞障碍物，按路径中点距离排序（最关键优先）
+        collisions = []
         for ox, oy, oz, radius in self._OBSTACLES:
             dist = self._point_to_segment_distance(ox, oz, x, z, tx, tz)
             if dist < radius:
-                needs_detour = True
-                # Compute perpendicular detour direction
-                dx, dz = tx - x, tz - z
-                norm = math.hypot(dx, dz)
-                if norm > 0.001:
-                    perp_x, perp_z = -dz / norm, dx / norm
-                    mid_x, mid_z = (x + tx) / 2.0, (z + tz) / 2.0
-                    # Choose offset direction away from obstacle
-                    off = 2.5
-                    if math.hypot(mid_x + perp_x * off - ox, mid_z + perp_z * off - oz) < \
-                       math.hypot(mid_x - perp_x * off - ox, mid_z - perp_z * off - oz):
-                        off = -off
+                mid_x, mid_z = (x + tx) / 2.0, (z + tz) / 2.0
+                mid_dist = math.hypot(ox - mid_x, oz - mid_z)
+                collisions.append((mid_dist, ox, oy, oz, radius))
+
+        needs_detour = False
+        detour_x, detour_z = 0.0, 0.0
+        if collisions:
+            collisions.sort(key=lambda c: c[0])
+            _, ox, oy, oz, radius = collisions[0]
+            needs_detour = True
+            dx, dz = tx - x, tz - z
+            norm = math.hypot(dx, dz)
+            if norm > 0.001:
+                perp_x, perp_z = -dz / norm, dx / norm
+                mid_x, mid_z = (x + tx) / 2.0, (z + tz) / 2.0
+                # 偏移量 = 安全半径 + 1.5m，确保充分绕行
+                off = radius + 1.5
+                dist_plus = math.hypot(
+                    mid_x + perp_x * off - ox, mid_z + perp_z * off - oz
+                )
+                dist_minus = math.hypot(
+                    mid_x - perp_x * off - ox, mid_z - perp_z * off - oz
+                )
+                if dist_plus > dist_minus:
                     detour_x, detour_z = mid_x + perp_x * off, mid_z + perp_z * off
-                break
+                else:
+                    detour_x, detour_z = mid_x - perp_x * off, mid_z - perp_z * off
 
         path: List[Tuple[float, float, float]] = []
         if needs_detour:
