@@ -381,7 +381,7 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
         final_x, final_y = path[-1]
         return NavigationResult(
             success=True,
-            final_position=(float(final_x), 0.0, float(final_y)),
+            final_position=(float(final_x), float(final_y), 0.0),  # 2D 语义 (x, y, z=0)
             steps_taken=len(path) - 1,
             collision_count=0,
             path=self._nav_path,
