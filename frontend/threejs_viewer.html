@@ -220,7 +220,7 @@ ws.onmessage = (event) => {
   }
   pathHistory.forEach((path, idx) => {
     if (!Array.isArray(path) || path.length < 2) return;
-    const points = path.map(p => new THREE.Vector3(p[0], p[2], p[1]));
+    const points = path.map(p => new THREE.Vector3(p[0], p[1], p[2]));
     const geom = new THREE.BufferGeometry().setFromPoints(points);
     // 旧路径逐渐淡化：越旧越透明，最新历史路径 opacity 0.35
     const opacity = Math.max(0.08, 0.35 - (pathHistory.length - idx - 1) * 0.03);
@@ -235,7 +235,7 @@ ws.onmessage = (event) => {
 
   // 当前活跃路径（高亮红色，短暂存在，移动结束后消失）
   if (d.metadata && Array.isArray(d.metadata.path_3d) && d.metadata.path_3d.length > 0) {
-    const points = d.metadata.path_3d.map(p => new THREE.Vector3(p[0], p[2], p[1]));
+    const points = d.metadata.path_3d.map(p => new THREE.Vector3(p[0], p[1], p[2]));
     const geom = new THREE.BufferGeometry().setFromPoints(points);
     if (pathLine) { scene.remove(pathLine); pathLine.geometry.dispose(); }
     pathLine = new THREE.Line(geom, pathMat);
