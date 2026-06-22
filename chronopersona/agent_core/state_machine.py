@@ -431,9 +431,9 @@ class StateMachineAgentCore(AbstractAgentCore):
     def _extract_navigation_target(self, text: str) -> Optional[str]:
         """Heuristic extraction of navigation target from user input."""
         patterns = [
-            r"(?:到|去|导航到|前往|走向)\s*(\S+?)(?:旁边|附近|那里|去)?[吧]?[？?]?\s*$",
-            r"(?:请|帮我)?\s*(?:到|去|导航到)\s*(\S+?)(?:旁边|附近|那里)?\s*[吧]?[？?]?\s*$",
-            r"(?:靠近|走近)\s*(\S+?)(?:旁边|附近)?\s*$",
+            r"(?:到|去|导航到|前往|走向)\s*(\S+?)(?:旁边|附近|那里|边|去)?[吧]?[？?]?\s*$",
+            r"(?:请|帮我)?\s*(?:到|去|导航到)\s*(\S+?)(?:旁边|附近|那里|边)?\s*[吧]?[？?]?\s*$",
+            r"(?:靠近|走近)\s*(\S+?)(?:旁边|附近|边)?\s*$",
         ]
         # Filter out question particles and common non-object words
         invalid_targets = {
