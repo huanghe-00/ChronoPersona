@@ -203,6 +203,7 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
     websockets 14.0+ compatibility: path is available via websocket.request.path
     if needed; signature reduced to (websocket, ...) only.
     """
+    path_history = []  # 累积路径历史，供前端视觉残留渲染
     # v1.1.0: API Key authentication skeleton (production baseline)
     api_key = os.environ.get("MVA_API_KEY")
     if api_key:
@@ -247,6 +248,12 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
             if hasattr(adapter, '_nav_path') and adapter._nav_path:
                 path = list(adapter._nav_path)  # 拷贝避免并发修改
                 adapter._nav_path = []  # 立即消费清空
+                # 追加当前路径到历史（用于视觉残留）
+                if path:
+                    path_history.append([list(p) for p in path])
+                    # 限制历史长度，避免内存无限增长
+                    if len(path_history) > 20:
+                        path_history.pop(0)
                 # 限制步数避免过长等待
                 if len(path) > 100:
                     step = max(1, len(path) // 100)
@@ -289,7 +296,11 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
                     "z": embodied.z,
                     "theta": embodied.theta,
                     "fov_objects": embodied.fov_objects,
-                    "metadata": getattr(embodied, "metadata", {}),
+                    "metadata": {
+                        **getattr(embodied, "metadata", {}),
+                        "path_3d": adapter._nav_path if hasattr(adapter, '_nav_path') else [],
+                        "path_history": path_history,
+                    },
                     "scene_id": getattr(embodied, "scene_id", None),
                     "backend_mode": backend_type,
                     "scene_objects": DEFAULT_SCENE_OBJECTS,
@@ -302,7 +313,10 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
                     "z": 0.0,
                     "theta": 0.0,
                     "fov_objects": [],
-                    "metadata": {"position_3d": (3.0, 4.0, 0.0)},
+                    "metadata": {
+                        "position_3d": (3.0, 4.0, 0.0),
+                        "path_history": path_history,
+                    },
                     "scene_id": None,
                     "backend_mode": backend_type,
                     "scene_objects": None,

@@ -64,6 +64,11 @@ scene.add(objectsGroup);
 let pathLine = null;
 const pathMat = new THREE.LineBasicMaterial({ color: 0xe74c3c });
 
+// 路径视觉残留：历史路径组
+let pathHistory = [];
+const pathHistoryGroup = new THREE.Group();
+scene.add(pathHistoryGroup);
+
 // 2D 小地图
 const c2d = document.getElementById('canvas2d');
 const ctx2d = c2d.getContext('2d');
@@ -202,12 +207,46 @@ ws.onmessage = (event) => {
     }
   });
 
-  // 导航路径
+  // 路径历史累积（从后端状态同步）
+  if (d.metadata && Array.isArray(d.metadata.path_history)) {
+    pathHistory = d.metadata.path_history;
+  }
+
+  // 渲染历史路径视觉残留（渐淡红色）
+  while (pathHistoryGroup.children.length > 0) {
+    const child = pathHistoryGroup.children[0];
+    if (child.geometry) child.geometry.dispose();
+    pathHistoryGroup.remove(child);
+  }
+  pathHistory.forEach((path, idx) => {
+    if (!Array.isArray(path) || path.length < 2) return;
+    const points = path.map(p => new THREE.Vector3(p[0], p[2], p[1]));
+    const geom = new THREE.BufferGeometry().setFromPoints(points);
+    // 旧路径逐渐淡化：越旧越透明，最新历史路径 opacity 0.35
+    const opacity = Math.max(0.08, 0.35 - (pathHistory.length - idx - 1) * 0.03);
+    const histMat = new THREE.LineBasicMaterial({
+      color: 0xcc5555,
+      transparent: true,
+      opacity: opacity,
+    });
+    const line = new THREE.Line(geom, histMat);
+    pathHistoryGroup.add(line);
+  });
+
+  // 当前活跃路径（高亮红色，短暂存在，移动结束后消失）
   if (d.metadata && Array.isArray(d.metadata.path_3d) && d.metadata.path_3d.length > 0) {
     const points = d.metadata.path_3d.map(p => new THREE.Vector3(p[0], p[2], p[1]));
     const geom = new THREE.BufferGeometry().setFromPoints(points);
     if (pathLine) { scene.remove(pathLine); pathLine.geometry.dispose(); }
-    pathLine = new THREE.Line(geom, pathMat); scene.add(pathLine);
+    pathLine = new THREE.Line(geom, pathMat);
+    scene.add(pathLine);
+  } else if (!d.metadata || !d.metadata.path_3d || d.metadata.path_3d.length === 0) {
+    // 当前无活跃路径时，移除高亮线
+    if (pathLine) {
+      scene.remove(pathLine);
+      pathLine.geometry.dispose();
+      pathLine = null;
+    }
   }
 
   drawMiniMap(d, currentObjects);

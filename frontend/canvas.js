@@ -16,6 +16,29 @@ function drawGrid() {
     }
 }
 
+function drawPathHistory() {
+    if (!pathHistory || pathHistory.length === 0) return;
+    pathHistory.forEach((path, idx) => {
+        if (!Array.isArray(path) || path.length < 2) return;
+        // 旧路径逐渐淡化：越旧越透明
+        const opacity = Math.max(0.06, 0.22 - (pathHistory.length - idx - 1) * 0.015);
+        ctx.strokeStyle = `rgba(231, 76, 60, ${opacity})`;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]); // 虚线表示历史路径
+        ctx.beginPath();
+        path.forEach((p, i) => {
+            // 坐标约定：p = [x, y_3d, z_3d]；2D平面使用 x 和 z（深度）
+            const px = (p[0] !== undefined ? p[0] : 0) * CELL + CELL / 2;
+            const py = (p[2] !== undefined ? p[2] : 0) * CELL + CELL / 2;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]); // 恢复实线
+        ctx.lineWidth = 1;
+    });
+}
+
 function drawAgent(x, y, theta, z = 0) {
     const cx = x * CELL + CELL / 2;
     const cy = y * CELL + CELL / 2;
@@ -145,6 +168,9 @@ let sceneObjects = {
     obstacle_bar3: { x: 3.0, y: 10.0, z: 0, label: '吧台3', type: 'obstacle', shape: 'cylinder', radius: 0.6, height: 1.1, color: '#DAA520' }
 };
 
+// 路径历史，用于2D俯视图视觉残留
+let pathHistory = [];
+
 const WS_URL = 'ws://localhost:8765/ws';
 let ws = null;
 let agentState = { x: 3, y: 4, theta: 0 };
@@ -186,6 +212,9 @@ function connectWebSocket() {
             if (s.scene_objects) {
                 sceneObjects = s.scene_objects;
             }
+            if (s.metadata && s.metadata.path_history) {
+                pathHistory = s.metadata.path_history;
+            }
             if (s.scene_id) {
                 log('Scene: ' + s.scene_id);
             }
@@ -195,6 +224,7 @@ function connectWebSocket() {
             // Redraw canvas with new state
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawGrid();
+            drawPathHistory(); // 在网格之上、物体之下绘制历史路径
             Object.values(sceneObjects).forEach(t => {
                 if (t.type === 'obstacle') {
                     if (t.shape === 'box' && t.size) {
