@@ -134,9 +134,16 @@ let sceneObjects = {
     chair: { x: 5, y: 5, z: 0.4, label: '椅子' },
     fridge: { x: 10, y: 5, z: 1.2, label: '冰箱' },
     coffee_table: { x: 4, y: 3, z: 0.3, label: '茶几' },
-    obstacle_island: { x: 6.5, y: 6.5, z: 0, label: '岛台', type: 'obstacle', shape: 'box', size: [3.0, 0.9, 1.0], color: '#8B4513' },
+    obstacle_island_main: { x: 6.5, y: 6.5, z: 0, label: '岛台主体', type: 'obstacle', shape: 'box', size: [3.0, 0.9, 1.0], color: '#8B4513' },
+    obstacle_island_wing: { x: 5.5, y: 7.5, z: 0, label: '岛台侧翼', type: 'obstacle', shape: 'box', size: [1.0, 0.9, 3.0], color: '#8B4513' },
     obstacle_pillar: { x: 4.0, y: 8.0, z: 0, label: '灯柱', type: 'obstacle', shape: 'cylinder', radius: 0.4, height: 2.2, color: '#696969' },
-    obstacle_cabinet: { x: 9.0, y: 4.0, z: 0, label: '矮柜', type: 'obstacle', shape: 'box', size: [1.5, 0.6, 0.8], color: '#2E8B57' }
+    obstacle_cabinet: { x: 9.0, y: 4.0, z: 0, label: '矮柜', type: 'obstacle', shape: 'box', size: [1.5, 0.6, 0.8], color: '#2E8B57' },
+    obstacle_bookshelf: { x: 1.5, y: 8.0, z: 0, label: '书架', type: 'obstacle', shape: 'box', size: [1.0, 2.4, 0.4], color: '#8B0000' },
+    obstacle_corner_sofa: { x: 7.0, y: 2.5, z: 0, label: '转角沙发', type: 'obstacle', shape: 'box', size: [2.0, 0.6, 1.0], color: '#4169E1' },
+    obstacle_glass_wall: { x: 8.0, y: 7.5, z: 0, label: '玻璃隔断', type: 'obstacle', shape: 'box', size: [0.1, 2.0, 3.0], color: '#87CEEB' },
+    obstacle_bar1: { x: 4.5, y: 9.0, z: 0, label: '吧台1', type: 'obstacle', shape: 'cylinder', radius: 0.6, height: 1.1, color: '#DAA520' },
+    obstacle_bar2: { x: 3.8, y: 9.5, z: 0, label: '吧台2', type: 'obstacle', shape: 'cylinder', radius: 0.6, height: 1.1, color: '#DAA520' },
+    obstacle_bar3: { x: 3.0, y: 10.0, z: 0, label: '吧台3', type: 'obstacle', shape: 'cylinder', radius: 0.6, height: 1.1, color: '#DAA520' }
 };
 
 const WS_URL = 'ws://localhost:8765/ws';

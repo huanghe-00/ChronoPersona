@@ -54,9 +54,17 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
     # 障碍物物理参数: (x, y_height, z_depth, safety_radius)
     # safety_radius = 几何外接半宽 + 0.5m 绕行余量
     _OBSTACLES = [
-        (6.5, 0.0, 6.5, 2.0),   # 中央岛台 (box 3.0x0.9x1.0): 半宽~1.5 + 0.5 = 2.0
-        (4.0, 0.0, 8.0, 1.0),   # 落地灯柱 (cylinder r=0.4, h=2.2): 半径0.4 + 0.6 = 1.0
-        (9.0, 0.0, 4.0, 1.0),   # 矮边柜 (box 1.5x0.6x0.8): 半宽~0.5 + 0.5 = 1.0
+        # L形岛台：主体+侧翼
+        (6.5, 0.0, 6.5, 1.5),    # 岛台主体
+        (5.5, 0.0, 7.5, 1.2),    # 岛台侧翼
+        (4.0, 0.0, 8.0, 1.0),    # 落地灯柱
+        (9.0, 0.0, 4.0, 1.0),    # 矮边柜
+        (1.5, 0.0, 8.0, 1.0),    # 高书架（阻挡从中心到床的另一条路径）
+        (7.0, 0.0, 2.5, 1.2),    # 转角沙发
+        (8.0, 0.0, 7.5, 1.5),    # 玻璃隔断（中央走廊）
+        (4.5, 0.0, 9.0, 0.8),    # 吧台1
+        (3.8, 0.0, 9.5, 0.8),    # 吧台2
+        (3.0, 0.0, 10.0, 0.8),   # 吧台3
     ]
 
     # 3D 形状与外观定义（供前端渲染使用）
@@ -65,7 +73,13 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
             "shape": "box",
             "size": (3.0, 0.9, 1.0),
             "color": 0x8B4513,
-            "label": "岛台",
+            "label": "岛台主体",
+        },
+        (5.5, 0.0, 7.5): {
+            "shape": "box",
+            "size": (1.0, 0.9, 3.0),
+            "color": 0x8B4513,
+            "label": "岛台侧翼",
         },
         (4.0, 0.0, 8.0): {
             "shape": "cylinder",
@@ -79,6 +93,45 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
             "size": (1.5, 0.6, 0.8),
             "color": 0x2E8B57,
             "label": "矮柜",
+        },
+        (1.5, 0.0, 8.0): {
+            "shape": "box",
+            "size": (1.0, 2.4, 0.4),
+            "color": 0x8B0000,
+            "label": "书架",
+        },
+        (7.0, 0.0, 2.5): {
+            "shape": "box",
+            "size": (2.0, 0.6, 1.0),
+            "color": 0x4169E1,
+            "label": "转角沙发",
+        },
+        (8.0, 0.0, 7.5): {
+            "shape": "box",
+            "size": (0.1, 2.0, 3.0),
+            "color": 0x87CEEB,
+            "label": "玻璃隔断",
+        },
+        (4.5, 0.0, 9.0): {
+            "shape": "cylinder",
+            "radius": 0.6,
+            "height": 1.1,
+            "color": 0xDAA520,
+            "label": "吧台1",
+        },
+        (3.8, 0.0, 9.5): {
+            "shape": "cylinder",
+            "radius": 0.6,
+            "height": 1.1,
+            "color": 0xDAA520,
+            "label": "吧台2",
+        },
+        (3.0, 0.0, 10.0): {
+            "shape": "cylinder",
+            "radius": 0.6,
+            "height": 1.1,
+            "color": 0xDAA520,
+            "label": "吧台3",
         },
     }
 
@@ -374,33 +427,26 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
                 else:
                     detour_x, detour_z = mid_x - perp_x * off, mid_z - perp_z * off
 
+        # 生成多段折线路径
         path: List[Tuple[float, float, float]] = []
-        if needs_detour:
-            # Two-segment detour: start → detour point → goal, 5 steps each
-            steps = 5
-            for i in range(steps + 1):
-                t = i / steps
-                px = x + (detour_x - x) * t
-                py = y + (ty - y) * t
-                pz = z + (detour_z - z) * t
+        waypoints = [(x, z)] + detour_points + [(tx, tz)]
+        segments = len(waypoints) - 1
+        steps_per_segment = 5 if segments > 1 else 10
+        steps_taken = segments * steps_per_segment
+
+        for seg_idx in range(segments):
+            sx, sz = waypoints[seg_idx]
+            ex, ez = waypoints[seg_idx + 1]
+            for i in range(steps_per_segment + 1):
+                if seg_idx < segments - 1 and i == steps_per_segment:
+                    continue  # 避免中间节点重复
+                t = i / steps_per_segment
+                px = sx + (ex - sx) * t
+                # y高度按整体进度线性插值
+                overall_t = (seg_idx * steps_per_segment + i) / steps_taken
+                py = y + (ty - y) * overall_t
+                pz = sz + (ez - sz) * t
                 path.append((px, py, pz))
-            for i in range(1, steps + 1):
-                t = i / steps
-                px = detour_x + (tx - detour_x) * t
-                py = ty
-                pz = detour_z + (tz - detour_z) * t
-                path.append((px, py, pz))
-            steps_taken = 10
-        else:
-            # No obstacle: straight linear interpolation
-            steps = 10
-            for i in range(steps + 1):
-                t = i / steps
-                px = x + (tx - x) * t
-                py = y + (ty - y) * t
-                pz = z + (tz - z) * t
-                path.append((px, py, pz))
-            steps_taken = steps
 
         # Update agent state to final position
         final_theta = math.atan2(tz - z, tx - x)
