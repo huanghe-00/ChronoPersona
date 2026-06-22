@@ -36,12 +36,12 @@ from chronopersona.mocks.mock_model_router import MockModelRouter
 
 # 统一前端家具坐标（与 VLNAgent / HM3DAdapter / HabitatAdapter 语义映射一致）
 DEFAULT_SCENE_OBJECTS = {
-    "sofa": {"x": 2, "y": 3, "z": 0.3, "label": "沙发"},
-    "bed": {"x": 8, "y": 12, "z": 0.5, "label": "床"},
-    "table": {"x": 3, "y": 2, "z": 0.8, "label": "桌子"},
-    "chair": {"x": 5, "y": 5, "z": 0.4, "label": "椅子"},
-    "fridge": {"x": 10, "y": 5, "z": 1.2, "label": "冰箱"},
-    "coffee_table": {"x": 4, "y": 3, "z": 0.3, "label": "茶几"},
+    "sofa": {"x": 7.0, "y": 8.0, "z": 0.3, "label": "沙发"},
+    "bed": {"x": 4.0, "y": 11.0, "z": 0.5, "label": "床"},
+    "table": {"x": 5.0, "y": 10.0, "z": 0.8, "label": "桌子"},
+    "chair": {"x": 9.0, "y": 3.0, "z": 0.4, "label": "椅子"},
+    "fridge": {"x": 10.0, "y": 5.0, "z": 1.2, "label": "冰箱"},
+    "coffee_table": {"x": 10.0, "y": 7.0, "z": 0.3, "label": "茶几"},
     "obstacle_island_main": {
         "x": 6.5, "y": 6.5, "z": 0.0,
         "label": "岛台主体", "type": "obstacle",
@@ -409,13 +409,13 @@ def main():
         adapter = GridWorldAdapter()
         # Align initial pose with frontend hard-coded initial state
         adapter._agents["default"] = (3.0, 4.0, 0.0)
-        adapter.add_object("default", "沙发", 2.0, 3.0)
-        adapter.add_object("default", "床", 8.0, 12.0)
-        adapter.add_object("default", "桌子", 3.0, 2.0)
+        adapter.add_object("default", "沙发", 7.0, 8.0)
+        adapter.add_object("default", "床", 4.0, 11.0)
+        adapter.add_object("default", "桌子", 5.0, 10.0)
         adapter.add_object("default", "厨房", 15.0, 5.0)
-        adapter.add_object("default", "椅子", 5.0, 5.0)
+        adapter.add_object("default", "椅子", 9.0, 3.0)
         adapter.add_object("default", "冰箱", 10.0, 5.0)
-        adapter.add_object("default", "茶几", 4.0, 3.0)
+        adapter.add_object("default", "茶几", 10.0, 7.0)
         # 障碍物：复杂室内空间布局
         for dx in [-1.0, 0.0, 1.0]:
             adapter.add_object("default", "岛台主体", 6.5 + dx, 6.5)

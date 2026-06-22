@@ -127,13 +127,13 @@ function log(msg) {
 }
 
 let sceneObjects = {
-    sofa: { x: 2, y: 3, z: 0.3, label: '沙发' },
-    bed: { x: 8, y: 12, z: 0.5, label: '床' },
-    table: { x: 3, y: 2, z: 0.8, label: '桌子' },
+    sofa: { x: 7.0, y: 8.0, z: 0.3, label: '沙发' },
+    bed: { x: 4.0, y: 11.0, z: 0.5, label: '床' },
+    table: { x: 5.0, y: 10.0, z: 0.8, label: '桌子' },
     kitchen: { x: 15, y: 5, z: 0, label: '厨房' },
-    chair: { x: 5, y: 5, z: 0.4, label: '椅子' },
-    fridge: { x: 10, y: 5, z: 1.2, label: '冰箱' },
-    coffee_table: { x: 4, y: 3, z: 0.3, label: '茶几' },
+    chair: { x: 9.0, y: 3.0, z: 0.4, label: '椅子' },
+    fridge: { x: 10.0, y: 5.0, z: 1.2, label: '冰箱' },
+    coffee_table: { x: 10.0, y: 7.0, z: 0.3, label: '茶几' },
     obstacle_island_main: { x: 6.5, y: 6.5, z: 0, label: '岛台主体', type: 'obstacle', shape: 'box', size: [3.0, 0.9, 1.0], color: '#8B4513' },
     obstacle_island_wing: { x: 5.5, y: 7.5, z: 0, label: '岛台侧翼', type: 'obstacle', shape: 'box', size: [1.0, 0.9, 3.0], color: '#8B4513' },
     obstacle_pillar: { x: 4.0, y: 8.0, z: 0, label: '灯柱', type: 'obstacle', shape: 'cylinder', radius: 0.4, height: 2.2, color: '#696969' },

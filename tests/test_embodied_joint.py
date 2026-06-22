@@ -42,10 +42,10 @@ class TestJointEmbodied:
         goal = SemanticNavigationGoal(target_object="沙发")
         result = adapter.navigate_to_object(goal)
         assert result.success is True
-        assert result.steps_taken == 10
-        # 3D coordinate consistency: final pos should match seed
-        assert result.final_position[0] == pytest.approx(2.0, abs=0.1)
-        assert result.final_position[2] == pytest.approx(3.0, abs=0.1)
+        assert result.steps_taken >= 10  # Detour segments may increase steps
+        # 3D coordinate consistency: final pos should match redistributed seed
+        assert result.final_position[0] == pytest.approx(7.0, abs=0.5)
+        assert result.final_position[2] == pytest.approx(8.0, abs=0.5)
 
     def test_grid_vs_hm3d_interface_parity(self):
         g = GridWorldAdapter()

@@ -32,15 +32,16 @@ except ImportError:
     pass
 
 
-# Pre-seeded object coordinates (aligned with frontend TARGETS and VLNAgent)
+# Pre-seeded object coordinates (redistributed behind obstacles for detour demonstration)
 # Heights differentiated for 3D layering: fridge=1.2m, table=0.8m, bed=0.5m, chair=0.4m, sofa/tea_table=0.3m
+# Layout: targets placed behind L-shaped island, glass wall, bar cluster, and corner sofa
 _DEFAULT_OBJECT_INDEX: Dict[str, List[Tuple[float, float, float]]] = {
-    "沙发": [(2.0, 0.3, 3.0)],
-    "床": [(8.0, 0.5, 12.0)],
-    "桌子": [(3.0, 0.8, 2.0)],
-    "椅子": [(5.0, 0.4, 5.0)],
-    "冰箱": [(10.0, 1.2, 5.0)],
-    "茶几": [(4.0, 0.3, 3.0)],
+    "沙发": [(7.0, 0.3, 8.0)],    # 岛台+玻璃隔断北侧，需绕行
+    "床": [(4.0, 0.5, 11.0)],     # 吧台群后方，需绕行
+    "桌子": [(5.0, 0.8, 10.0)],   # 岛台侧翼+灯柱北侧，需绕行
+    "椅子": [(9.0, 0.4, 3.0)],    # 转角沙发东侧，需绕行
+    "冰箱": [(10.0, 1.2, 5.0)],   # 矮柜东侧，需绕行
+    "茶几": [(10.0, 0.3, 7.0)],   # 玻璃隔断东侧，需绕行
 }
 
 

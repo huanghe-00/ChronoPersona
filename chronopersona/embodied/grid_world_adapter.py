@@ -344,13 +344,13 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
 
         if target_pos is None:
             target_map = {
-                "沙发": (2.0, 3.0), "sofa": (2.0, 3.0),
-                "床": (8.0, 12.0), "bed": (8.0, 12.0),
-                "桌子": (3.0, 2.0), "table": (3.0, 2.0),
+                "沙发": (7.0, 8.0), "sofa": (7.0, 8.0),
+                "床": (4.0, 11.0), "bed": (4.0, 11.0),
+                "桌子": (5.0, 10.0), "table": (5.0, 10.0),
                 "厨房": (15.0, 5.0), "kitchen": (15.0, 5.0),
-                "椅子": (5.0, 5.0), "chair": (5.0, 5.0),
+                "椅子": (9.0, 3.0), "chair": (9.0, 3.0),
                 "冰箱": (10.0, 5.0), "fridge": (10.0, 5.0),
-                "茶几": (4.0, 3.0), "coffee_table": (4.0, 3.0),
+                "茶几": (10.0, 7.0), "coffee_table": (10.0, 7.0),
             }
             pos = target_map.get(name)
             if pos is None:
