@@ -71,6 +71,24 @@ function drawObject(x, y, label, z = 0) {
     }
 }
 
+function drawObstacle(x, y, radius, label) {
+    const cx = x * CELL + CELL / 2;
+    const cy = y * CELL + CELL / 2;
+    ctx.fillStyle = 'rgba(231, 76, 60, 0.3)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * CELL, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#e74c3c';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * CELL, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#e74c3c';
+    ctx.font = '10px sans-serif';
+    ctx.fillText(label, cx + radius * CELL + 4, cy + 3);
+}
+
 function log(msg) {
     const div = document.getElementById('log');
     const line = document.createElement('div');
@@ -80,13 +98,14 @@ function log(msg) {
 }
 
 let sceneObjects = {
-    sofa: { x: 2, y: 3, label: '沙发' },
-    bed: { x: 8, y: 12, label: '床' },
-    table: { x: 3, y: 2, label: '桌子' },
-    kitchen: { x: 15, y: 5, label: '厨房' },
-    chair: { x: 5, y: 5, label: '椅子' },
-    fridge: { x: 10, y: 5, label: '冰箱' },
-    coffee_table: { x: 4, y: 3, label: '茶几' }
+    sofa: { x: 2, y: 3, z: 0.3, label: '沙发' },
+    bed: { x: 8, y: 12, z: 0.5, label: '床' },
+    table: { x: 3, y: 2, z: 0.8, label: '桌子' },
+    kitchen: { x: 15, y: 5, z: 0, label: '厨房' },
+    chair: { x: 5, y: 5, z: 0.4, label: '椅子' },
+    fridge: { x: 10, y: 5, z: 1.2, label: '冰箱' },
+    coffee_table: { x: 4, y: 3, z: 0.3, label: '茶几' },
+    obstacle: { x: 6, y: 6.5, z: 0, label: '障碍物', radius: 1.5, type: 'obstacle' }
 };
 
 const WS_URL = 'ws://localhost:8765/ws';
@@ -139,7 +158,13 @@ function connectWebSocket() {
             // Redraw canvas with new state
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawGrid();
-            Object.values(sceneObjects).forEach(t => drawObject(t.x, t.y, t.label, t.z || 0));
+            Object.values(sceneObjects).forEach(t => {
+                if (t.type === 'obstacle') {
+                    drawObstacle(t.x, t.y, t.radius || 1.5, t.label);
+                } else {
+                    drawObject(t.x, t.y, t.label, t.z || 0);
+                }
+            });
             if (s.fov_objects) {
                 s.fov_objects.forEach((obj, idx) => {
                     // Optional: draw dynamic FOV objects
@@ -209,7 +234,13 @@ function sendMsg() {
 
 // Initial render
 drawGrid();
-Object.values(sceneObjects).forEach(t => drawObject(t.x, t.y, t.label, t.z || 0));
+Object.values(sceneObjects).forEach(t => {
+    if (t.type === 'obstacle') {
+        drawObstacle(t.x, t.y, t.radius || 1.5, t.label);
+    } else {
+        drawObject(t.x, t.y, t.label, t.z || 0);
+    }
+});
 drawAgent(agentState.x, agentState.y, agentState.theta, agentState.z || 0);
 log('MVA: 2D world initialized. Grid 20x20, Agent at (3,4).');
 connectWebSocket();

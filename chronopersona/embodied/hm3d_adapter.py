@@ -33,13 +33,14 @@ except ImportError:
 
 
 # Pre-seeded object coordinates (aligned with frontend TARGETS and VLNAgent)
+# Heights differentiated for 3D layering: fridge=1.2m, table=0.8m, bed=0.5m, chair=0.4m, sofa/tea_table=0.3m
 _DEFAULT_OBJECT_INDEX: Dict[str, List[Tuple[float, float, float]]] = {
-    "沙发": [(2.0, 0.0, 3.0)],
-    "床": [(8.0, 0.0, 12.0)],
-    "桌子": [(3.0, 0.0, 2.0)],
-    "椅子": [(5.0, 0.0, 5.0)],
-    "冰箱": [(10.0, 0.0, 5.0)],
-    "茶几": [(4.0, 0.0, 3.0)],
+    "沙发": [(2.0, 0.3, 3.0)],
+    "床": [(8.0, 0.5, 12.0)],
+    "桌子": [(3.0, 0.8, 2.0)],
+    "椅子": [(5.0, 0.4, 5.0)],
+    "冰箱": [(10.0, 1.2, 5.0)],
+    "茶几": [(4.0, 0.3, 3.0)],
 }
 
 
@@ -49,6 +50,11 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
     不加载真实场景几何，不重建navmesh。Agent 在预置坐标间直线移动。
     仅用于前端联调和2D/3D坐标演示，非真实物理仿真。
     """
+
+    # Obstacles for path planning demonstration (x, y_height, z_depth, radius)
+    _OBSTACLES = [
+        (6.0, 0.0, 6.5, 1.5),  # Blocks center→sofa direct path
+    ]
 
     def __init__(
         self,
@@ -266,6 +272,17 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
             rotation=(0.0, math.sin(theta / 2), 0.0, math.cos(theta / 2)),
         )
 
+    @staticmethod
+    def _point_to_segment_distance(
+        px: float, pz: float, x1: float, z1: float, x2: float, z2: float
+    ) -> float:
+        """Compute minimum distance from point (px, pz) to line segment (x1,z1)-(x2,z2)."""
+        dx, dz = x2 - x1, z2 - z1
+        if abs(dx) < 1e-9 and abs(dz) < 1e-9:
+            return math.hypot(px - x1, pz - z1)
+        t = max(0.0, min(1.0, ((px - x1) * dx + (pz - z1) * dz) / (dx * dx + dz * dz)))
+        return math.hypot(px - (x1 + t * dx), pz - (z1 + t * dz))
+
     def navigate_to_object(self, goal: SemanticNavigationGoal) -> NavigationResult:
         if not goal.target_object:
             raise ValueError("goal.target_object must not be empty")
@@ -289,15 +306,54 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         tx, ty, tz = positions[0]
         x, y, z, theta = self._agents.get(self._agent_id, (0.0, 0.0, 0.0, 0.0))
 
-        # Linear interpolation over 10 steps
+        # Obstacle-aware path planning: check for intersections and generate detour
+        needs_detour = False
+        detour_x, detour_z = 0.0, 0.0
+        for ox, oy, oz, radius in self._OBSTACLES:
+            dist = self._point_to_segment_distance(ox, oz, x, z, tx, tz)
+            if dist < radius:
+                needs_detour = True
+                # Compute perpendicular detour direction
+                dx, dz = tx - x, tz - z
+                norm = math.hypot(dx, dz)
+                if norm > 0.001:
+                    perp_x, perp_z = -dz / norm, dx / norm
+                    mid_x, mid_z = (x + tx) / 2.0, (z + tz) / 2.0
+                    # Choose offset direction away from obstacle
+                    off = 2.5
+                    if math.hypot(mid_x + perp_x * off - ox, mid_z + perp_z * off - oz) < \
+                       math.hypot(mid_x - perp_x * off - ox, mid_z - perp_z * off - oz):
+                        off = -off
+                    detour_x, detour_z = mid_x + perp_x * off, mid_z + perp_z * off
+                break
+
         path: List[Tuple[float, float, float]] = []
-        steps = 10
-        for i in range(steps + 1):
-            t = i / steps
-            px = x + (tx - x) * t
-            py = y + (ty - y) * t
-            pz = z + (tz - z) * t
-            path.append((px, py, pz))
+        if needs_detour:
+            # Two-segment detour: start → detour point → goal, 5 steps each
+            steps = 5
+            for i in range(steps + 1):
+                t = i / steps
+                px = x + (detour_x - x) * t
+                py = y + (ty - y) * t
+                pz = z + (detour_z - z) * t
+                path.append((px, py, pz))
+            for i in range(1, steps + 1):
+                t = i / steps
+                px = detour_x + (tx - detour_x) * t
+                py = ty
+                pz = detour_z + (tz - detour_z) * t
+                path.append((px, py, pz))
+            steps_taken = 10
+        else:
+            # No obstacle: straight linear interpolation
+            steps = 10
+            for i in range(steps + 1):
+                t = i / steps
+                px = x + (tx - x) * t
+                py = y + (ty - y) * t
+                pz = z + (tz - z) * t
+                path.append((px, py, pz))
+            steps_taken = steps
 
         # Update agent state to final position
         final_theta = math.atan2(tz - z, tx - x)
@@ -306,7 +362,7 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         return NavigationResult(
             success=True,
             final_position=(tx, ty, tz),
-            steps_taken=steps,
+            steps_taken=steps_taken,
             collision_count=0,
             path=path,
         )

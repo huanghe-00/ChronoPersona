@@ -149,12 +149,32 @@ ws.onmessage = (event) => {
   // 3D Agent: x=x, y=height(z), z=depth(y)
   agentMesh.position.set(d.x, d.z, d.y);
 
-  // 目标标记
+  // 目标标记（高度与 z 成正比，障碍物渲染为圆柱）
   while (objectsGroup.children.length > 0) objectsGroup.remove(objectsGroup.children[0]);
   Object.values(currentObjects).forEach(o => {
-    const mesh = new THREE.Mesh(goalGeo, goalMat);
-    mesh.position.set(o.x, o.z || 0, o.y);
-    objectsGroup.add(mesh);
+    if (o.type === 'obstacle') {
+      // 障碍物：红色半透明圆柱
+      const cylGeo = new THREE.CylinderGeometry(o.radius || 1.5, o.radius || 1.5, 1.0, 16);
+      const cylMat = new THREE.MeshBasicMaterial({ color: 0xe74c3c, transparent: true, opacity: 0.4 });
+      const cyl = new THREE.Mesh(cylGeo, cylMat);
+      cyl.position.set(o.x, 0.5, o.y);
+      objectsGroup.add(cyl);
+    } else {
+      // 普通物品：高度与 z 值成正比的方块
+      const h = Math.max(0.3, (o.z || 0) * 0.8 + 0.2);
+      const geo = new THREE.BoxGeometry(0.4, h, 0.4);
+      const mesh = new THREE.Mesh(geo, goalMat);
+      mesh.position.set(o.x, (o.z || 0) / 2, o.y);
+      objectsGroup.add(mesh);
+      // 底座标记（确保物品看起来是放在地面上）
+      if (o.z > 0) {
+        const baseGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.05, 8);
+        const baseMat = new THREE.MeshBasicMaterial({ color: 0x555555 });
+        const base = new THREE.Mesh(baseGeo, baseMat);
+        base.position.set(o.x, 0.025, o.y);
+        objectsGroup.add(base);
+      }
+    }
   });
 
   // 导航路径

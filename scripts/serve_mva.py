@@ -36,12 +36,13 @@ from chronopersona.mocks.mock_model_router import MockModelRouter
 
 # 统一前端家具坐标（与 VLNAgent / HM3DAdapter / HabitatAdapter 语义映射一致）
 DEFAULT_SCENE_OBJECTS = {
-    "sofa": {"x": 2, "y": 3, "z": 0, "label": "沙发"},
-    "bed": {"x": 8, "y": 12, "z": 0, "label": "床"},
-    "table": {"x": 3, "y": 2, "z": 0, "label": "桌子"},
-    "chair": {"x": 5, "y": 5, "z": 0, "label": "椅子"},
-    "fridge": {"x": 10, "y": 5, "z": 0, "label": "冰箱"},
-    "coffee_table": {"x": 4, "y": 3, "z": 0, "label": "茶几"},
+    "sofa": {"x": 2, "y": 3, "z": 0.3, "label": "沙发"},
+    "bed": {"x": 8, "y": 12, "z": 0.5, "label": "床"},
+    "table": {"x": 3, "y": 2, "z": 0.8, "label": "桌子"},
+    "chair": {"x": 5, "y": 5, "z": 0.4, "label": "椅子"},
+    "fridge": {"x": 10, "y": 5, "z": 1.2, "label": "冰箱"},
+    "coffee_table": {"x": 4, "y": 3, "z": 0.3, "label": "茶几"},
+    "obstacle": {"x": 6, "y": 6.5, "z": 0.0, "label": "障碍物", "radius": 1.5, "type": "obstacle"},
 }
 
 _DATASET_ROOT = _PROJECT_ROOT / "dataset" / "habitat-matterport-3dresearch" / "example"
@@ -356,6 +357,8 @@ def main():
         adapter.add_object("default", "椅子", 5.0, 5.0)
         adapter.add_object("default", "冰箱", 10.0, 5.0)
         adapter.add_object("default", "茶几", 4.0, 3.0)
+        # Obstacle for path planning demonstration (A* will avoid this cell)
+        adapter.add_object("default", "障碍物", 6.0, 6.5)
         backend_type = "grid2d"
         logger.info("Using GridWorldAdapter (2D)")
 
