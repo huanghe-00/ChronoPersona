@@ -379,12 +379,16 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
             self._nav_path.append((float(px), 0.0, float(py)))
 
         final_x, final_y = path[-1]
+
+        # 公开接口路径：2D 语义格式 (x, y, 0.0)，与 final_position 一致
+        result_path = [(float(p[0]), float(p[1]), 0.0) for p in path]
+
         return NavigationResult(
             success=True,
             final_position=(float(final_x), float(final_y), 0.0),  # 2D 语义 (x, y, z=0)
             steps_taken=len(path) - 1,
             collision_count=0,
-            path=self._nav_path,
+            path=result_path,
         )
 
     def add_object(self, agent_id: str, object_id: str, x: float, y: float) -> None:
