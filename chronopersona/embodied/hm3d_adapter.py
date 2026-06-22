@@ -378,6 +378,21 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         t = max(0.0, min(1.0, ((px - x1) * dx + (pz - z1) * dz) / (dx * dx + dz * dz)))
         return math.hypot(px - (x1 + t * dx), pz - (z1 + t * dz))
 
+    @staticmethod
+    def _segment_projection(
+        px: float, pz: float, x1: float, z1: float, x2: float, z2: float
+    ) -> Tuple[float, float, float]:
+        """Return (distance, proj_x, proj_z) from point to line segment."""
+        dx, dz = x2 - x1, z2 - z1
+        seg_len_sq = dx * dx + dz * dz
+        if seg_len_sq < 1e-9:
+            return math.hypot(px - x1, pz - z1), x1, z1
+        t = max(0.0, min(1.0, ((px - x1) * dx + (pz - z1) * dz) / seg_len_sq))
+        proj_x = x1 + t * dx
+        proj_z = z1 + t * dz
+        dist = math.hypot(px - proj_x, pz - proj_z)
+        return dist, proj_x, proj_z
+
     def navigate_to_object(self, goal: SemanticNavigationGoal) -> NavigationResult:
         if not goal.target_object:
             raise ValueError("goal.target_object must not be empty")
