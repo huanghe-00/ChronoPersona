@@ -456,7 +456,7 @@ class StateMachineAgentCore(AbstractAgentCore):
             return False
         target = target.strip().lower()
         known = {
-            "沙发", "sofa", "床", "bed", "桌子", "table", "厨房", "kitchen",
+            "沙发", "sofa", "床", "bed", "桌子", "table",
             "椅子", "chair", "冰箱", "fridge", "茶几", "coffee_table",
         }
         if target in known:

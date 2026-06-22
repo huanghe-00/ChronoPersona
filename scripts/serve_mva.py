@@ -36,12 +36,12 @@ from chronopersona.mocks.mock_model_router import MockModelRouter
 
 # 统一前端家具坐标（与 VLNAgent / HM3DAdapter / HabitatAdapter 语义映射一致）
 DEFAULT_SCENE_OBJECTS = {
-    "sofa": {"x": 7.0, "y": 8.0, "z": 0.3, "label": "沙发"},
-    "bed": {"x": 4.0, "y": 11.0, "z": 0.5, "label": "床"},
-    "table": {"x": 5.0, "y": 10.0, "z": 0.8, "label": "桌子"},
+    "sofa": {"x": 8.0, "y": 6.0, "z": 0.3, "label": "沙发"},
+    "bed": {"x": 4.0, "y": 11.0, "z": 1.5, "label": "床"},        # 高架床
+    "table": {"x": 5.0, "y": 10.0, "z": 1.1, "label": "桌子"},    # 高脚桌
     "chair": {"x": 9.0, "y": 3.0, "z": 0.4, "label": "椅子"},
-    "fridge": {"x": 10.0, "y": 5.0, "z": 1.2, "label": "冰箱"},
-    "coffee_table": {"x": 10.0, "y": 7.0, "z": 0.3, "label": "茶几"},
+    "fridge": {"x": 10.0, "y": 4.0, "z": 1.2, "label": "冰箱"},
+    "coffee_table": {"x": 9.0, "y": 5.0, "z": 0.3, "label": "茶几"},
     "obstacle_island_main": {
         "x": 6.5, "y": 6.5, "z": 0.0,
         "label": "岛台主体", "type": "obstacle",
@@ -55,7 +55,7 @@ DEFAULT_SCENE_OBJECTS = {
         "color": "#8B4513",
     },
     "obstacle_pillar": {
-        "x": 4.0, "y": 8.0, "z": 0.0,
+        "x": 3.0, "y": 8.0, "z": 0.0,
         "label": "灯柱", "type": "obstacle",
         "shape": "cylinder", "radius": 0.4, "height": 2.2,
         "color": "#696969",
@@ -67,7 +67,7 @@ DEFAULT_SCENE_OBJECTS = {
         "color": "#2E8B57",
     },
     "obstacle_bookshelf": {
-        "x": 1.5, "y": 8.0, "z": 0.0,
+        "x": 1.5, "y": 9.0, "z": 0.0,
         "label": "书架", "type": "obstacle",
         "shape": "box", "size": [1.0, 2.4, 0.4],
         "color": "#8B0000",
@@ -78,10 +78,10 @@ DEFAULT_SCENE_OBJECTS = {
         "shape": "box", "size": [2.0, 0.6, 1.0],
         "color": "#4169E1",
     },
-    "obstacle_glass_wall": {
-        "x": 8.0, "y": 7.5, "z": 0.0,
+    "obstacle_glass_wall": {          # 新增：中央玻璃隔断墙
+        "x": 5.0, "y": 7.5, "z": 0.0,
         "label": "玻璃隔断", "type": "obstacle",
-        "shape": "box", "size": [0.1, 2.0, 3.0],
+        "shape": "box", "size": [4.0, 1.8, 0.1],
         "color": "#87CEEB",
     },
     "obstacle_bar1": {
@@ -409,22 +409,21 @@ def main():
         adapter = GridWorldAdapter()
         # Align initial pose with frontend hard-coded initial state
         adapter._agents["default"] = (3.0, 4.0, 0.0)
-        adapter.add_object("default", "沙发", 7.0, 8.0)
+        adapter.add_object("default", "沙发", 8.0, 6.0)
         adapter.add_object("default", "床", 4.0, 11.0)
         adapter.add_object("default", "桌子", 5.0, 10.0)
-        adapter.add_object("default", "厨房", 15.0, 5.0)
         adapter.add_object("default", "椅子", 9.0, 3.0)
-        adapter.add_object("default", "冰箱", 10.0, 5.0)
-        adapter.add_object("default", "茶几", 10.0, 7.0)
-        # 障碍物：复杂室内空间布局
+        adapter.add_object("default", "冰箱", 10.0, 4.0)
+        adapter.add_object("default", "茶几", 9.0, 5.0)
+        # 障碍物：同步 3D 空间布局
         for dx in [-1.0, 0.0, 1.0]:
             adapter.add_object("default", "岛台主体", 6.5 + dx, 6.5)
         adapter.add_object("default", "岛台侧翼", 5.5, 7.5)
-        adapter.add_object("default", "灯柱", 4.0, 8.0)
+        adapter.add_object("default", "玻璃隔断", 5.0, 7.5)  # 新增
+        adapter.add_object("default", "灯柱", 3.0, 8.0)
         adapter.add_object("default", "矮柜", 9.0, 4.0)
-        adapter.add_object("default", "书架", 1.5, 8.0)
+        adapter.add_object("default", "书架", 1.5, 9.0)
         adapter.add_object("default", "转角沙发", 7.0, 2.5)
-        adapter.add_object("default", "玻璃隔断", 8.0, 7.5)
         adapter.add_object("default", "吧台1", 4.5, 9.0)
         adapter.add_object("default", "吧台2", 3.8, 9.5)
         adapter.add_object("default", "吧台3", 3.0, 10.0)

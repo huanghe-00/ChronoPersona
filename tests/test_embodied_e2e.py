@@ -18,11 +18,11 @@ class TestEmbodiedE2E:
     def _make_agent(self, x: float = 3.0, y: float = 4.0, theta: float = 0.0):
         adapter = GridWorldAdapter()
         adapter._agents["default"] = (x, y, theta)
-        # Navigation targets behind obstacles (demonstrate detour capability)
-        adapter.add_object("default", "沙发", 7.0, 8.0)
+        # Navigation targets (demonstrate detour capability)
+        adapter.add_object("default", "沙发", 8.0, 6.0)
         adapter.add_object("default", "桌子", 5.0, 10.0)
-        # Obstacle blocking direct path from (3,4) to sofa(7,8)
-        adapter.add_object("default", "岛台", 7.0, 5.0)
+        # Obstacle blocking direct path from (3,4) to sofa(8,6)
+        adapter.add_object("default", "岛台", 6.5, 6.5)
         return StateMachineAgentCore(
             memory_store=MockMemoryStore(),
             model_router=MockModelRouter(),
@@ -74,8 +74,8 @@ class TestEmbodiedE2E:
         out = agent.run_turn("去沙发旁边", branch_id="main")
         assert "已到达" in out.reply_text or "无法找到" in out.reply_text
         state = adapter.get_perception("default")
-        assert state.x == 7.0
-        assert state.y == 8.0
+        assert state.x == 8.0
+        assert state.y == 6.0
 
     def test_emotion_modulation_reduces_speed(self):
         """T-E2E-06: CONCERNED emotion reduces approach speed to 0.25."""
@@ -96,17 +96,17 @@ class TestEmbodiedE2E:
     def test_fov_contains_nearby_object(self):
         """T-E2E-07: FOV computation includes object when facing correct direction."""
         adapter = GridWorldAdapter()
-        # Agent at (7,7), facing north (theta=pi/2), sofa at (7,8) is directly ahead
-        adapter._agents["default"] = (7.0, 7.0, math.pi / 2)
-        adapter.add_object("default", "沙发", 7.0, 8.0)
+        # Agent at (8,5), facing north (theta=pi/2), sofa at (8,6) is directly ahead
+        adapter._agents["default"] = (8.0, 5.0, math.pi / 2)
+        adapter.add_object("default", "沙发", 8.0, 6.0)
         state = adapter.get_perception("default")
         assert "沙发" in state.fov_objects
 
     def test_fov_excludes_out_of_angle_object(self):
         """T-E2E-08: FOV excludes object outside cone angle."""
         adapter = GridWorldAdapter()
-        # Agent at (7,7), facing east (theta=0), sofa at (7,8) is north (outside FOV)
-        adapter._agents["default"] = (7.0, 7.0, 0.0)
-        adapter.add_object("default", "沙发", 7.0, 8.0)
+        # Agent at (8,5), facing east (theta=0), sofa at (8,6) is north (outside FOV)
+        adapter._agents["default"] = (8.0, 5.0, 0.0)
+        adapter.add_object("default", "沙发", 8.0, 6.0)
         state = adapter.get_perception("default")
         assert "沙发" not in state.fov_objects
