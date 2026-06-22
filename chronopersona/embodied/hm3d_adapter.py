@@ -416,42 +416,67 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         tx, ty, tz = positions[0]
         x, y, z, theta = self._agents.get(self._agent_id, (0.0, 0.0, 0.0, 0.0))
 
-        # 收集所有碰撞障碍物，按路径中点距离排序（最关键优先）
+        # 收集所有碰撞障碍物，按碰撞点距起点距离排序
         collisions = []
         for ox, oy, oz, radius in self._OBSTACLES:
-            dist = self._point_to_segment_distance(ox, oz, x, z, tx, tz)
+            dist, proj_x, proj_z = self._segment_projection(ox, oz, x, z, tx, tz)
             if dist < radius:
-                mid_x, mid_z = (x + tx) / 2.0, (z + tz) / 2.0
-                mid_dist = math.hypot(ox - mid_x, oz - mid_z)
-                collisions.append((mid_dist, ox, oy, oz, radius))
+                start_dist = math.hypot(proj_x - x, proj_z - z)
+                collisions.append((start_dist, ox, oy, oz, radius, proj_x, proj_z))
 
-        # 最多处理前2个障碍，生成最多3段折线
+        # 迭代避障：在碰撞点附近偏移，逐段处理，最多4个绕行点
+        MAX_DETOURS = 4
         detour_points: List[Tuple[float, float]] = []
-        if collisions:
-            collisions.sort(key=lambda c: c[0])
-            for idx in range(min(2, len(collisions))):
-                _, ox, oy, oz, radius = collisions[idx]
-                dx, dz = tx - x, tz - z
-                norm = math.hypot(dx, dz)
-                if norm > 0.001:
-                    perp_x, perp_z = -dz / norm, dx / norm
-                    # 基于当前线段起点（考虑已添加的绕行点）计算中点
-                    seg_start_x = x if not detour_points else detour_points[-1][0]
-                    seg_start_z = z if not detour_points else detour_points[-1][1]
-                    mid_x = (seg_start_x + tx) / 2.0
-                    mid_z = (seg_start_z + tz) / 2.0
-                    off = radius + 2.0  # 更大偏移确保避开复杂障碍
-                    dist_plus = math.hypot(
-                        mid_x + perp_x * off - ox, mid_z + perp_z * off - oz
-                    )
-                    dist_minus = math.hypot(
-                        mid_x - perp_x * off - ox, mid_z - perp_z * off - oz
-                    )
-                    if dist_plus > dist_minus:
-                        detour_x, detour_z = mid_x + perp_x * off, mid_z + perp_z * off
-                    else:
-                        detour_x, detour_z = mid_x - perp_x * off, mid_z - perp_z * off
-                    detour_points.append((detour_x, detour_z))
+        current_x, current_z = x, z
+        collisions = sorted(collisions, key=lambda c: c[0])
+
+        while collisions and len(detour_points) < MAX_DETOURS:
+            # 找到从当前位置到终点的第一个碰撞
+            first_col = None
+            min_t = float('inf')
+            for col in collisions:
+                _, ox, oy, oz, radius, _, _ = col
+                dist, proj_x, proj_z = self._segment_projection(
+                    ox, oz, current_x, current_z, tx, tz
+                )
+                if dist < radius:
+                    dx_seg, dz_seg = tx - current_x, tz - current_z
+                    seg_len = math.hypot(dx_seg, dz_seg)
+                    if seg_len > 0.001:
+                        t = max(0.0, min(1.0, ((ox - current_x) * dx_seg + (oz - current_z) * dz_seg) / (seg_len * seg_len)))
+                        if t < min_t:
+                            min_t = t
+                            first_col = (ox, oy, oz, radius, proj_x, proj_z)
+
+            if first_col is None:
+                break
+
+            ox, oy, oz, radius, proj_x, proj_z = first_col
+
+            # 基于当前子线段方向计算垂直偏移
+            dx_seg, dz_seg = tx - current_x, tz - current_z
+            seg_len = math.hypot(dx_seg, dz_seg)
+            if seg_len < 0.001:
+                break
+
+            perp_x, perp_z = -dz_seg / seg_len, dx_seg / seg_len
+            off = radius + 0.5  # 紧凑偏移：仅障碍物半径 + 0.5m 安全余量
+
+            # 选择远离障碍物的方向
+            if math.hypot(proj_x + perp_x * off - ox, proj_z + perp_z * off - oz) > \
+               math.hypot(proj_x - perp_x * off - ox, proj_z - perp_z * off - oz):
+                detour_x, detour_z = proj_x + perp_x * off, proj_z + perp_z * off
+            else:
+                detour_x, detour_z = proj_x - perp_x * off, proj_z - perp_z * off
+
+            detour_points.append((detour_x, detour_z))
+            current_x, current_z = detour_x, detour_z
+
+            # 移除已绕过的碰撞（距离当前位置过近的不再考虑）
+            collisions = [
+                col for col in collisions
+                if math.hypot(col[5] - current_x, col[6] - current_z) > 0.5
+            ]
 
         # 生成多段折线路径
         path: List[Tuple[float, float, float]] = []
