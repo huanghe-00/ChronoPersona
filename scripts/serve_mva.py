@@ -19,6 +19,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 import asyncio
 import functools
 import json
+import math
 import os
 import argparse
 import threading
@@ -182,6 +183,7 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
             await websocket.send(json.dumps({"event": "chat.reply", "data": response}))
 
             # 步进动画重播：广播中间坐标，让前端感知移动过程（非瞬移）
+            # P1 fix: Regular actions also generate _nav_path for smooth animation
             if hasattr(adapter, '_nav_path') and adapter._nav_path:
                 path = list(adapter._nav_path)  # 拷贝避免并发修改
                 adapter._nav_path = []  # 立即消费清空
@@ -189,25 +191,32 @@ async def websocket_handler(websocket, gateway, adapter, backend_type):
                 if len(path) > 100:
                     step = max(1, len(path) // 100)
                     path = path[::step]
+                prev_pos = None
                 for pos in path:
                     if len(pos) >= 3:
-                        x, h, z = float(pos[0]), float(pos[1]), float(pos[2])
-                        # x=水平x, h=垂直高度(Y), z=水平深度
-                        # 2D俯视投影：x→x, z→y, h→z(高度)
+                        px, ph, pz = float(pos[0]), float(pos[1]), float(pos[2])
                     else:
-                        x, z = float(pos[0]), float(pos[1])
-                        h = 0.0
+                        px, pz = float(pos[0]), float(pos[1])
+                        ph = 0.0
+                    # Compute theta from direction of movement for natural animation
+                    theta = 0.0
+                    if prev_pos is not None:
+                        ddx = px - float(prev_pos[0])
+                        ddz = pz - (float(prev_pos[2]) if len(prev_pos) >= 3 else float(prev_pos[1]))
+                        if abs(ddx) > 0.001 or abs(ddz) > 0.001:
+                            theta = math.atan2(ddz, ddx)
                     state = {
-                        "x": x,
-                        "y": z,  # 水平深度映射为2D平面y轴
-                        "z": h,  # 垂直高度作为3D特征
-                        "theta": 0,
+                        "x": px,
+                        "y": pz,  # 水平深度映射为2D平面y轴
+                        "z": ph,  # 垂直高度作为3D特征
+                        "theta": theta,
                         "fov_objects": [],
-                        "metadata": {"position_3d": (x, h, z)},
+                        "metadata": {"position_3d": (px, ph, pz)},
                         "backend_mode": backend_type,
                     }
                     await gateway.broadcast_state_async(state)
                     await asyncio.sleep(0.05)  # 50ms 每步，前端平滑动画
+                    prev_pos = pos
                 # 可选：让前端感知到"到达"停顿
                 await asyncio.sleep(0.2)
 

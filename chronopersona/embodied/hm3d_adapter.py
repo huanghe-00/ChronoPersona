@@ -171,6 +171,17 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
             new_y = max(self._bounds[0][1], min(self._bounds[1][1], new_y))
             new_z = max(self._bounds[0][2], min(self._bounds[1][2], new_z))
 
+        # P1 fix: Generate intermediate steps for smooth animation (only if not set by navigation)
+        if not self._nav_path:
+            steps = 5
+            self._nav_path = []
+            for i in range(steps + 1):
+                t = i / steps
+                ix = x + (new_x - x) * t
+                iy = y + (new_y - y) * t
+                iz = z + (new_z - z) * t
+                self._nav_path.append((ix, iy, iz))
+
         self._agents[agent_id] = (new_x, new_y, new_z, new_theta)
         return PerceptionResult(success=True)
 

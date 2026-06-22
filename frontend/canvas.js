@@ -176,7 +176,10 @@ function connectWebSocket() {
                 ctx.fillText(`2D: (${s.x.toFixed(2)}, ${s.y.toFixed(2)}) θ=${s.theta.toFixed(2)}`, 10, 25);
             }
             ctx.fillText(`FOV: ${(s.fov_objects || []).join(', ') || 'none'}`, 10, 45);
-            log(`State update: (${s.x}, ${s.y}) θ=${s.theta}`);
+            // Only log final state updates (with scene_objects), not intermediate animation steps
+            if (s.scene_objects) {
+                log(`State update: (${s.x}, ${s.y}) θ=${s.theta}`);
+            }
         }
     };
 

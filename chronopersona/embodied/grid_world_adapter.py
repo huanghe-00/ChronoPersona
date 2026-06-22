@@ -101,6 +101,18 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
         new_x = max(0.0, min(self._grid_width - 1, x + dx))
         new_y = max(0.0, min(self._grid_height - 1, y + dy))
         new_theta = (theta + dtheta) % (2 * math.pi)
+
+        # P1 fix: Generate intermediate steps for smooth animation (only if not set by navigation)
+        if not self._nav_path:
+            steps = 5
+            self._nav_path = []
+            for i in range(steps + 1):
+                t = i / steps
+                ix = x + (new_x - x) * t
+                iy = y + (new_y - y) * t
+                # Coordinate convention: (x, height=0.0, depth=y) aligned with HM3D
+                self._nav_path.append((ix, 0.0, iy))
+
         self._agents[agent_id] = (new_x, new_y, new_theta)
         return PerceptionResult(success=True)
 
@@ -357,18 +369,19 @@ class GridWorldAdapter(AbstractEmbodiedAdapter):
         if path is None:
             return NavigationResult(success=False, final_position=(x, y, 0.0), steps_taken=0, path=[])
 
-        self._nav_path = [(float(path[0][0]), float(path[0][1]), 0.0)]
+        # Coordinate convention aligned with HM3D: (x, height=0.0, depth=y)
+        self._nav_path = [(float(path[0][0]), 0.0, float(path[0][1]))]
         for i in range(1, len(path)):
             px, py = path[i]
             prev_x, prev_y = path[i - 1]
             theta = math.atan2(py - prev_y, px - prev_x)
             self._agents[agent_id] = (float(px), float(py), theta)
-            self._nav_path.append((float(px), float(py), 0.0))
+            self._nav_path.append((float(px), 0.0, float(py)))
 
         final_x, final_y = path[-1]
         return NavigationResult(
             success=True,
-            final_position=(float(final_x), float(final_y), 0.0),
+            final_position=(float(final_x), 0.0, float(final_y)),
             steps_taken=len(path) - 1,
             collision_count=0,
             path=self._nav_path,

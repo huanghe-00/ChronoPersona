@@ -59,6 +59,8 @@ python scripts/serve_mva.py --backend 2d
 
 **回复示例**：`Agent: 已到达沙发，共移动 10 步`
 
+**普通动作步进动画（P1 修复）**：`approach_gently` / `retreat_slowly` / `turn_to_user` / `look_around` 等普通动作现在也会生成 5 步中间坐标（`_nav_path`），前端可观测平滑位移，不再出现位置跳跃。导航指令仍为 10 步线性插值。广播逻辑同时计算移动方向 theta，动画朝向自然过渡。
+
 ## 4. 坐标语义约定
 
 - **前端 2D 俯视图**：`x` = 水平轴，`y` = 深度轴（对应 3D 的 `z`）
