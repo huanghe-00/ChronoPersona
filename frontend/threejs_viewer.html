@@ -15,6 +15,11 @@
 <div id="loading">Loading 3D Scene...</div>
 <div id="info">Connecting to ws://localhost:8765/ws ...</div>
 <canvas id="canvas2d" width="240" height="240"></canvas>
+<div id="controls" style="position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.6); padding:10px; border-radius:4px; color:#fff; font-family:monospace; z-index:100;">
+  <input id="cmd" type="text" placeholder="输入指令，如：去沙发" style="width:180px; padding:4px; border:1px solid #0ff; background:#111; color:#0ff;" onkeydown="if(event.key==='Enter') sendCmd()" />
+  <button onclick="sendCmd()" style="padding:4px 8px; background:#0ff; color:#111; border:none; cursor:pointer;">发送</button>
+  <div id="reply" style="margin-top:6px; font-size:12px; max-width:260px; word-break:break-all; line-height:1.5;"></div>
+</div>
 
 <script type="importmap">
 {
@@ -89,6 +94,21 @@ function drawMiniMap(state, sceneObjects) {
 const ws = new WebSocket('ws://localhost:8765/ws');
 let currentState = null;
 let currentObjects = {};
+let lastUserInput = '';
+
+function sendCmd() {
+    const input = document.getElementById('cmd');
+    const text = input.value.trim();
+    if (!text) return;
+    lastUserInput = text;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ message: text, branch_id: 'main' }));
+        document.getElementById('reply').innerHTML = '<span style="color:#0ff">→ ' + text + '</span>';
+    } else {
+        document.getElementById('reply').innerHTML = '<span style="color:#e74c3c">WebSocket 未连接</span>';
+    }
+    input.value = '';
+}
 
 ws.onopen = () => {
   document.getElementById('info').innerHTML = 'WebSocket Connected<br>Waiting for embodied.state...';
@@ -96,6 +116,20 @@ ws.onopen = () => {
 };
 ws.onmessage = (event) => {
   const msg = JSON.parse(event.data);
+  
+  if (msg.event === 'chat.reply') {
+    const d = msg.data;
+    const reply = d.reply_text || '(no text)';
+    const reasoning = d.action_plan && d.action_plan.reasoning ? d.action_plan.reasoning : '';
+    let html = '<span style="color:#0ff">User: ' + lastUserInput + '</span>';
+    html += '<br><span style="color:#2ecc71">Agent: ' + reply + '</span>';
+    if (reasoning) {
+      html += '<br><span style="color:#f1c40f; font-size:10px">[' + reasoning + ']</span>';
+    }
+    document.getElementById('reply').innerHTML = html;
+    return;
+  }
+  
   if (msg.event !== 'embodied.state') return;
   const d = msg.data;
   currentState = d; currentObjects = d.scene_objects || {};
