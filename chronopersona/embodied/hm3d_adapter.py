@@ -142,6 +142,12 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         },
     }
 
+    # Phase 1 navigation optimization: A* with 3D-aware collision + path smoothing
+    _GRID_RESOLUTION: float = 0.5   # 0.5m cell size for occupancy grid
+    _AGENT_RADIUS: float = 0.3      # Agent body radius for obstacle inflation
+    _AGENT_HEIGHT: float = 1.7      # Agent standing height (for under-passage check)
+    _STEP_OVER_HEIGHT: float = 0.15 # Obstacles shorter than this can be stepped over
+
     def __init__(
         self,
         scene_dir: str = "",
@@ -393,6 +399,341 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         dist = math.hypot(px - proj_x, pz - proj_z)
         return dist, proj_x, proj_z
 
+    # ── Phase 1 navigation optimization methods ──
+
+    def _build_occupancy_grid(self) -> Tuple[Any, Tuple[float, float], Tuple[float, float]]:
+        """Build 2D occupancy grid with 3D-aware collision detection.
+
+        Creates a discretized grid on the x-z plane, marking cells as blocked
+        based on obstacle geometry inflated by agent radius. 3D passability
+        is considered: obstacles shorter than _STEP_OVER_HEIGHT are passable,
+        and obstacles with bottom clearance above _AGENT_HEIGHT are passable.
+
+        Returns:
+            grid: 2D boolean numpy array (True = blocked)
+            origin: (x_offset, z_offset) grid origin in world coordinates
+            bounds: (x_max, z_max) grid extent in world coordinates
+        """
+        if self._bounds is not None:
+            x_min = self._bounds[0][0] - self._AGENT_RADIUS
+            z_min = self._bounds[0][2] - self._AGENT_RADIUS
+            x_max = self._bounds[1][0] + self._AGENT_RADIUS
+            z_max = self._bounds[1][2] + self._AGENT_RADIUS
+        else:
+            x_min = -self._AGENT_RADIUS
+            z_min = -self._AGENT_RADIUS
+            x_max = 20.0 + self._AGENT_RADIUS
+            z_max = 20.0 + self._AGENT_RADIUS
+
+        nx = int(math.ceil((x_max - x_min) / self._GRID_RESOLUTION))
+        nz = int(math.ceil((z_max - z_min) / self._GRID_RESOLUTION))
+
+        grid = np.zeros((nx, nz), dtype=bool)
+
+        # Mark obstacle cells with 3D-aware passability
+        for (ox, _oy, oz), meta in self._OBSTACLE_SHAPES.items():
+            if self._is_obstacle_passable_3d(meta):
+                continue  # Agent can step over or pass under
+
+            shape = meta.get("shape", "box")
+            if shape == "box":
+                sx, _sy, sz = meta["size"]
+                half_wx = sx / 2 + self._AGENT_RADIUS
+                half_wz = sz / 2 + self._AGENT_RADIUS
+                # Mark cells within inflated box footprint
+                for ix in range(nx):
+                    cx = x_min + ix * self._GRID_RESOLUTION
+                    if abs(cx - ox) >= half_wx:
+                        continue
+                    for iz in range(nz):
+                        cz = z_min + iz * self._GRID_RESOLUTION
+                        if abs(cz - oz) >= half_wz:
+                            continue
+                        grid[ix, iz] = True
+            elif shape == "cylinder":
+                r = meta["radius"] + self._AGENT_RADIUS
+                for ix in range(nx):
+                    cx = x_min + ix * self._GRID_RESOLUTION
+                    if abs(cx - ox) >= r:
+                        continue
+                    for iz in range(nz):
+                        cz = z_min + iz * self._GRID_RESOLUTION
+                        if math.hypot(cx - ox, cz - oz) >= r:
+                            continue
+                        grid[ix, iz] = True
+
+        return grid, (x_min, z_min), (x_max, z_max)
+
+    def _is_obstacle_passable_3d(self, meta: Dict) -> bool:
+        """Check if an obstacle can be passed over or under based on 3D geometry.
+
+        An obstacle is passable if:
+        - Its height < _STEP_OVER_HEIGHT (agent can step over, e.g. 0.1m threshold)
+        - Its bottom is above _AGENT_HEIGHT (agent can walk under, e.g. elevated shelf)
+
+        Ground-level obstacles (bottom at y=0) with height > step-over threshold
+        are NOT passable — agent must detour around them.
+
+        Args:
+            meta: Obstacle shape metadata from _OBSTACLE_SHAPES.
+
+        Returns:
+            True if agent can pass without detouring.
+        """
+        shape = meta.get("shape", "box")
+        if shape == "box":
+            _, sy, _ = meta["size"]
+            # Very short obstacles can be stepped over
+            if sy < self._STEP_OVER_HEIGHT:
+                return True
+            # Ground-level obstacles with significant height block passage
+            return False
+        elif shape == "cylinder":
+            h = meta["height"]
+            if h < self._STEP_OVER_HEIGHT:
+                return True
+            return False
+        return False
+
+    def _astar_2d(
+        self,
+        start: Tuple[int, int],
+        goal: Tuple[int, int],
+        grid: Any,
+    ) -> Optional[List[Tuple[int, int]]]:
+        """A* pathfinding on 2D occupancy grid with 8-connected neighbors.
+
+        Uses Euclidean distance heuristic. Diagonal moves require both
+        axis-aligned neighbors to be free (prevents corner-cutting).
+
+        Args:
+            start: (ix, iz) grid coordinates.
+            goal: (ix, iz) grid coordinates.
+            grid: 2D boolean numpy array (True = blocked).
+
+        Returns:
+            List of (ix, iz) grid coordinates forming the shortest path,
+            or None if no path exists (unreachable goal).
+        """
+        import heapq
+
+        nx, nz = grid.shape
+        sx, sz = start
+        gx, gz = goal
+
+        if not (0 <= sx < nx and 0 <= sz < nz and 0 <= gx < nx and 0 <= gz < nz):
+            return None
+
+        # 8-connected neighbors with movement costs
+        NEIGHBORS = [
+            (1, 0, self._GRID_RESOLUTION),             # East
+            (-1, 0, self._GRID_RESOLUTION),            # West
+            (0, 1, self._GRID_RESOLUTION),             # North
+            (0, -1, self._GRID_RESOLUTION),            # South
+            (1, 1, self._GRID_RESOLUTION * 1.4142),   # NE
+            (-1, 1, self._GRID_RESOLUTION * 1.4142),  # NW
+            (1, -1, self._GRID_RESOLUTION * 1.4142),  # SE
+            (-1, -1, self._GRID_RESOLUTION * 1.4142), # SW
+        ]
+
+        open_set: list[tuple[float, Tuple[int, int]]] = [(0.0, (sx, sz))]
+        came_from: dict[Tuple[int, int], Tuple[int, int]] = {}
+        g_score: dict[Tuple[int, int], float] = {(sx, sz): 0.0}
+
+        while open_set:
+            _, current = heapq.heappop(open_set)
+
+            if current == (gx, gz):
+                # Reconstruct path
+                path = [current]
+                while current in came_from:
+                    current = came_from[current]
+                    path.append(current)
+                path.reverse()
+                return path
+
+            cx, cz = current
+            for dx, dz, cost in NEIGHBORS:
+                nxt = (cx + dx, cz + dz)
+                ni, nj = nxt
+
+                if not (0 <= ni < nx and 0 <= nj < nz):
+                    continue
+                if grid[ni, nj]:
+                    continue
+
+                # Diagonal move: check both axis-aligned neighbors are free
+                if abs(dx) + abs(dz) == 2:
+                    if grid[cx + dx, cz] or grid[cx, cz + dz]:
+                        continue
+
+                tentative_g = g_score[current] + cost
+                if tentative_g < g_score.get(nxt, float('inf')):
+                    came_from[nxt] = current
+                    g_score[nxt] = tentative_g
+                    # Euclidean distance heuristic
+                    h = math.hypot(
+                        (gx - ni) * self._GRID_RESOLUTION,
+                        (gz - nj) * self._GRID_RESOLUTION,
+                    )
+                    heapq.heappush(open_set, (tentative_g + h, nxt))
+
+        return None  # No path found (unreachable goal)
+
+    def _find_nearest_free_cell(
+        self,
+        ix: int,
+        iz: int,
+        grid: Any,
+        max_search_radius: int = 20,
+    ) -> Optional[Tuple[int, int]]:
+        """Find nearest unblocked grid cell via BFS expansion.
+
+        Used when start or goal position falls inside a blocked cell
+        (e.g., agent standing next to an obstacle after inflation).
+
+        Args:
+            ix, iz: Starting grid coordinates (may be blocked or out of bounds).
+            grid: 2D boolean occupancy grid.
+            max_search_radius: Maximum BFS expansion depth.
+
+        Returns:
+            (ix, iz) of nearest free cell, or None if all nearby cells are blocked.
+        """
+        from collections import deque
+
+        nx, nz = grid.shape
+        # Clamp to grid bounds first
+        ix = max(0, min(nx - 1, ix))
+        iz = max(0, min(nz - 1, iz))
+
+        if not grid[ix, iz]:
+            return (ix, iz)
+
+        queue: deque[Tuple[int, int, int]] = deque([(ix, iz, 0)])
+        visited: set[Tuple[int, int]] = {(ix, iz)}
+
+        while queue:
+            cx, cz, depth = queue.popleft()
+            if depth > max_search_radius:
+                return None
+
+            for dx, dz in [(1, 0), (-1, 0), (0, 1), (0, -1),
+                           (1, 1), (-1, 1), (1, -1), (-1, -1)]:
+                ni, nj = cx + dx, cz + dz
+                nxt = (ni, nj)
+                if nxt in visited:
+                    continue
+                visited.add(nxt)
+                if 0 <= ni < nx and 0 <= nj < nz and not grid[ni, nj]:
+                    return nxt
+                if 0 <= ni < nx and 0 <= nj < nz:
+                    queue.append((ni, nj, depth + 1))
+
+        return None
+
+    def _smooth_path(
+        self,
+        path: List[Tuple[float, float]],
+        grid: Any,
+        x_off: float,
+        z_off: float,
+        iterations: int = 3,
+    ) -> List[Tuple[float, float]]:
+        """Path smoothing via iterative shortcutting.
+
+        For each pair of non-adjacent path points, checks if a direct
+        collision-free line exists. If so, removes intermediate waypoints.
+        Repeats for multiple iterations to maximize shortcutting.
+
+        Args:
+            path: List of (x, z) world coordinates from A*.
+            grid: Occupancy grid for collision checking.
+            x_off, z_off: Grid origin offsets.
+            iterations: Number of shortcutting passes.
+
+        Returns:
+            Smoothed path with fewer waypoints and gentler turns.
+        """
+        if len(path) <= 2:
+            return list(path)
+
+        smoothed = list(path)
+
+        for _ in range(iterations):
+            if len(smoothed) <= 2:
+                break
+            new_path = [smoothed[0]]
+            i = 0
+            while i < len(smoothed) - 1:
+                # Find farthest reachable point from current position
+                farthest = i + 1
+                for j in range(len(smoothed) - 1, i + 1, -1):
+                    if self._line_collision_free(
+                        smoothed[i], smoothed[j], grid, x_off, z_off
+                    ):
+                        farthest = j
+                        break
+                new_path.append(smoothed[farthest])
+                i = farthest
+            smoothed = new_path
+
+        return smoothed
+
+    def _line_collision_free(
+        self,
+        p1: Tuple[float, float],
+        p2: Tuple[float, float],
+        grid: Any,
+        x_off: float,
+        z_off: float,
+    ) -> bool:
+        """Check if a straight line between two points is collision-free.
+
+        Uses ray marching along the line, checking grid cell occupancy
+        at half-cell spacing intervals for robust collision detection.
+
+        Args:
+            p1, p2: (x, z) world coordinates of line endpoints.
+            grid: 2D boolean occupancy grid.
+            x_off, z_off: Grid origin offsets.
+
+        Returns:
+            True if the entire line is in free space.
+        """
+        x1, z1 = p1
+        x2, z2 = p2
+
+        dx = x2 - x1
+        dz = z2 - z1
+        dist = math.hypot(dx, dz)
+        if dist < 0.001:
+            ix = int(round((x1 - x_off) / self._GRID_RESOLUTION))
+            iz = int(round((z1 - z_off) / self._GRID_RESOLUTION))
+            nx, nz = grid.shape
+            if not (0 <= ix < nx and 0 <= iz < nz):
+                return False
+            return not grid[ix, iz]
+
+        # Sample at half-cell intervals for robust collision checking
+        steps = int(math.ceil(dist / (self._GRID_RESOLUTION * 0.5)))
+        nx, nz = grid.shape
+
+        for s in range(steps + 1):
+            t = s / max(steps, 1)
+            px = x1 + dx * t
+            pz = z1 + dz * t
+
+            ix = int(round((px - x_off) / self._GRID_RESOLUTION))
+            iz = int(round((pz - z_off) / self._GRID_RESOLUTION))
+
+            if not (0 <= ix < nx and 0 <= iz < nz):
+                return False  # Out of bounds = blocked
+            if grid[ix, iz]:
+                return False  # Occupied cell = collision
+
+        return True
+
     def navigate_to_object(self, goal: SemanticNavigationGoal) -> NavigationResult:
         if not goal.target_object:
             raise ValueError("goal.target_object must not be empty")
@@ -416,97 +757,97 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
         tx, ty, tz = positions[0]
         x, y, z, theta = self._agents.get(self._agent_id, (0.0, 0.0, 0.0, 0.0))
 
-        # 收集所有碰撞障碍物，按碰撞点距起点距离排序
-        collisions = []
-        for ox, oy, oz, radius in self._OBSTACLES:
-            dist, proj_x, proj_z = self._segment_projection(ox, oz, x, z, tx, tz)
-            if dist < radius:
-                start_dist = math.hypot(proj_x - x, proj_z - z)
-                collisions.append((start_dist, ox, oy, oz, radius, proj_x, proj_z))
+        # Phase 1: Build 3D-aware occupancy grid
+        grid, (x_off, z_off), _ = self._build_occupancy_grid()
 
-        # 迭代避障：在碰撞点附近偏移，逐段处理，最多4个绕行点
-        MAX_DETOURS = 4
-        detour_points: List[Tuple[float, float]] = []
-        current_x, current_z = x, z
-        collisions = sorted(collisions, key=lambda c: c[0])
+        # Convert world coordinates to grid indices
+        start_ix = int(round((x - x_off) / self._GRID_RESOLUTION))
+        start_iz = int(round((z - z_off) / self._GRID_RESOLUTION))
+        goal_ix = int(round((tx - x_off) / self._GRID_RESOLUTION))
+        goal_iz = int(round((tz - z_off) / self._GRID_RESOLUTION))
 
-        while collisions and len(detour_points) < MAX_DETOURS:
-            # 找到从当前位置到终点的第一个碰撞
-            first_col = None
-            min_t = float('inf')
-            for col in collisions:
-                _, ox, oy, oz, radius, _, _ = col
-                dist, proj_x, proj_z = self._segment_projection(
-                    ox, oz, current_x, current_z, tx, tz
-                )
-                if dist < radius:
-                    dx_seg, dz_seg = tx - current_x, tz - current_z
-                    seg_len = math.hypot(dx_seg, dz_seg)
-                    if seg_len > 0.001:
-                        t = max(0.0, min(1.0, ((ox - current_x) * dx_seg + (oz - current_z) * dz_seg) / (seg_len * seg_len)))
-                        if t < min_t:
-                            min_t = t
-                            first_col = (ox, oy, oz, radius, proj_x, proj_z)
+        # Find nearest free cells if start/goal are blocked (after inflation)
+        start_cell = self._find_nearest_free_cell(start_ix, start_iz, grid)
+        goal_cell = self._find_nearest_free_cell(goal_ix, goal_iz, grid)
 
-            if first_col is None:
-                break
+        if start_cell is None or goal_cell is None:
+            return NavigationResult(
+                success=False, final_position=(x, y, z), steps_taken=0, path=[]
+            )
 
-            ox, oy, oz, radius, proj_x, proj_z = first_col
+        # Clear start and goal cells for accessibility
+        grid[start_cell[0], start_cell[1]] = False
+        grid[goal_cell[0], goal_cell[1]] = False
 
-            # 基于当前子线段方向计算垂直偏移
-            dx_seg, dz_seg = tx - current_x, tz - current_z
-            seg_len = math.hypot(dx_seg, dz_seg)
+        # Phase 2: A* pathfinding on x-z plane (global shortest path)
+        grid_path = self._astar_2d(start_cell, goal_cell, grid)
+
+        if grid_path is None:
+            return NavigationResult(
+                success=False, final_position=(x, y, z), steps_taken=0, path=[]
+            )
+
+        # Convert grid path to world coordinates on x-z plane
+        world_path_2d = [
+            (x_off + ix * self._GRID_RESOLUTION,
+             z_off + iz * self._GRID_RESOLUTION)
+            for ix, iz in grid_path
+        ]
+
+        # Phase 3: Path smoothing via shortcutting (3 iterations)
+        smoothed_2d = self._smooth_path(
+            world_path_2d, grid, x_off, z_off, iterations=3
+        )
+
+        # Generate 3D animation path with height interpolation
+        ANIM_STEP_SIZE = 0.5  # ~0.5m per animation step for smooth movement
+        path_3d: List[Tuple[float, float, float]] = []
+
+        # Calculate total 2D path length for proportional height interpolation
+        total_dist = sum(
+            math.hypot(
+                smoothed_2d[i + 1][0] - smoothed_2d[i][0],
+                smoothed_2d[i + 1][1] - smoothed_2d[i][1],
+            )
+            for i in range(len(smoothed_2d) - 1)
+        ) if len(smoothed_2d) > 1 else 0.0
+
+        cumulative_dist = 0.0
+        for seg_idx in range(len(smoothed_2d) - 1):
+            sx, sz = smoothed_2d[seg_idx]
+            ex, ez = smoothed_2d[seg_idx + 1]
+            seg_len = math.hypot(ex - sx, ez - sz)
+
             if seg_len < 0.001:
-                break
+                continue
 
-            perp_x, perp_z = -dz_seg / seg_len, dx_seg / seg_len
-            off = radius + 0.5  # 紧凑偏移：仅障碍物半径 + 0.5m 安全余量
+            n_steps = max(2, int(math.ceil(seg_len / ANIM_STEP_SIZE)))
+            for step in range(n_steps + 1):
+                # Skip last step of non-final segments to avoid duplicate waypoints
+                if seg_idx < len(smoothed_2d) - 2 and step == n_steps:
+                    continue
 
-            # 选择远离障碍物的方向
-            if math.hypot(proj_x + perp_x * off - ox, proj_z + perp_z * off - oz) > \
-               math.hypot(proj_x - perp_x * off - ox, proj_z - perp_z * off - oz):
-                detour_x, detour_z = proj_x + perp_x * off, proj_z + perp_z * off
-            else:
-                detour_x, detour_z = proj_x - perp_x * off, proj_z - perp_z * off
-
-            detour_points.append((detour_x, detour_z))
-            current_x, current_z = detour_x, detour_z
-
-            # 移除已绕过的碰撞（距离当前位置过近的不再考虑）
-            collisions = [
-                col for col in collisions
-                if math.hypot(col[5] - current_x, col[6] - current_z) > 0.5
-            ]
-
-        # 生成多段折线路径
-        path: List[Tuple[float, float, float]] = []
-        waypoints = [(x, z)] + detour_points + [(tx, tz)]
-        segments = len(waypoints) - 1
-        steps_per_segment = 5 if segments > 1 else 10
-        steps_taken = segments * steps_per_segment
-
-        for seg_idx in range(segments):
-            sx, sz = waypoints[seg_idx]
-            ex, ez = waypoints[seg_idx + 1]
-            for i in range(steps_per_segment + 1):
-                if seg_idx < segments - 1 and i == steps_per_segment:
-                    continue  # 避免中间节点重复
-                t = i / steps_per_segment
+                t = step / n_steps
                 px = sx + (ex - sx) * t
-                # y高度按整体进度线性插值
-                overall_t = (seg_idx * steps_per_segment + i) / steps_taken
-                py = y + (ty - y) * overall_t
                 pz = sz + (ez - sz) * t
-                path.append((px, py, pz))
+
+                # Height interpolation based on cumulative progress
+                h_t = (cumulative_dist + seg_len * t) / total_dist if total_dist > 0 else 0.0
+                py = y + (ty - y) * h_t
+
+                path_3d.append((px, py, pz))
+
+            cumulative_dist += seg_len
 
         # Update agent state to final position
-        final_theta = math.atan2(tz - z, tx - x)
+        final_theta = math.atan2(tz - z, tx - x) if abs(tx - x) + abs(tz - z) > 0.001 else theta
         self._agents[self._agent_id] = (tx, ty, tz, final_theta)
-        self._nav_path = path  # Cache for step-by-step animation replay
+        self._nav_path = path_3d  # Cache for step-by-step animation replay
+
         return NavigationResult(
             success=True,
             final_position=(tx, ty, tz),
-            steps_taken=steps_taken,
+            steps_taken=len(path_3d),
             collision_count=0,
-            path=path,
+            path=path_3d,
         )
