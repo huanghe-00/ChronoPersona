@@ -403,29 +403,33 @@ class HM3DAdapter(AbstractEmbodiedAdapter):
                 mid_dist = math.hypot(ox - mid_x, oz - mid_z)
                 collisions.append((mid_dist, ox, oy, oz, radius))
 
-        needs_detour = False
-        detour_x, detour_z = 0.0, 0.0
+        # 最多处理前2个障碍，生成最多3段折线
+        detour_points: List[Tuple[float, float]] = []
         if collisions:
             collisions.sort(key=lambda c: c[0])
-            _, ox, oy, oz, radius = collisions[0]
-            needs_detour = True
-            dx, dz = tx - x, tz - z
-            norm = math.hypot(dx, dz)
-            if norm > 0.001:
-                perp_x, perp_z = -dz / norm, dx / norm
-                mid_x, mid_z = (x + tx) / 2.0, (z + tz) / 2.0
-                # 偏移量 = 安全半径 + 1.5m，确保充分绕行
-                off = radius + 1.5
-                dist_plus = math.hypot(
-                    mid_x + perp_x * off - ox, mid_z + perp_z * off - oz
-                )
-                dist_minus = math.hypot(
-                    mid_x - perp_x * off - ox, mid_z - perp_z * off - oz
-                )
-                if dist_plus > dist_minus:
-                    detour_x, detour_z = mid_x + perp_x * off, mid_z + perp_z * off
-                else:
-                    detour_x, detour_z = mid_x - perp_x * off, mid_z - perp_z * off
+            for idx in range(min(2, len(collisions))):
+                _, ox, oy, oz, radius = collisions[idx]
+                dx, dz = tx - x, tz - z
+                norm = math.hypot(dx, dz)
+                if norm > 0.001:
+                    perp_x, perp_z = -dz / norm, dx / norm
+                    # 基于当前线段起点（考虑已添加的绕行点）计算中点
+                    seg_start_x = x if not detour_points else detour_points[-1][0]
+                    seg_start_z = z if not detour_points else detour_points[-1][1]
+                    mid_x = (seg_start_x + tx) / 2.0
+                    mid_z = (seg_start_z + tz) / 2.0
+                    off = radius + 2.0  # 更大偏移确保避开复杂障碍
+                    dist_plus = math.hypot(
+                        mid_x + perp_x * off - ox, mid_z + perp_z * off - oz
+                    )
+                    dist_minus = math.hypot(
+                        mid_x - perp_x * off - ox, mid_z - perp_z * off - oz
+                    )
+                    if dist_plus > dist_minus:
+                        detour_x, detour_z = mid_x + perp_x * off, mid_z + perp_z * off
+                    else:
+                        detour_x, detour_z = mid_x - perp_x * off, mid_z - perp_z * off
+                    detour_points.append((detour_x, detour_z))
 
         # 生成多段折线路径
         path: List[Tuple[float, float, float]] = []
