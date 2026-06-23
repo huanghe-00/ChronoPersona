@@ -261,8 +261,8 @@ class TestStateMachineAgentCore:
         assert len(out.action_plan.action_params["path"]) > 0
         # Verify adapter state updated
         es = adapter.get_perception("default")
-        assert es.x == 2.0
-        assert es.y == 3.0
+        assert es.x == 8.0  # 沙发新坐标 x
+        assert es.y == 6.0  # 沙发新坐标 y
 
         # Verify navigation event was persisted to episodic memory
         ctx = core._memory_store.retrieve("导航", branch_id="main")
@@ -348,8 +348,8 @@ class TestStateMachineAgentCore:
         assert out.action_plan.action_token == "navigate_to_object"
         assert out.action_plan.action_params.get("path") is not None
         es = adapter.get_perception("default")
-        assert es.x == 8.0
-        assert es.y == 12.0
+        assert es.x == 4.0   # 床新坐标 x
+        assert es.y == 11.0  # 床新坐标 y
 
     def test_build_prompt_truncates_l2_by_budget(self) -> None:
         """T25: L2 memories truncated when exceeding retrieval budget."""
@@ -427,7 +427,7 @@ class TestStateMachineAgentCore:
         assert len(out.action_plan.action_params["path"]) > 0
         es = adapter.get_perception("default")
         assert es.x == 10.0
-        assert es.y == 5.0
+        assert es.y == 4.0  # 冰箱新坐标 y
 
     def test_hard_budget_throttle_blocks_at_limit(self) -> None:
         """T29: v1.1.0 Hard budget throttle returns exhausted message when budget reached."""

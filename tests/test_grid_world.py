@@ -154,12 +154,12 @@ class TestGridWorldAdapter:
         goal = SemanticNavigationGoal(target_object="沙发")
         result = adapter.navigate_to_object(goal)
         assert result.success is True
-        assert result.final_position == (2.0, 3.0, 0.0)
+        assert result.final_position == (8.0, 6.0, 0.0)  # 沙发新坐标
         assert len(result.path) > 0
         assert result.path[-1] == result.final_position
         es = adapter.get_perception("default")
-        assert es.x == 2.0
-        assert es.y == 3.0
+        assert es.x == 8.0
+        assert es.y == 6.0
 
     def test_navigate_to_object_dynamic_spatial_memory(self) -> None:
         """T18: navigate_to_object prioritizes dynamically added spatial records."""
@@ -222,8 +222,8 @@ class TestGridWorldAdapter:
         goal = SemanticNavigationGoal(target_object="床")
         result = adapter.navigate_to_object(goal)
         assert result.success is True
-        assert result.steps_taken == 20
-        assert len(result.path) == 21
+        assert result.steps_taken == 15   # 床新坐标 (4,11)：Manhattan 距离 15
+        assert len(result.path) == 16     # 15 步 + 起点
         assert result.path[-1] == result.final_position
 
     def test_navigate_to_chair(self) -> None:
@@ -233,12 +233,12 @@ class TestGridWorldAdapter:
         goal = SemanticNavigationGoal(target_object="椅子")
         result = adapter.navigate_to_object(goal)
         assert result.success is True
-        assert result.final_position == (5.0, 5.0, 0.0)
+        assert result.final_position == (9.0, 3.0, 0.0)  # 椅子新坐标
         assert len(result.path) > 0
         assert result.path[-1] == result.final_position
         es = adapter.get_perception("default")
-        assert es.x == 5.0
-        assert es.y == 5.0
+        assert es.x == 9.0
+        assert es.y == 3.0
 
     def test_navigate_to_fridge(self) -> None:
         """T24: Navigation to fridge target."""
@@ -247,7 +247,7 @@ class TestGridWorldAdapter:
         goal = SemanticNavigationGoal(target_object="冰箱")
         result = adapter.navigate_to_object(goal)
         assert result.success is True
-        assert result.final_position == (10.0, 5.0, 0.0)
+        assert result.final_position == (10.0, 4.0, 0.0)  # 冰箱新坐标
         assert len(result.path) > 0
         assert result.path[-1] == result.final_position
 
@@ -258,6 +258,6 @@ class TestGridWorldAdapter:
         goal = SemanticNavigationGoal(target_object="茶几")
         result = adapter.navigate_to_object(goal)
         assert result.success is True
-        assert result.final_position == (4.0, 3.0, 0.0)
+        assert result.final_position == (9.0, 5.0, 0.0)  # 茶几新坐标
         assert len(result.path) > 0
         assert result.path[-1] == result.final_position
