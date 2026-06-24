@@ -64,5 +64,5 @@ class TestEmbodiedNavigationEndToEnd:
 
         core.run_turn("去床那里", branch_id="main")
         state = adapter.get_perception("default")
-        assert state.x == 8.0
-        assert state.y == 12.0
+        assert state.x == 4.0   # 床新坐标 x
+        assert state.y == 11.0  # 床新坐标 y
