@@ -245,7 +245,7 @@ class TestStateMachineAgentCore:
         """T19: Navigation intent drives GridWorldAdapter to target and updates position."""
         from chronopersona.embodied.grid_world_adapter import GridWorldAdapter
         adapter = GridWorldAdapter()
-        adapter.add_object("default", "沙发", 2.0, 3.0)
+        adapter.add_object("default", "沙发", 8.0, 6.0)  # 同步新坐标
         core = StateMachineAgentCore(
             memory_store=MockMemoryStore(),
             model_router=MockModelRouter(),
@@ -330,8 +330,8 @@ class TestStateMachineAgentCore:
         assert out.action_plan.action_token == "navigate_to_object"
         assert out.action_plan.action_params.get("path") is not None
         es = adapter.get_perception("default")
-        assert es.x == 2.0
-        assert es.y == 3.0
+        assert es.x == 8.0  # 沙发新坐标 x
+        assert es.y == 6.0  # 沙发新坐标 y
 
     def test_navigation_intent_via_navigate_to(self) -> None:
         """T24: '请帮我导航到床附近' triggers navigation."""
