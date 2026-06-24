@@ -59,8 +59,8 @@ class TestEmbodiedNavigationEndToEnd:
         adapter = core._embodied_adapter
         assert adapter is not None
         state = adapter.get_perception("default")
-        assert state.x == 2.0
-        assert state.y == 3.0
+        assert state.x == 8.0  # 沙发新坐标 x
+        assert state.y == 6.0  # 沙发新坐标 y
 
         core.run_turn("去床那里", branch_id="main")
         state = adapter.get_perception("default")
